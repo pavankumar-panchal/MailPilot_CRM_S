@@ -652,3 +652,697 @@
 [2025-07-14 13:02:13] Worker [IDs 49501-49759] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
 
 [2025-07-14 13:02:13] Processing complete. Remaining unprocessed emails: 23592
+[2025-07-15 05:05:04] Total emails to process: 49759
+[2025-07-15 05:05:04] Total batches: 100, Batch size: 500
+[2025-07-15 05:05:04] Starting parallel SMTP processing with MAX_WORKERS=100
+[2025-07-15 05:05:04] Started worker for IDs 1 - 500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 501 - 1000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 1001 - 1500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 1501 - 2000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 2001 - 2500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 2501 - 3000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 3001 - 3500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 3501 - 4000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 4001 - 4500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 4501 - 5000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 5001 - 5500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 5501 - 6000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 6001 - 6500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 6501 - 7000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 7001 - 7500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 7501 - 8000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 8001 - 8500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 8501 - 9000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 9001 - 9500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 9501 - 10000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 10001 - 10500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 10501 - 11000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 11001 - 11500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 11501 - 12000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 12001 - 12500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 12501 - 13000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 13001 - 13500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 13501 - 14000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 14001 - 14500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 14501 - 15000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 15001 - 15500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 15501 - 16000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 16001 - 16500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 16501 - 17000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 17001 - 17500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 17501 - 18000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 18001 - 18500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 18501 - 19000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 19001 - 19500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 19501 - 20000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 20001 - 20500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 20501 - 21000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 21001 - 21500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 21501 - 22000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 22001 - 22500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 22501 - 23000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 23001 - 23500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 23501 - 24000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 24001 - 24500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 24501 - 25000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 25001 - 25500 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 25501 - 26000 (500 emails)
+[2025-07-15 05:05:04] Started worker for IDs 26001 - 26500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 26501 - 27000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 27001 - 27500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 27501 - 28000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 28001 - 28500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 28501 - 29000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 29001 - 29500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 29501 - 30000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 30001 - 30500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 30501 - 31000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 31001 - 31500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 31501 - 32000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 32001 - 32500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 32501 - 33000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 33001 - 33500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 33501 - 34000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 34001 - 34500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 34501 - 35000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 35001 - 35500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 35501 - 36000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 36001 - 36500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 36501 - 37000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 37001 - 37500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 37501 - 38000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 38001 - 38500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 38501 - 39000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 39001 - 39500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 39501 - 40000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 40001 - 40500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 40501 - 41000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 41001 - 41500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 41501 - 42000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 42001 - 42500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 42501 - 43000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 43001 - 43500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 43501 - 44000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 44001 - 44500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 44501 - 45000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 45001 - 45500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 45501 - 46000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 46001 - 46500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 46501 - 47000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 47001 - 47500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 47501 - 48000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 48001 - 48500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 48501 - 49000 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 49001 - 49500 (500 emails)
+[2025-07-15 05:05:05] Started worker for IDs 49501 - 49759 (259 emails)
+[2025-07-15 05:05:06] Processing complete. Remaining unprocessed emails: 23592
+[2025-07-15 05:05:11] Total emails to process: 49759
+[2025-07-15 05:05:11] Total batches: 100, Batch size: 500
+[2025-07-15 05:05:11] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 05:05:11] Started worker for IDs 1 - 500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 501 - 1000 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 1001 - 1500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 1501 - 2000 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 2001 - 2500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 2501 - 3000 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 3001 - 3500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 3501 - 4000 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 4001 - 4500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 4501 - 5000 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 5001 - 5500 (500 emails)
+[2025-07-15 05:05:11] Started worker for IDs 5501 - 6000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 6001 - 6500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 6501 - 7000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 7001 - 7500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 7501 - 8000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 8001 - 8500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 8501 - 9000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 9001 - 9500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 9501 - 10000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 501-1000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 1001-1500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 1501-2000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 10001 - 10500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 10501 - 11000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 11001 - 11500 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 1-500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 2001-2500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 2501-3000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 3001-3500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 3501-4000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 4001-4500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 4501-5000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 5001-5500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 5501-6000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 6001-6500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 6501-7000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 7001-7500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 7501-8000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 8001-8500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 8501-9000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 9001-9500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 9501-10000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 11501 - 12000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 12001 - 12500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 12501 - 13000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 13001 - 13500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 13501 - 14000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 14001 - 14500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 14501 - 15000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 15001 - 15500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 15501 - 16000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 16001 - 16500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 16501 - 17000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 17001 - 17500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 17501 - 18000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 18001 - 18500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 18501 - 19000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 19001 - 19500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 19501 - 20000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 10001-10500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 10501-11000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 11001-11500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 12501-13000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 20001 - 20500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 20501 - 21000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 21001 - 21500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 21501 - 22000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 11501-12000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 12001-12500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 13001-13500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 13501-14000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 14001-14500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 14501-15000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 15001-15500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 15501-16000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 16001-16500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 16501-17000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 17001-17500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 17501-18000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 18001-18500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 18501-19000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 19001-19500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 19501-20000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 22001 - 22500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 22501 - 23000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 23001 - 23500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 23501 - 24000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 24001 - 24500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 24501 - 25000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 25001 - 25500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 25501 - 26000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 26001 - 26500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 26501 - 27000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 27001 - 27500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 27501 - 28000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 28001 - 28500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 28501 - 29000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 29001 - 29500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 29501 - 30000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 20001-20500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 20501-21000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 21001-21500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 21501-22000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 30001 - 30500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 30501 - 31000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 31001 - 31500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 31501 - 32000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 22001-22500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 22501-23000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 23001-23500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 23501-24000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 24001-24500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 24501-25000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 25001-25500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 25501-26000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 26001-26500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 26501-27000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 27001-27500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 27501-28000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 28001-28500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 28501-29000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 29001-29500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 29501-30000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 32001 - 32500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 32501 - 33000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 33001 - 33500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 33501 - 34000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 34001 - 34500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 34501 - 35000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 35001 - 35500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 35501 - 36000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 36001 - 36500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 36501 - 37000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 37001 - 37500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 37501 - 38000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 38001 - 38500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 38501 - 39000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 39001 - 39500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 39501 - 40000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 30001-30500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 30501-31000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 31001-31500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 31501-32000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 40001 - 40500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 40501 - 41000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 41001 - 41500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 41501 - 42000 (500 emails)
+[2025-07-15 05:05:12] Worker [IDs 32001-32500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 32501-33000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 33001-33500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 33501-34000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 34001-34500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 34501-35000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 35001-35500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 35501-36000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 36001-36500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 36501-37000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 37001-37500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 37501-38000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 38001-38500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 38501-39000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 39001-39500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Worker [IDs 39501-40000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:12] Started worker for IDs 42001 - 42500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 42501 - 43000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 43001 - 43500 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 43501 - 44000 (500 emails)
+[2025-07-15 05:05:12] Started worker for IDs 44001 - 44500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 44501 - 45000 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 45001 - 45500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 45501 - 46000 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 46001 - 46500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 46501 - 47000 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 47001 - 47500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 47501 - 48000 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 48001 - 48500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 48501 - 49000 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 49001 - 49500 (500 emails)
+[2025-07-15 05:05:13] Started worker for IDs 49501 - 49759 (259 emails)
+[2025-07-15 05:05:13] Worker [IDs 40001-40500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 40501-41000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 41001-41500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 41501-42000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 42001-42500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 42501-43000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 43001-43500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 43501-44000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 44001-44500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 44501-45000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 45001-45500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 45501-46000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 46001-46500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 46501-47000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 47001-47500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 47501-48000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 48001-48500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 48501-49000] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 49001-49500] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Worker [IDs 49501-49759] ERROR: PHP Parse error:  syntax error, unexpected token ";", expecting ")" in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 11
+
+[2025-07-15 05:05:13] Processing complete. Remaining unprocessed emails: 23592
+[2025-07-15 05:06:14] Total emails to process: 49759
+[2025-07-15 05:06:14] Total batches: 100, Batch size: 500
+[2025-07-15 05:06:14] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 05:06:14] Started worker for IDs 1 - 500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 501 - 1000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 1001 - 1500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 1501 - 2000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 2001 - 2500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 2501 - 3000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 3001 - 3500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 3501 - 4000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 4001 - 4500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 4501 - 5000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 5001 - 5500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 5501 - 6000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 6001 - 6500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 6501 - 7000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 7001 - 7500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 7501 - 8000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 8001 - 8500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 8501 - 9000 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 9001 - 9500 (500 emails)
+[2025-07-15 05:06:14] Started worker for IDs 9501 - 10000 (500 emails)
+[2025-07-15 05:15:50] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 05:15:50] Started worker 0 for 1032 emails
+[2025-07-15 05:15:50] Started worker 1 for 1032 emails
+[2025-07-15 05:15:50] Started worker 2 for 1032 emails
+[2025-07-15 05:15:50] Started worker 3 for 1032 emails
+[2025-07-15 05:15:50] Started worker 4 for 1032 emails
+[2025-07-15 05:15:50] Started worker 5 for 1032 emails
+[2025-07-15 05:15:50] Started worker 6 for 1032 emails
+[2025-07-15 05:15:50] Started worker 7 for 1032 emails
+[2025-07-15 05:15:50] Started worker 8 for 1032 emails
+[2025-07-15 05:15:50] Started worker 9 for 1032 emails
+[2025-07-15 05:15:50] Started worker 10 for 1032 emails
+[2025-07-15 05:15:50] Started worker 11 for 1032 emails
+[2025-07-15 05:15:50] Started worker 12 for 1032 emails
+[2025-07-15 05:15:50] Started worker 13 for 1032 emails
+[2025-07-15 05:15:50] Started worker 14 for 1032 emails
+[2025-07-15 05:15:50] Started worker 15 for 1032 emails
+[2025-07-15 05:15:50] Started worker 16 for 1032 emails
+[2025-07-15 05:15:50] Started worker 17 for 1032 emails
+[2025-07-15 05:15:50] Started worker 18 for 1032 emails
+[2025-07-15 05:15:50] Started worker 19 for 1017 emails
+[2025-07-15 05:18:03] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 05:18:03] Started worker 0 for 1028 emails
+[2025-07-15 05:18:03] Started worker 1 for 1028 emails
+[2025-07-15 05:18:03] Started worker 2 for 1028 emails
+[2025-07-15 05:18:03] Started worker 3 for 1028 emails
+[2025-07-15 05:18:04] Started worker 4 for 1028 emails
+[2025-07-15 05:18:04] Started worker 5 for 1028 emails
+[2025-07-15 05:18:04] Started worker 6 for 1028 emails
+[2025-07-15 05:18:04] Started worker 7 for 1028 emails
+[2025-07-15 05:18:04] Started worker 8 for 1028 emails
+[2025-07-15 05:18:04] Started worker 9 for 1028 emails
+[2025-07-15 05:18:04] Started worker 10 for 1028 emails
+[2025-07-15 05:18:04] Started worker 11 for 1028 emails
+[2025-07-15 05:18:04] Started worker 12 for 1028 emails
+[2025-07-15 05:18:04] Started worker 13 for 1028 emails
+[2025-07-15 05:18:04] Started worker 14 for 1028 emails
+[2025-07-15 05:18:04] Started worker 15 for 1028 emails
+[2025-07-15 05:18:04] Started worker 16 for 1028 emails
+[2025-07-15 05:18:04] Started worker 17 for 1028 emails
+[2025-07-15 05:18:04] Started worker 18 for 1028 emails
+[2025-07-15 05:18:04] Started worker 19 for 1025 emails
+[2025-07-15 05:35:54] Worker 0 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 1 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 4 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 6 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 9 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 10 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 12 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:53:53] Worker 15 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 16 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:53:53] Worker 17 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:54:43] Worker 18 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 05:54:43] Worker 19 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 05:54:43] Processing complete. Remaining unprocessed emails: 6696
+[2025-07-15 05:58:53] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 05:58:53] Started worker 0 for 202 emails
+[2025-07-15 05:58:53] Started worker 1 for 202 emails
+[2025-07-15 05:58:53] Started worker 2 for 202 emails
+[2025-07-15 05:58:53] Started worker 3 for 202 emails
+[2025-07-15 05:58:53] Started worker 4 for 202 emails
+[2025-07-15 05:58:53] Started worker 5 for 202 emails
+[2025-07-15 05:58:53] Started worker 6 for 202 emails
+[2025-07-15 05:58:53] Started worker 7 for 202 emails
+[2025-07-15 05:58:53] Started worker 8 for 202 emails
+[2025-07-15 05:58:53] Started worker 9 for 202 emails
+[2025-07-15 05:58:53] Started worker 10 for 202 emails
+[2025-07-15 05:58:53] Started worker 11 for 202 emails
+[2025-07-15 05:58:53] Started worker 12 for 202 emails
+[2025-07-15 05:58:53] Started worker 13 for 202 emails
+[2025-07-15 05:58:53] Started worker 14 for 202 emails
+[2025-07-15 05:58:53] Started worker 15 for 202 emails
+[2025-07-15 05:58:53] Started worker 16 for 202 emails
+[2025-07-15 05:58:53] Started worker 17 for 202 emails
+[2025-07-15 05:58:53] Started worker 18 for 202 emails
+[2025-07-15 05:58:53] Started worker 19 for 194 emails
+[2025-07-15 05:58:59] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:06:53] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:06:53] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:07:46] Worker 12 ERROR: PHP Notice:  fputs(): Send of 31 bytes failed with errno=104 Connection reset by peer in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 145
+
+[2025-07-15 06:08:22] Worker 17 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:08:22] Worker 18 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:08:22] Worker 19 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:49
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(49): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(193): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(210): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 49
+
+[2025-07-15 06:08:22] Processing complete. Remaining unprocessed emails: 3326
+[2025-07-15 06:09:18] Starting parallel SMTP processing with MAX_WORKERS=20
+[2025-07-15 06:09:18] Started worker 0 for 34 emails
+[2025-07-15 06:09:18] Started worker 1 for 34 emails
+[2025-07-15 06:09:18] Started worker 2 for 34 emails
+[2025-07-15 06:09:18] Started worker 3 for 34 emails
+[2025-07-15 06:09:18] Started worker 4 for 34 emails
+[2025-07-15 06:09:18] Started worker 5 for 34 emails
+[2025-07-15 06:09:18] Started worker 6 for 34 emails
+[2025-07-15 06:09:18] Started worker 7 for 34 emails
+[2025-07-15 06:09:18] Started worker 8 for 34 emails
+[2025-07-15 06:09:18] Started worker 9 for 34 emails
+[2025-07-15 06:09:18] Started worker 10 for 34 emails
+[2025-07-15 06:09:18] Started worker 11 for 34 emails
+[2025-07-15 06:09:18] Started worker 12 for 34 emails
+[2025-07-15 06:09:18] Started worker 13 for 34 emails
+[2025-07-15 06:09:18] Started worker 14 for 34 emails
+[2025-07-15 06:09:18] Started worker 15 for 34 emails
+[2025-07-15 06:09:18] Started worker 16 for 34 emails
+[2025-07-15 06:09:18] Started worker 17 for 34 emails
+[2025-07-15 06:09:18] Started worker 18 for 34 emails
+[2025-07-15 06:09:18] Started worker 19 for 16 emails
+[2025-07-15 06:09:19] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
+
+[2025-07-15 06:11:01] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
+
+[2025-07-15 06:11:33] Worker 10 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
+
+[2025-07-15 06:11:33] Worker 13 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
+
+[2025-07-15 06:11:33] Worker 18 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'validation' at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
+Stack trace:
+#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
+#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
+#3 {main}
+  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
+
+[2025-07-15 06:11:33] Processing complete. Remaining unprocessed emails: 2750

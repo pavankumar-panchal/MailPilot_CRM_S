@@ -11,7 +11,7 @@ header("Access-Control-Allow-Methods: GET");
 
 // Database configuration
 $servername = "127.0.0.1";
-$username = "root";
+$username = "root"; 
 $password = "";
 $dbname = "CRM";
 
@@ -56,9 +56,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");
 if ($conn->connect_error) exit(1);
 
-define("WORKER_ID", 2;
-
-// Separate log DB credentials
 $log_db_host = "127.0.0.1";
 $log_db_user = "root";
 $log_db_pass = "";
@@ -66,11 +63,17 @@ $log_db_name = "CRM_logs";
 
 $conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
 $conn_logs->set_charset("utf8mb4");
-if ($conn_logs->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-}
+if ($conn_logs->connect_error) exit(1);
 
-$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID;
+define('WORKER_ID', 2); // Set worker id here
+
+// Get ID list from argument
+$id_list = isset($argv[1]) ? $argv[1] : '';
+$ids = array_filter(explode(',', $id_list), 'is_numeric');
+if (empty($ids)) exit(0);
+
+$id_sql = implode(',', $ids);
+$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID . " AND id IN ($id_sql)";
 $result = $conn->query($query);
 
 function log_worker($msg, $id_range = '') {
@@ -298,84 +301,66 @@ function write_log($msg)
     file_put_contents(LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
 }
 
-// --- Get ID ranges for parallel processing ---
-function get_id_ranges($conn, $batch_size)
+// --- Get all email IDs to process ---
+function get_all_email_ids($conn)
 {
-    $ranges = [];
-    $result = $conn->query("SELECT MIN(id) as min_id, MAX(id) as max_id, COUNT(*) as total FROM emails");
-    $row = $result->fetch_assoc();
-    if (!$row || $row['min_id'] === null || $row['max_id'] === null)
-        return $ranges;
-
-    $total = $row['total'];
-    write_log("Total emails to process: $total");
-
-    for ($i = $row['min_id']; $i <= $row['max_id']; $i += $batch_size) {
-        $end = min($i + $batch_size - 1, $row['max_id']);
-        $ranges[] = [
-            'start' => $i,
-            'end' => $end,
-            'count' => $end - $i + 1
-        ];
+    $ids = [];
+    $result = $conn->query("SELECT id FROM emails WHERE domain_status=1 AND domain_processed=0");
+    while ($row = $result->fetch_assoc()) {
+        $ids[] = $row['id'];
     }
-    write_log("Total batches: " . count($ranges) . ", Batch size: $batch_size");
-    return $ranges;
+    return $ids;
+}
+
+// --- Split IDs into N workers ---
+function split_ids($ids, $num_workers)
+{
+    $chunks = array_chunk($ids, ceil(count($ids) / $num_workers));
+    return $chunks;
 }
 
 // --- Parallel SMTP processing ---
 function process_in_parallel($conn)
 {
-    $batch_size = EMAILS_PER_WORKER;
-    $ranges = get_id_ranges($conn, $batch_size);
-    $total_batches = count($ranges);
-    $processed = 0;
+    $ids = get_all_email_ids($conn);
+    $num_workers = MAX_WORKERS;
+    $chunks = split_ids($ids, $num_workers);
     $active_procs = [];
-    $batch_idx = 0;
+    $processed = 0;
 
-    write_log("Starting parallel SMTP processing with MAX_WORKERS=" . MAX_WORKERS);
+    write_log("Starting parallel SMTP processing with MAX_WORKERS=" . $num_workers);
 
-    while ($batch_idx < $total_batches || count($active_procs) > 0) {
-        // Start new workers if under limit
-        while (count($active_procs) < MAX_WORKERS && $batch_idx < $total_batches) {
-            $range = $ranges[$batch_idx];
-            $cmd = "php " . escapeshellarg(WORKER_SCRIPT) . " {$range['start']} {$range['end']}";
-            $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
-            $proc = proc_open($cmd, $descriptorspec, $pipes);
-            if (is_resource($proc)) {
-                $active_procs[] = [
-                    'proc' => $proc,
-                    'pipes' => $pipes,
-                    'range' => $range
-                ];
-                write_log("Started worker for IDs {$range['start']} - {$range['end']} ({$range['count']} emails)");
-            }
-            $processed += $range['count'];
-            $batch_idx++;
+    foreach ($chunks as $worker_id => $id_chunk) {
+        if (empty($id_chunk)) continue;
+        $id_list = implode(',', $id_chunk);
+        $cmd = "php " . escapeshellarg(WORKER_SCRIPT) . " " . escapeshellarg($id_list) . " $worker_id";
+        $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
+        $proc = proc_open($cmd, $descriptorspec, $pipes);
+        if (is_resource($proc)) {
+            $active_procs[] = [
+                'proc' => $proc,
+                'pipes' => $pipes,
+                'worker_id' => $worker_id,
+                'count' => count($id_chunk)
+            ];
+            write_log("Started worker $worker_id for " . count($id_chunk) . " emails");
+            $processed += count($id_chunk);
         }
+    }
 
-        // Check for finished workers
-        foreach ($active_procs as $key => $worker) {
+    // Wait for all workers to finish
+    foreach ($active_procs as $worker) {
+        $status = proc_get_status($worker['proc']);
+        while ($status['running']) {
+            usleep(100000);
             $status = proc_get_status($worker['proc']);
-            if (!$status['running']) {
-                // Read output and errors
-                $stdout = stream_get_contents($worker['pipes'][1]);
-                $stderr = stream_get_contents($worker['pipes'][2]);
-                if (trim($stdout)) {
-                    write_log("Worker [IDs {$worker['range']['start']}-{$worker['range']['end']}] OUTPUT: $stdout");
-                }
-                if (trim($stderr)) {
-                    write_log("Worker [IDs {$worker['range']['start']}-{$worker['range']['end']}] ERROR: $stderr");
-                }
-                // Close pipes and remove from active list
-                foreach ($worker['pipes'] as $pipe)
-                    fclose($pipe);
-                proc_close($worker['proc']);
-                unset($active_procs[$key]);
-            }
         }
-        // Prevent busy waiting
-        usleep(100000); // 0.1s
-        $active_procs = array_values($active_procs); // reindex
+        $stdout = stream_get_contents($worker['pipes'][1]);
+        $stderr = stream_get_contents($worker['pipes'][2]);
+        if (trim($stdout)) write_log("Worker {$worker['worker_id']} OUTPUT: $stdout");
+        if (trim($stderr)) write_log("Worker {$worker['worker_id']} ERROR: $stderr");
+        foreach ($worker['pipes'] as $pipe) fclose($pipe);
+        proc_close($worker['proc']);
     }
 
     // Log how many emails remain to process
