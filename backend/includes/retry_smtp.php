@@ -43,7 +43,7 @@ function write_log($msg)
 
 function insert_smtp_log($log_conn, $email, $steps, $validation, $validation_response)
 {
-    $stmt = $log_conn->prepare("INSERT INTO email_smtp_checks 
+    $stmt = $log_conn->prepare("INSERT INTO email_smtp_checks2 
         (email, smtp_connection, ehlo, mail_from, rcpt_to, validation, validation_response) 
         VALUES (?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {

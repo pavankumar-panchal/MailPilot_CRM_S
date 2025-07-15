@@ -2,3 +2,1370 @@
 [2025-07-15 08:10:34] Starting SMTP processing for 792 retryable emails in list 1
 [2025-07-15 08:10:42] Starting SMTP processing for 792 retryable emails in list 1
 [2025-07-15 08:10:50] Starting SMTP processing for 793 retryable emails in list 1
+[2025-07-15 08:22:06] Starting SMTP processing for 793 retryable emails in list 1
+[2025-07-15 08:30:04] Starting SMTP processing for 793 retryable emails in list 1
+[2025-07-15 08:32:12] Starting SMTP processing for 793 retryable emails in list 1
+[2025-07-15 08:32:14] Processed 198 (abhaykapoor161@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:15] Processed 268 (abhishekchavan019@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:17] Processed 364 (ac@sonamquartz.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:18] Processed 370 (acajaychauhan2@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:19] Processed 504 (accounts@allozenpharma.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:21] Processed 659 (accounts@moduleone.com): valid - 74.208.5.21
+[2025-07-15 08:32:25] Processed 688 (accounts@peopleframe.in): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:32:25] Processed 871 (accounts1@hashtaag.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062B9.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:32:25.874Z 08DDBF9EE92A3526]
+
+[2025-07-15 08:32:27] Processed 952 (acmejaipur0141@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:28] Processed 958 (aco@iimk.ac.in): invalid - 451 4.3.2 Please try again later
+
+[2025-07-15 08:32:30] Processed 1057 (adityaabad80@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:30] Processed 1100 (admin@acumendevelopers.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:31] Processed 1127 (admin@cenza.co): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062BA.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:32:31.663Z 08DDBEAC32B6A49A]
+
+[2025-07-15 08:32:32] Processed 1190 (admin@janapareddy.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:32] Processed 1300 (admin@svgco.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:34] Processed 1390 (advparasparekh@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:35] Processed 1394 (advvkvaishnav@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:37] Processed 1441 (afzalkhandln@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:38] Processed 1452 (agarwalkunal1993@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:40] Processed 1457 (agarwalautomobiles1972@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:42] Processed 1496 (agrawalsagar744@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:42] Processed 1562 (aishwarya@crescdata.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:43] Processed 1583 (ajasabjsk@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:45] Processed 1666 (ajayshekhawat1988@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:47] Processed 1669 (ajaysurgical13@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:47] Processed 1706 (ajithkumar@kumarsglobal.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:32:50] Processed 1754 (Akash@tp.com): invalid - 451 Account inbounds disabled - https://community.mimecast.com/docs/DOC-1369#451 [a1BT39eKNyecUP3mxOe_1w.de54]
+
+[2025-07-15 08:32:51] Processed 1857 (aksinghndt@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:51] Processed 1878 (Alekhya.Sujitha@sparklethemes.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF000072B2.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:32:51.932Z 08DDBE6D9FC1E8BA]
+
+[2025-07-15 08:32:53] Processed 2086 (amirteshsk@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:54] Processed 2186 (amitagoswami92@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:56] Processed 2397 (ananthupky97@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:57] Processed 2399 (anantjadhav56@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:32:59] Processed 2430 (angolayash@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:00] Processed 2452 (aniljvvnl@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:02] Processed 2467 (anilshreeganeshenggworks@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:03] Processed 2509 (anilchauhan@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:05] Processed 2689 (ankitpanthy88@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:07] Processed 2699 (ankur4u93@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:09] Processed 2708 (ankur@globeone.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:33:09] Processed 2812 (antony@munnargreenresorts.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:33:11] Processed 2855 (anupg23@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:13] Processed 2893 (anurag03sharma@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:14] Processed 2895 (anuragkundu28@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:16] Processed 2905 (anushanair3@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:16] Processed 2908 (anushka.shukre@integscloud.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:33:17] Processed 2913 (anvay2011@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:24] Processed 3038 (archana.shevkari@tristone.com): invalid - 451 4.3.2 Please try again later
+
+[2025-07-15 08:33:26] Processed 3251 (arvindkadu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:28] Processed 3263 (aryalalit87@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:29] Processed 3400 (ashok22kumar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:29] Processed 3415 (ashok@agtinfra.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:33:31] Processed 3439 (ashokbhai@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:33] Processed 3506 (ashvaniveenus@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:33] Processed 3559 (asingh@weavetech.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:33:34] Processed 3709 (autoworldsrgms@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:36] Processed 3796 (ayaankhn@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:38] Processed 3832 (bbikram1992@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:39] Processed 3863 (bablujaiswal7825@gmail.com): valid - 142.251.12.27
+[2025-07-15 08:33:41] Processed 3896 (bagracom001@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:44] Processed 3923 (bala@vaithisvaran.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:33:46] Processed 4096 (basupritisha18@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:47] Processed 4165 (bernicebaraily@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:49] Processed 4445 (bhuwanchandra908@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:51] Processed 4574 (blcmmangapur2005@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:52] Processed 4625 (bolisettysankar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:54] Processed 4701 (brijesh@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:55] Processed 4757 (bubun43@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:57] Processed 4818 (caashishah@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:58] Processed 4833 (canitinkhode@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:33:59] Processed 4850 (ca@apsco.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:00] Processed 4858 (ca@suranaca.in): invalid - 452 <ca@suranaca.in> Domain size limit exceeded
+
+[2025-07-15 08:34:02] Processed 5159 (chaharsari16@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:03] Processed 5160 (chairmanbossindia@gmail.com): valid - 142.251.12.27
+[2025-07-15 08:34:05] Processed 5165 (chairmancwcfirozabad@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:05] Processed 5187 (chakaravarthy@gokulam.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:06] Processed 5307 (charmitoraskar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:08] Processed 5311 (charusetia08@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:09] Processed 5335 (chavansuresh541@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:09] Processed 5374 (chetana@strategiautomation.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:11] Processed 5375 (chetankumarp99@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:13] Processed 5401 (chhabrahosp68@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:14] Processed 5420 (chinnarajm582@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:16] Processed 5448 (chiran245@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:16] Processed 5450 (chirantan@chirantandave.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:18] Processed 5541 (cleannshinekol@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:18] Processed 5705 (contact@rotomac.org): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:19] Processed 5741 (coolganga2009@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:20] Processed 5908 (customercare@inspirehonda.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:21] Processed 5931 (dk14325897@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:23] Processed 6051 (dattabhagat8155@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:25] Processed 6083 (dc@nic.com): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:34:27] Processed 6120 (debasmitat@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:29] Processed 6258 (deepamala@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:29] Processed 6294 (deepti@22ndparallel.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:30] Processed 6297 (deeptigaude@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:32] Processed 6387 (devendragarg2012@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:34] Processed 6503 (dharmendragr1@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:35] Processed 6561 (dhirendercs@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:35] Processed 6626 (dilip@shreepushkar.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:36] Processed 12777 (info@lakshmiorganics.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:36] Processed 12795 (info@lotuscorp.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:36] Processed 12799 (info@luxflavours.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:36] Processed 12803 (info@madhutechno.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:38] Processed 12852 (info@megaproengineers.com): invalid - 454 4.7.1 Service unavailable; Client host [203.192.210.211] blocked using b.barracudacentral.org; http://www.barracudanetworks.com/reputation/?pr=1&ip=203.192.210.211
+
+[2025-07-15 08:34:38] Processed 12869 (info@mimanihospital.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:42] Processed 12883 (info@monsoon.com): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:34:43] Processed 12895 (info@myoh.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062BA.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:34:43.477Z 08DDBEAC32B79118]
+
+[2025-07-15 08:34:44] Processed 13084 (Info@Rajshanti.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:44] Processed 13140 (info@s4security.co.in): invalid - 451 Requested action aborted: error in processing
+
+[2025-07-15 08:34:46] Processed 13162 (info@salonagroup.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:34:46] Processed 13278 (info@solarquest.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:47] Processed 13336 (info@suncables.co): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:47] Processed 13473 (info@venturapumps.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:48] Processed 13524 (info@weltcare.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:49] Processed 13538 (Info@xtrimdigitech.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:49] Processed 13721 (IT.manager@ayushmanhhs.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:49] Processed 13795 (it@pvshospital.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:50] Processed 13800 (it@rotomac.org): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:50] Processed 13804 (it@sahana.ind.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:34:52] Processed 13839 (it@xeamventures.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:34:54] Processed 13970 (jadhav@prabhaengg.com): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:34:55] Processed 14035 (jagtapk2012@gmail.com): valid - 173.194.208.27
+[2025-07-15 08:34:57] Processed 14057 (jailaxmienterprisesgoa@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:34:59] Processed 14184 (jasvirjassi25@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:00] Processed 14368 (jeyamuthu05@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:02] Processed 14565 (jogaramsaran4722@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:03] Processed 14734 (jyothi.tomar@otsi.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [SJ5PEPF000001D2.namprd05.prod.outlook.com 2025-07-15T06:35:03.738Z 08DDBED1207D0C93]
+
+[2025-07-15 08:35:05] Processed 14760 (jyotishukla2032019@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:05] Processed 14772 (k.kumar@globaltvs.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:35:07] Processed 14777 (kroshmi1995@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:09] Processed 14884 (kalyanrambatla@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:10] Processed 15020 (kanwalsandeep4@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:10] Processed 15122 (karthik@airwillhomecollections.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:35:12] Processed 15165 (kasviranjith@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:13] Processed 15187 (kaushik@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:15] Processed 15195 (kaustubh@sereniityresort.com): invalid - 454 4.7.1 Service unavailable; Client host [203.192.210.211] blocked using b.barracudacentral.org; http://www.barracudanetworks.com/reputation/?pr=1&ip=203.192.210.211
+
+[2025-07-15 08:35:16] Processed 15241 (kcbandaru2002@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:18] Processed 15304 (ketalitilekar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:19] Processed 15318 (kewalfashion@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:21] Processed 15630 (kondupravn@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:22] Processed 15657 (kotharimadhutextile@gmail.com): valid - 192.178.164.27
+[2025-07-15 08:35:24] Processed 15752 (krishnachaugule89@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:26] Processed 15783 (krishrupal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:27] Processed 15788 (kritipareek17@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:29] Processed 15982 (kunal34raval@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:30] Processed 15994 (kundankumar15891@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:32] Processed 16072 (lakshmiyalamanchili09@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:33] Processed 16186 (lecswitch@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:35] Processed 16254 (link2anwar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:37] Processed 16292 (lohithat2018@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:38] Processed 16318 (lokeshbhati1981@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:40] Processed 16492 (maharanakunu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:41] Processed 16510 (mahendragedam07@gmail.com): valid - 173.194.208.27
+[2025-07-15 08:35:42] Processed 16522 (mahendrasaini821@gmail.com): valid - 142.251.12.27
+[2025-07-15 08:35:44] Processed 16531 (maheshchouhan1508@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:45] Processed 16616 (mahipalsinghrathore1996@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:47] Processed 16680 (mailarveen@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:49] Processed 16720 (malasurendra@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:49] Processed 16770 (management@idigitalpreneur.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:35:50] Processed 16825 (maneetlal10@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:52] Processed 16830 (mangalagowda45@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:53] Processed 16859 (manikandan@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:54] Processed 16906 (manish@galaxybearings.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:35:56] Processed 17003 (manjunathnbc@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:57] Processed 17029 (manjuyashash@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:35:59] Processed 17058 (MANOJ.S@KLAPS.IN): invalid - 451 unable to verify user
+
+[2025-07-15 08:36:01] Processed 17103 (manojkatarakss@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:02] Processed 17161 (manyarfaruk@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:02] Processed 17223 (mascpu@mas.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:36:04] Processed 17244 (mathurvipin@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:05] Processed 17326 (mbplmanoj01@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:07] Processed 17339 (mcoilsprings@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:08] Processed 17375 (md291180@gmail.com): valid - 142.251.12.27
+[2025-07-15 08:36:09] Processed 17388 (Mdenterprice7686@zohomail.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:36:10] Processed 17466 (meghagranite2@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:12] Processed 17471 (meghanagodse@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:14] Processed 17473 (meghanarishith@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:14] Processed 17508 (mehz@skill2source.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:36:15] Processed 17510 (mejichacko@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:17] Processed 17548 (mgaba86@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:18] Processed 17619 (milliemathur22@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:20] Processed 17630 (mineshvrushu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:22] Processed 17634 (minisaroj17@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:22] Processed 17656 (mishra@akrspi.org): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [SG1PEPF000082E1.apcprd02.prod.outlook.com 2025-07-15T06:36:22.531Z 08DDBF0794B05A76]
+
+[2025-07-15 08:36:23] Processed 17966 (mohammedluqman8655@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:25] Processed 17969 (mohammedshabaz1550@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:26] Processed 18048 (mohitkumar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:28] Processed 18110 (mossadten@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:29] Processed 18137 (mrhcgupta@gmail.com): valid - 142.250.101.27
+[2025-07-15 08:36:31] Processed 18144 (mraghubabu78@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:33] Processed 18206 (mslingam2000@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:34] Processed 18226 (mtcnarendra@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:36] Processed 18241 (mukeshdynamic@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:37] Processed 18310 (mulelavanya@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:39] Processed 18439 (mylaralinga@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:39] Processed 18531 (nagaraj@cosmocarrying.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:36:41] Processed 18631 (namithakasthiar@fleetech.com): invalid - 451 Internal resource temporarily unavailable - https://community.mimecast.com/docs/DOC-1369#451 [SCbCzG_nPgOanhzQeyAAIw.uk253]
+
+[2025-07-15 08:36:42] Processed 18632 (namrata.j@avhan.com): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:36:43] Processed 18681 (naninagesh2007@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:45] Processed 25599 (secy@welcoagencies.com): invalid - 550 Sender IP (203.192.210.211) is blacklisted at b.barracudacentral.org
+
+[2025-07-15 08:36:46] Processed 25691 (seshakalai@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:48] Processed 25768 (shaaron2025@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:49] Processed 25818 (shaiknayabrasool786@gmail.com): valid - 173.194.208.27
+[2025-07-15 08:36:51] Processed 25829 (shailendrakumar1984@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:52] Processed 25834 (shailendrafca@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:54] Processed 25873 (shalakapathak17@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:54] Processed 26025 (sharma56037@yahoo.in): valid - 106.10.248.74
+[2025-07-15 08:36:56] Processed 26067 (shashankvyas11@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:56] Processed 26076 (shashigopi@yahoo.co.in): valid - 106.10.248.74
+[2025-07-15 08:36:58] Processed 26096 (shavetahanda1989@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:36:59] Processed 26197 (shilpafrank5@gmail.com): valid - 142.251.12.27
+[2025-07-15 08:37:01] Processed 26566 (shwetadupare7@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:02] Processed 26671 (simranautomobiles@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:04] Processed 26727 (singlarakesh25@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:05] Processed 26740 (sirisridevi03@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:06] Processed 26760 (sivadsr@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:08] Processed 26814 (sjpatel1010@yahoo.com): valid - 67.195.204.77
+[2025-07-15 08:37:11] Processed 26822 (sk@maxelectronicsindia.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:37:12] Processed 26825 (sk6290991@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:14] Processed 26857 (skguptamanglam@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:15] Processed 26874 (skpstorkgrp@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:17] Processed 26893 (sktmachines@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:18] Processed 26927 (slnairtel@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:20] Processed 26947 (smartgroupofindia@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:22] Processed 26972 (smita.jadhav@diehl.com): valid - 193.201.238.220
+[2025-07-15 08:37:24] Processed 27013 (smullani59@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:25] Processed 27106 (sohailkhanskk72@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:27] Processed 27167 (sonalijamalpur@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:29] Processed 27281 (spassociates285@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:30] Processed 27373 (sranveer657@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:32] Processed 27448 (srialagupharma@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:33] Processed 27455 (sridar@lokozo.com): invalid - 454 4.7.1 Service unavailable; Client host [203.192.210.211] blocked using b.barracudacentral.org; http://www.barracudanetworks.com/reputation/?pr=1&ip=203.192.210.211
+
+[2025-07-15 08:37:34] Processed 27459 (sridevieyehospital@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:36] Processed 27475 (sridharmathew@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:37] Processed 27477 (sridurgaodisha@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:39] Processed 27491 (srikamal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:40] Processed 27533 (Srinivas.kumar09@yahoo.in): valid - 106.10.248.73
+[2025-07-15 08:37:41] Processed 27585 (sriram@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:37:43] Processed 27601 (srisai_dhebest@yahoo.com): valid - 67.195.228.111
+[2025-07-15 08:37:45] Processed 27619 (srk_2k6@yahoo.com): valid - 67.195.228.109
+[2025-07-15 08:37:47] Processed 27620 (srk526@yahoo.com): valid - 67.195.204.73
+[2025-07-15 08:37:50] Processed 27627 (srnmetals@srnmetals.com): valid - 67.195.228.75
+[2025-07-15 08:37:52] Processed 27648 (srushtisuthar@finarchemicals.com): invalid - 451 Internal resource temporarily unavailable - https://community.mimecast.com/docs/DOC-1369#451 [H1L8XODFMcyhXZigpMy3qw.us319]
+
+[2025-07-15 08:37:52] Processed 27651 (sruti_filatex@yahoo.in): valid - 106.10.248.73
+[2025-07-15 08:37:54] Processed 27665 (ssapondy@ymail.com): valid - 67.195.228.111
+[2025-07-15 08:37:57] Processed 27695 (ssharma15@vecv.in): valid - 216.71.148.153
+[2025-07-15 08:37:59] Processed 27754 (stalakant@fixflyer.com): valid - 192.178.163.27
+[2025-07-15 08:38:01] Processed 27797 (sthawait.supdt@nitrr.ac.in): valid - 142.250.101.26
+[2025-07-15 08:38:03] Processed 27821 (subairali@oasisautomation.net): valid - 192.178.163.27
+[2025-07-15 08:38:04] Processed 27837 (subhani@shantasriram.com): valid - 173.194.208.26
+[2025-07-15 08:38:06] Processed 27844 (subhas@bmm.in): valid - 173.194.208.26
+[2025-07-15 08:38:07] Processed 27848 (subhash@thrillophilia.com): valid - 192.178.164.26
+[2025-07-15 08:38:09] Processed 27857 (subhashtitoo74@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:10] Processed 27861 (subin@am-exinsure.com): valid - 142.251.10.27
+[2025-07-15 08:38:12] Processed 27870 (subramanya@lcmlogistics.com): valid - 192.178.163.27
+[2025-07-15 08:38:14] Processed 27872 (subramanya@shilpakruti.net): valid - 192.178.163.27
+[2025-07-15 08:38:15] Processed 27879 (subrat@iiserbpr.ac.in): valid - 142.250.101.27
+[2025-07-15 08:38:17] Processed 27897 (sudarshan.sj@ferrotiger.com): valid - 142.251.10.27
+[2025-07-15 08:38:18] Processed 27913 (sudha@bhoopalamgroup.com): valid - 192.178.163.27
+[2025-07-15 08:38:20] Processed 27919 (sudhakar.hr@cricbuzz.com): valid - 192.178.164.26
+[2025-07-15 08:38:22] Processed 27932 (sudhanshu14@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:22] Processed 27934 (sudhanvan@yahoo.co.in): valid - 106.10.248.74
+[2025-07-15 08:38:24] Processed 27936 (sudharshan@361dm.com): valid - 142.250.101.27
+[2025-07-15 08:38:25] Processed 27958 (sudhir@mcp.in): valid - 192.178.163.27
+[2025-07-15 08:38:27] Processed 27996 (suhas@accordindia.net): valid - 173.194.208.26
+[2025-07-15 08:38:29] Processed 27999 (suhas@designtransit.net): valid - 192.178.164.26
+[2025-07-15 08:38:30] Processed 28000 (suhasini.das@efsme.com): invalid - 451 Internal resource temporarily unavailable - https://community.mimecast.com/docs/DOC-1369#451 [SLimAXWyMAyDio_JtNhxrA.uk2]
+
+[2025-07-15 08:38:32] Processed 28018 (sujatha.ramakotty@sidsfarm.com): valid - 142.251.10.27
+[2025-07-15 08:38:33] Processed 28038 (sujit.saha@innovatiview.com): valid - 142.250.101.27
+[2025-07-15 08:38:35] Processed 28039 (sujit@aurainc.com): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
+
+[2025-07-15 08:38:37] Processed 28040 (sujit@iitbbs.ac.in): valid - 142.250.101.27
+[2025-07-15 08:38:39] Processed 28052 (sujitwadekar@vspaco.in): valid - 192.178.164.26
+[2025-07-15 08:38:41] Processed 28082 (suman@incentivesolutions.in): valid - 142.250.101.26
+[2025-07-15 08:38:42] Processed 28095 (sumanth@greenmobiles.in): valid - 192.178.163.27
+[2025-07-15 08:38:44] Processed 28109 (sumeetshingi@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:46] Processed 28119 (sumit.chanda@chstudios.in): valid - 173.194.208.26
+[2025-07-15 08:38:48] Processed 28121 (sumit.gupta@hester.in): valid - 173.194.208.26
+[2025-07-15 08:38:48] Processed 28124 (sumit.kothari@yahoo.co.in): valid - 106.10.248.73
+[2025-07-15 08:38:48] Processed 28143 (sumiteekapoor789@yahoo.co.in): valid - 106.10.248.73
+[2025-07-15 08:38:50] Processed 28151 (sumitlahoti111@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:50] Processed 28161 (sun07ora@yahoo.co.in): valid - 106.10.248.74
+[2025-07-15 08:38:52] Processed 28266 (suniljawlia1991@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:53] Processed 28278 (sunilkumarsharma183@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:56] Processed 28365 (support@chami.com): valid - 104.131.65.109
+[2025-07-15 08:38:58] Processed 28421 (supriyaprabhu113@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:38:59] Processed 28424 (supromit077@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:00] Processed 28454 (surana_kaushik@yahoo.co.in): valid - 106.10.248.73
+[2025-07-15 08:39:01] Processed 28680 (svrmurthy@zamilacindia.com): invalid - 550 Invalid Recipient - https://community.mimecast.com/docs/DOC-1369#550 [KgBzzGtDO5Ssl30yLoXgiQ.uk252]
+
+[2025-07-15 08:39:03] Processed 28696 (swamidecors@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:04] Processed 28733 (swaroop@roligtfoods.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:39:05] Processed 28804 (swtsharma395@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:07] Processed 28897 (tamritsinghga@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:09] Processed 28921 (tanvisinglatts@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:24] Processed 28956 (tarun@acty-sys.co.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:39:25] Processed 29060 (teejeeraj@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:27] Processed 29145 (thangavel@kprmill.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:39:29] Processed 29338 (trimukhevishal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:30] Processed 29343 (tripathipallavi6@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:32] Processed 29480 (udhayasandhirabala@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:34] Processed 36920 (alimmohd545@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:35] Processed 36930 (alkeshkumavat@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:38] Processed 36981 (alpa.patel@in.lisega.com): valid - 62.153.73.204
+[2025-07-15 08:39:40] Processed 37038 (am@evereadymills.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:39:42] Processed 37093 (amarbharatconstruction@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:39:57] Processed 37113 (amarnath.v@phoenixmills.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:39:58] Processed 37127 (amarraut55@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:00] Processed 37166 (ambikatradersamc2019@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:01] Processed 37265 (amitoberoi84@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:02] Processed 37285 (amit.sharma2@jkmail.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:40:03] Processed 37300 (amit@akrspi.org): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [OSA0EPF000000CC.apcprd02.prod.outlook.com 2025-07-15T06:40:03.786Z 08DDBF54AC2CF44E]
+
+[2025-07-15 08:40:05] Processed 37340 (amitabh0105@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:06] Processed 37428 (ammantradingco786@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:08] Processed 37444 (amol.datt@thorogood.com): valid - 91.220.42.201
+[2025-07-15 08:40:09] Processed 37453 (amol.kumbhar@aesseal.in): valid - 91.220.42.241
+[2025-07-15 08:40:11] Processed 37467 (amols@womindia.com): valid - 170.10.128.242
+[2025-07-15 08:40:15] Processed 37534 (amul@kgenix.com): invalid - 550 <amul@kgenix.com> No such user here
+
+[2025-07-15 08:40:15] Processed 37549 (anamika.kumari@onida.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:40:16] Processed 37642 (anandbjp07@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:20] Processed 37706 (ananth.rangarajan@mainetti.com): valid - 38.21.198.132
+[2025-07-15 08:40:22] Processed 37723 (ananthamurthy.hv@stridesarco.com): valid - 91.220.42.201
+[2025-07-15 08:40:23] Processed 37770 (angelsomani@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:24] Processed 37911 (anilkumar@dhootcompack.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:40:25] Processed 37944 (anilsawant@in.sharafcargo.com): valid - 91.220.42.211
+[2025-07-15 08:40:26] Processed 37985 (anita.kumari@in.experis.com): valid - 194.104.110.22
+[2025-07-15 08:40:42] Processed 38010 (anitha@sharonply.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:40:43] Processed 38067 (anjumshariff5@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:40:58] Processed 38168 (ankur.chakrborty@oaknethealthcare.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:41:00] Processed 38239 (anoopnp82@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:00] Processed 38277 (anthony@malladi.co.in): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:41:02] Processed 38289 (antonyr21@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:03] Processed 38309 (anudeekshith@arcolab.com): valid - 91.220.42.241
+[2025-07-15 08:41:04] Processed 38370 (anupgowda97@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:04] Processed 38389 (anuradha.nss@arambhangroup.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:41:06] Processed 38558 (aotdsmh@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:08] Processed 38585 (ap@rgbsi.co.in): valid - 170.10.132.242
+[2025-07-15 08:41:09] Processed 38599 (aparna.gupte@enkinlab.com): valid - 52.101.144.0
+[2025-07-15 08:41:11] Processed 38746 (aratifragrance@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:11] Processed 38921 (arpitb@eosglobe.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:41:12] Processed 38937 (arshiya.b@aquarelleindia.com): valid - 195.130.217.241
+[2025-07-15 08:41:13] Processed 38961 (arumugam.palanisamy@efsme.com): valid - 91.220.42.201
+[2025-07-15 08:41:15] Processed 38993 (arun.v@nestgroup.net): valid - 195.130.217.241
+[2025-07-15 08:41:17] Processed 39312 (ashishrajshree@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:18] Processed 39341 (ashishagarwalrkt@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:20] Processed 39405 (ashok.p@alimakgroup.com): valid - 195.130.217.211
+[2025-07-15 08:41:22] Processed 39506 (ashokseervee1986@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:23] Processed 39652 (asifshadab4677@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:24] Processed 39668 (ask4msvasu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:25] Processed 39689 (asmitathakur@shamiks.com): invalid - 451 relay not permitted!
+
+[2025-07-15 08:41:25] Processed 39811 (atghare@badvegroup.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:41:27] Processed 39861 (attendance@eaglesoftware.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:41:27] Processed 39891 (atul@parksonscartamundi.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:41:29] Processed 40062 (avdhutsherekar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:30] Processed 40077 (avijitpaira10@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:32] Processed 40278 (babaibose2906@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:33] Processed 40375 (baghiyyaraj.j@iconplc.com): valid - 195.130.217.211
+[2025-07-15 08:41:35] Processed 40411 (bajay@rsbrothers.net): valid - 43.205.181.205
+[2025-07-15 08:41:37] Processed 40425 (balabalaji094@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:39] Processed 40450 (balachandrabalu355@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:39] Processed 40467 (balaji.g@mmfl.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN2PEPF0000018E.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:41:39.840Z 08DDBE8DD3A6DD6F]
+
+[2025-07-15 08:41:41] Processed 40531 (balajipaper23@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:42] Processed 40621 (baloogeetha@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:41:57] Processed 40754 (barani@malladi.co.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:41:59] Processed 40813 (basavaraju2005@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:00] Processed 40815 (basavaraju5551@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:02] Processed 40846 (baswafashion@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:04] Processed 40858 (bayirche@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:05] Processed 40945 (beaver_cfa@airtelmail.in): invalid - MAIL FROM failed
+[2025-07-15 08:42:05] Processed 40957 (beeresh.kumar@phoenixmills.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:42:05] Processed 41064 (bhagat.r@bsafal.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:42:06] Processed 41208 (bharath.vemula@gbg.com): invalid - 550 Invalid Recipient - https://community.mimecast.com/docs/DOC-1369#550 [puMhCgsPPL6Z_BzspplV7w.uk130]
+
+[2025-07-15 08:42:08] Processed 41446 (bhavsaryogesh7@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:09] Processed 41487 (bhimraogadade@synapselabs.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:42:10] Processed 41590 (bijaramdewasi7976@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:11] Processed 41605 (biju.m@nestgroup.net): valid - 91.220.42.241
+[2025-07-15 08:42:13] Processed 41678 (bindu.n@nestgroup.net): valid - 91.220.42.241
+[2025-07-15 08:42:13] Processed 41765 (bishnu.nayak@tatasteelmining.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN2PEPF00000190.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:42:13.938Z 08DDBEBD56126864]
+
+[2025-07-15 08:42:15] Processed 41813 (bittu802117@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:16] Processed 42045 (bobby2279@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:18] Processed 42055 (bohravipul@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:20] Processed 42068 (bookingbaddi@gmptech.net): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:42:21] Processed 42138 (brahmma.s@cigniti.com): valid - 195.130.217.201
+[2025-07-15 08:42:22] Processed 42141 (brajesh@gmptech.net): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:42:23] Processed 42211 (brotindraroy@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:25] Processed 42308 (btibbu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:26] Processed 42321 (buddhadev.senapati@waxpol.com): valid - 52.101.145.0
+[2025-07-15 08:42:27] Processed 42426 (cbvishnoi1989@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:29] Processed 42975 (camnarsireddy@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:30] Processed 43061 (caoruvnl@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:32] Processed 43217 (cassapkota@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:34] Processed 43301 (casonallakhina@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:34] Processed 43414 (cboc@janatabankpune.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:42:34] Processed 43562 (chaitali.shah@devitpl.com): invalid - Connection failed: Connection refused
+[2025-07-15 08:42:36] Processed 43571 (chaitanyavvvn@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:37] Processed 43661 (chanddrakanthd@grameenkoota.org): invalid - 451 domain not found (not relaying for 203.192.210.211)
+
+[2025-07-15 08:42:39] Processed 43698 (chandrakalamakaraju@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:40] Processed 43764 (chandrashekhar917@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:42] Processed 43835 (charvigroupsbengaluru@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:42:42] Processed 43845 (chaturvedi@netcore.co.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:42:44] Processed 43994 (chethunaik611@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:10] Starting SMTP processing for 393 retryable emails in list 1
+[2025-07-15 08:45:12] Processed 6660 (dinesh.sharma@consam.in): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:45:14] Processed 6713 (dipaklami28@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:15] Processed 6913 (drsagarbhut01@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:17] Processed 6991 (dsouzalaura@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:18] Processed 7078 (eanapalirajmg@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:19] Processed 7179 (ekssankar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:21] Processed 7285 (ersonu2014@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:23] Processed 7345 (experts93@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:24] Processed 7423 (fcavishalgupta89@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:25] Processed 7495 (finance@microgenindia.co): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:45:26] Processed 7507 (finance@rexpoly.co.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF000072B0.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:45:26.564Z 08DDBE8CE871C584]
+
+[2025-07-15 08:45:27] Processed 7551 (financecontroller@avighnaservices.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:45:30] Processed 7674 (gajender.singh@bikajifoods.com): invalid - 451 Greylisted, please try again in 120 seconds
+
+[2025-07-15 08:45:31] Processed 7676 (gajendrarokayablr@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:33] Processed 7736 (ganeshpuli2014@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:33] Processed 7798 (gaurav.bhardwaj@tattvaspa.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:45:35] Processed 7847 (gawadetanmaya@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:36] Processed 7890 (geetikanaidu7@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:37] Processed 7907 (george.ps@itgenics.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:45:38] Processed 7954 (ghanshyam@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:39] Processed 8005 (girish@vphoenixcompliance.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:45:40] Processed 8049 (gktaxindia@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:42] Processed 8170 (gomasursez@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:43] Processed 8207 (gopalsadang@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:45] Processed 8221 (gopikamr1@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:47] Processed 8302 (grandbakersblore@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:48] Processed 8355 (gsingh534@gmail.com): valid - 142.250.101.26
+[2025-07-15 08:45:50] Processed 8488 (gurudattaservices501@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:52] Processed 8525 (gyanuawasthi510@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:45:53] Processed 8532 (hsrinivasan96@gmail.com): valid - 142.250.101.26
+[2025-07-15 08:45:54] Processed 8634 (haripal.singh@sintexbapl.co.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN2PEPF0000018F.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:45:54.508Z 08DDBEAF8F91B6E4]
+
+[2025-07-15 08:45:55] Processed 8683 (harisons@airtelmail.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [SG2PEPF000B66CF.apcprd03.prod.outlook.com 2025-07-15T06:45:55.357Z 08DDBF690DD1BBE0]
+
+[2025-07-15 08:45:58] Processed 8698 (harpreet@harksh.com): invalid - 550 Email blocked by b.barracudacentral.org (127.0.0.2)
+
+[2025-07-15 08:46:00] Processed 8705 (harshhunjan@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:02] Processed 8896 (hemrajpatel103143@gmail.com): valid - 173.194.208.27
+[2025-07-15 08:46:03] Processed 8987 (hiraparak@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:05] Processed 9008 (hitendrasinhc98@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:05] Processed 9143 (hr.adcpl@acmepharma.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF000072B0.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:46:05.644Z 08DDBE8CE87204E6]
+
+[2025-07-15 08:46:05] Processed 9183 (hr.buildpro@shankarabuildpro.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:07] Processed 9189 (hrchaudhary@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:09] Processed 9257 (hrksrlm@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:09] Processed 9310 (hr.pune@autovista.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:10] Processed 9407 (Hr@7dimensionsestates.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:10] Processed 9433 (hr@acousticsind.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:11] Processed 9493 (hr@amcarehospital.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:11] Processed 9635 (hr@birlacentury.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF000072B0.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:46:11.434Z 08DDBE8CE8720DA7]
+
+[2025-07-15 08:46:11] Processed 9676 (hr@capasricha.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:12] Processed 9677 (hr@capitalev.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF00007263.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:46:12.687Z 08DDBE8B830B8ABA]
+
+[2025-07-15 08:46:12] Processed 9732 (hr@cloudtailor.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:13] Processed 9741 (hr@cominds.co): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:14] Processed 9800 (hr@dhruvdeshhonda.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:14] Processed 9836 (hr@ecareindia.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:15] Processed 9848 (hr@ekajal.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:16] Processed 9850 (hr@electrogreenmotors.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:17] Processed 9878 (HR@ESVENTURES.IN): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:17] Processed 9880 (hr@euroindiafoods.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:17] Processed 9914 (hr@firstneuro.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:18] Processed 10145 (hr@karaulidiagnostics.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:18] Processed 10214 (hr@lawrbit.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:18] Processed 10340 (hr@mycrofine.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:19] Processed 10426 (hr@palcofms.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:19] Processed 10597 (hr@rotocastgroup.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:19] Processed 10605 (hr@rswindtech.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:23] Processed 10699 (hr@shailja.com): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:46:23] Processed 10702 (hr@sharmaortho.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:24] Processed 10732 (hr@signellent.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:24] Processed 10746 (hr@sjcpl.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:25] Processed 10756 (hr@smcindia.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:46:25] Processed 10764 (hr@snhrc.org): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:46:28] Processed 10859 (hr@swastikindustries.com): valid - 205.147.111.56
+[2025-07-15 08:46:28] Processed 10933 (hr@transactglobal.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:32] Processed 10986 (hr@urbantouch.in): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:46:33] Processed 11007 (hr@vconquer.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:34] Processed 11274 (hrconsultantctrlp@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:37] Processed 11289 (hrd.india@mainetti.com): invalid - 451 4.3.2 Please try again later
+
+[2025-07-15 08:46:40] Processed 11336 (hrd@bajajsons.com): invalid - 450 4.7.25 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:46:40] Processed 11416 (hrd@mayurply.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:40] Processed 11510 (hrd@veeragroups.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:41] Processed 11511 (hrd@velociti.in): invalid - 450 Recipient address rejected: Greylisting in action, please try later
+
+[2025-07-15 08:46:42] Processed 11669 (hrm@aadhimaruti.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:42] Processed 11706 (hrm@thecentrum.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:44] Processed 11776 (hrpremkumars@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:44] Processed 11794 (hrservices@catalystshr.com): invalid - 503 This mail server requires authentication when attempting to send to a non-local e-mail address. Please check your mail client settings or contact your administrator to verify that the domain or address is defined for this server.
+
+[2025-07-15 08:46:46] Processed 11909 (iamarunsivadas@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:48] Processed 11977 (immanmonesh2016@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:49] Processed 12049 (indrajeet@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:51] Processed 12060 (indukslekha@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:46:52] Processed 12127 (info@abstampings.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:52] Processed 12189 (info@ananyanetworks.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:52] Processed 12242 (info@atol.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:53] Processed 12333 (info@captainsecurityagency.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:54] Processed 12395 (info@daspan.net): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:54] Processed 12412 (info@dfgservices.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:54] Processed 12566 (info@gpsconsulting.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:55] Processed 12617 (info@hotelmahisgateway.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:55] Processed 12639 (info@impressive.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:55] Processed 12641 (info@incoconut.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:57] Processed 12661 (info@interproglobal.com): invalid - 450 4.7.25 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:46:57] Processed 12679 (info@jagdambayforgings.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:57] Processed 12723 (info@kapsonsindustries.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:46:59] Processed 29504 (ujjalchakraborty6399@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:01] Processed 29576 (unasujit1@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:01] Processed 29865 (vasanth@yashodamail.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:47:03] Processed 29901 (vbilva@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:04] Processed 29922 (vdtupkari@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:06] Processed 29945 (veerrupali05@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:07] Processed 29958 (veerendra@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:11] Processed 30005 (venkatesan@weg.net): invalid - 451 4.3.2 Please try again later
+
+[2025-07-15 08:47:11] Processed 30032 (venkatramana@pknco.com): invalid - 450 4.7.25 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:47:13] Processed 30161 (vijaykadian@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:14] Processed 30173 (vijay.samala@sknl.co.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:47:16] Processed 30203 (vijayalakshmi@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:18] Processed 30210 (vijayaraghavanvn4@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:19] Processed 30235 (vijayjain43@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:21] Processed 30252 (vijaynrlm@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:23] Processed 30268 (vijaytamil2014@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:24] Processed 30282 (vijeyap7@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:26] Processed 30306 (vikas.yadav@premmotors.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:47:41] Processed 30324 (vikasbajaj@vetrilsystems.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:47:43] Processed 30483 (vindyanagraj@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:47:44] Processed 30484 (vineesh6660@gmail.com): valid - 192.178.164.27
+[2025-07-15 08:47:46] Processed 30649 (viraj.w12@emirateslogistics.com): invalid - 451 Account inbounds disabled - https://community.mimecast.com/docs/DOC-1369#451 [2lU8s6cOOnSULv3ZrmY7ww.uk78]
+
+[2025-07-15 08:47:47] Processed 30662 (virendradadheech@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:02] Processed 30902 (vizianagaram@mahaveerfinance.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:48:04] Processed 30932 (vki.hr1@premmotors.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:48:05] Processed 31041 (vss20151986@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:07] Processed 31221 (yashashukla@armstronginternational.in): valid - 170.10.128.242
+[2025-07-15 08:48:08] Processed 31446 (zubermulla@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:10] Processed 31489 (221401autmov@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:12] Processed 31490 (22chaudharyshrawan@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:13] Processed 31537 (7474auditor@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:13] Processed 31637 (aagamshah@pknco.com): invalid - 450 4.7.25 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:48:15] Processed 31738 (aashni2@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:16] Processed 31775 (abailur@artekchemicals.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:48:17] Processed 31832 (abhargava@rajasthanbarytes.com): valid - 52.101.144.0
+[2025-07-15 08:48:17] Processed 31978 (abhishek_b@monachem.com): invalid - 550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors [PN2PEPF00000190.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:48:17.836Z 08DDBEBD5614C0A9]
+
+[2025-07-15 08:48:19] Processed 32092 (accicaihyd@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:48:21] Processed 32106 (acc.ragavan@billrothhospitals.com): invalid - 451 relay not permitted!
+
+[2025-07-15 08:48:24] Processed 32116 (acc.tojaipur@jaipurgolden.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:48:24] Processed 32124 (acc@ipaindia.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:48:39] Processed 32183 (accoff@jainscar.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:48:42] Processed 32207 (account@asianfeeds.com.np): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:48:57] Processed 32332 (account6@stargroup.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:48:57] Processed 32416 (accounts.corp@isolve.co.in): valid - 52.101.144.0
+[2025-07-15 08:48:59] Processed 32473 (accounts.india@paragondigitalservices.com): valid - 195.130.217.201
+[2025-07-15 08:49:00] Processed 32562 (accounts@aachigroup.com): valid - 52.101.145.0
+[2025-07-15 08:49:00] Processed 32572 (accounts@aayudh.co.in): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:49:01] Processed 32682 (accounts@amanta.co.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:16] Processed 32747 (accounts@arltyres.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:49:16] Processed 32816 (accounts@aveny.co.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:16] Processed 32875 (accounts@billrothhospitals.com): valid - 121.243.77.92
+[2025-07-15 08:49:17] Processed 32876 (accounts@bionutriz.com): valid - 52.101.145.0
+[2025-07-15 08:49:17] Processed 32885 (accounts@blitsgoa.com): valid - 52.101.145.0
+[2025-07-15 08:49:18] Processed 32928 (accounts@calyxgroup.co.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062B8.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:49:18.840Z 08DDBF790522C50F]
+
+[2025-07-15 08:49:20] Processed 33033 (accounts@coronishealth.com): valid - 170.10.128.221
+[2025-07-15 08:49:21] Processed 33299 (accounts@flutechno.com): valid - 52.101.145.0
+[2025-07-15 08:49:22] Processed 33375 (accounts@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:49:23] Processed 33445 (accounts@hashtaag.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062BB.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:49:23.239Z 08DDBE6D85492333]
+
+[2025-07-15 08:49:23] Processed 33509 (accounts@iconlife.in): valid - 52.101.144.0
+[2025-07-15 08:49:24] Processed 33537 (accounts@in.cymyutec.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:25] Processed 33619 (accounts@jaigroup.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:26] Processed 33622 (accounts@jainscar.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:28] Processed 33763 (accounts@kwalityspices.com): invalid - 451 relay not permitted!
+
+[2025-07-15 08:49:29] Processed 34024 (accounts@naturalcapsules.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:49:44] Processed 34039 (accounts@netcore.co.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:49:46] Processed 34128 (accounts@orschelnindia.co.in): valid - 199.21.92.40
+[2025-07-15 08:50:01] Processed 34170 (accounts@patnihealthcare.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:50:02] Processed 34261 (accounts@prismcorp.in): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:50:17] Processed 34363 (accounts@reliablespaces.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:50:19] Processed 34369 (accounts@repcohome.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:19] Processed 34405 (accounts@rsbrothers.net): valid - 52.101.144.3
+[2025-07-15 08:50:21] Processed 34424 (accounts@sahanaclothing.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:23] Processed 34435 (accounts@salonagroup.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:50:23] Processed 34635 (accounts@spm.co.in): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:50:24] Processed 34689 (accounts@strikartech.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF00007263.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:50:24.324Z 08DDBE8B830D17C7]
+
+[2025-07-15 08:50:25] Processed 34826 (accounts@tmbank.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:25] Processed 34943 (accounts1@lasalabs.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:50:27] Processed 35006 (accounts2@lasalabs.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:30] Processed 35133 (accounts-india@advantumhealth.com): valid - 170.10.152.242
+[2025-07-15 08:50:32] Processed 35135 (accountsindia@coronishealth.com): valid - 170.10.128.242
+[2025-07-15 08:50:33] Processed 35142 (accountsinfo.ho@pcstech.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:46] Processed 35401 (acm@theoceanpearl.in): invalid - 451 4.1.0 Recipient disabled <acm@theoceanpearl.in>
+
+[2025-07-15 08:50:48] Processed 35461 (actssalesbalajiautos@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:49] Processed 35489 (adarsha@ujwal.biz): valid - 195.130.217.241
+[2025-07-15 08:50:49] Processed 35508 (adesh.v@netlabindia.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:51] Processed 35512 (adfrewa1971@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:51] Processed 35814 (admin@nabfins.org): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:51] Processed 35822 (admin@nirlep.com): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [PN1PEPF000062B8.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:50:51.556Z 08DDBF7905235A34]
+
+[2025-07-15 08:50:51] Processed 35828 (admin@omkarchemicals.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:50:53] Processed 35995 (adugemanecaterers2020@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:54] Processed 36013 (advmullani@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:56] Processed 36286 (agrawalavinashca@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:57] Processed 36305 (agronashok@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:50:59] Processed 36337 (ahmed@grameenkoota.org): invalid - 451 domain not found (not relaying for 203.192.210.211)
+
+[2025-07-15 08:51:01] Processed 36342 (ahmedthouseef786@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:51:02] Processed 36389 (aishwaryagb74@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:51:04] Processed 36499 (ajaykumar@emirateslogistics.net): valid - 91.220.42.201
+[2025-07-15 08:51:05] Processed 36503 (ajaykumarbharti9689@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:51:20] Processed 36551 (ajinkya.chandore@netcore.co.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:51:21] Processed 36738 (akmindia@akm-india.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:53:04] Starting SMTP processing for 193 retryable emails in list 1
+[2025-07-15 08:53:05] Processed 18759 (naresh@saicontech.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:06] Processed 18855 (naveen12strengg@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:07] Processed 18869 (naveenkumar@koyo.co.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [OSA0EPF000000CC.apcprd02.prod.outlook.com 2025-07-15T06:53:07.827Z 08DDBF54AC3311F5]
+
+[2025-07-15 08:53:09] Processed 18896 (navneetmodi1963@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:11] Processed 19018 (neelusingh56@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:11] Processed 19024 (neeraj.bajpai@karaulidiagnostics.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:12] Processed 19026 (neeraj.dagar@audigurgaon.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [SG1PEPF000082E3.apcprd02.prod.outlook.com 2025-07-15T06:53:12.309Z 08DDBF1289553767]
+
+[2025-07-15 08:53:14] Processed 19203 (nikale1992sarita@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:15] Processed 19297 (nimishakjoseph@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:16] Processed 19410 (nissar@promillion.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:16] Processed 19512 (NJADHAV@XDBSCORP.NET): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:18] Processed 19522 (njtdetective@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:19] Processed 19619 (npal@dccil.com): valid - 52.101.41.56
+[2025-07-15 08:53:20] Processed 19709 (office@dynamicgroupindia.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:20] Processed 19716 (office@nelsuncoir.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:22] Processed 19900 (p6248733@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:24] Processed 19990 (pandiyangym2000@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:25] Processed 20049 (pankajroy79@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:27] Processed 20058 (pankajvaishnav4@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:28] Processed 20067 (panuganti@koteshwar.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:28] Processed 20139 (parimal@weavetech.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:30] Processed 20197 (parvinderrathour280@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:30] Processed 20301 (pawan.sharma@stan.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:31] Processed 20371 (payrollsupport@gkmmail.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:32] Processed 20480 (pgupta4942@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:48] Processed 20615 (placement@hbs.ac.in): invalid - Connection failed: Connection timed out
+[2025-07-15 08:53:49] Processed 20722 (pooja51mahale@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:51] Processed 20756 (powersunnykareliya@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:53] Processed 20767 (ppawan019@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:54] Processed 20864 (pradeepalpha8@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:56] Processed 20877 (pradeepnath@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:53:57] Processed 20886 (pradeepw@spainstruments.com): invalid - 451 relay not permitted!
+
+[2025-07-15 08:53:57] Processed 20909 (prafull.mishra@harilalventures.in): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [MA1PEPF00007262.INDPRD01.PROD.OUTLOOK.COM 2025-07-15T06:53:57.736Z 08DDBEAA94889217]
+
+[2025-07-15 08:53:58] Processed 20980 (prakash@yuvatrip.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:53:59] Processed 20986 (prakashkumar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:01] Processed 21020 (pramoddubeyguna82@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:02] Processed 21044 (pranav10081986@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:03] Processed 21186 (prasun.pal@shamiks.com): invalid - 451 relay not permitted!
+
+[2025-07-15 08:54:03] Processed 21231 (pratik@vasantmasala.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:03] Processed 21249 (praveen.garlapati@idrslabs.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:05] Processed 21335 (preetichofficial@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:07] Processed 21556 (psakamal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:07] Processed 21768 (pv.chary@ionexchange.co.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:08] Processed 21790 (quadirsiddi@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:10] Processed 21791 (quadronicssolutions@gmail.com): valid - 192.178.164.27
+[2025-07-15 08:54:11] Processed 21867 (radheyshyam@datamaxsolutions.in): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:54:12] Processed 21897 (raghav1994singh@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:13] Processed 21968 (Rahul.ghodke@zybisys.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:13] Processed 22025 (rahul@zedsecurity.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:13] Processed 22100 (raj@ajassociate.in): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:15] Processed 22151 (rajaram@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:16] Processed 22203 (rajeevsharma@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:17] Processed 22214 (rajeev22@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:19] Processed 22237 (rajendranemade@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:21] Processed 22268 (rajeshnagegowda@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:22] Processed 22275 (rajesh.sahani@arucom.com): invalid - 450 4.5.1 Protocol error
+
+[2025-07-15 08:54:23] Processed 22279 (rajeshspaceripl@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:25] Processed 22319 (rajeshbkanojia@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:27] Processed 22377 (rajiniwings@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:28] Processed 22383 (rajiv115111@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:29] Processed 22485 (rajsriyahp@rajsriya.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:30] Processed 22670 (ramanaidu@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:32] Processed 22677 (ramangulati2001@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:33] Processed 22781 (rameshyalgodkar1979@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:36] Processed 22811 (ramnathbeniwal64@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:38] Processed 22817 (rampurenarendra@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:40] Processed 23098 (ravikumarpatila@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:41] Processed 23181 (rbhalla715@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:43] Processed 23183 (rbikaner@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:44] Processed 23201 (rdmohadikar77@gmail.com): valid - 192.178.163.26
+[2025-07-15 08:54:45] Processed 23240 (rect@srfsecurity.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:47] Processed 23664 (rohittiet06@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:48] Processed 23738 (rosbin1234@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:49] Processed 23773 (rpathak143@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:50] Starting SMTP processing for 119 retryable emails in list 1
+[2025-07-15 08:54:51] Processed 23785 (rprnavi@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:51] Processed 23785 (rprnavi@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:52] Processed 23836 (rsharma4547@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:53] Processed 23893 (rudradipta.mukherjee@taramarine.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:53] Processed 23836 (rsharma4547@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:53] Processed 23893 (rudradipta.mukherjee@taramarine.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:54] Processed 24264 (saikrishnavarada@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:55] Processed 24264 (saikrishnavarada@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:56] Processed 24279 (sainijaipal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:56] Processed 24279 (sainijaipal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:54:57] Processed 24352 (salamagency777@gmail.com): valid - 142.250.101.26
+[2025-07-15 08:54:57] Processed 24524 (salomiya.m@relicellbattery.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:58] Processed 24352 (salamagency777@gmail.com): valid - 142.250.101.26
+[2025-07-15 08:54:58] Processed 24524 (salomiya.m@relicellbattery.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:54:59] Processed 24525 (saloni@salonagroup.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:54:59] Processed 24525 (saloni@salonagroup.com): invalid - 451 4.7.23 Sender's SPF Policy Failure
+
+[2025-07-15 08:55:00] Processed 24546 (samar.goel@consam.in): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:55:00] Processed 24546 (samar.goel@consam.in): invalid - 450 4.7.1 <server.relyon.co.in>: Helo command rejected: Host not found
+
+[2025-07-15 08:55:01] Processed 24618 (samtatechnologies@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:02] Processed 24618 (samtatechnologies@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:02] Processed 24639 (sanath.k@accountaxy.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:55:02] Processed 24639 (sanath.k@accountaxy.com): invalid - 541 5.7.1 Mail rejected due to antispam policy
+
+[2025-07-15 08:55:03] Processed 24728 (sandeeprathi300@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:03] Processed 24728 (sandeeprathi300@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:04] Processed 24784 (sangamk143@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:05] Processed 24784 (sangamk143@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:06] Processed 24881 (sanjay24268@yahoo.com): valid - 67.195.228.106
+[2025-07-15 08:55:07] Processed 24881 (sanjay24268@yahoo.com): valid - 98.136.96.75
+[2025-07-15 08:55:08] Processed 24884 (sanjaybarapatre10@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:08] Processed 24884 (sanjaybarapatre10@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:10] Processed 25011 (sansuautomotives@yahoo.com): valid - 67.195.204.79
+[2025-07-15 08:55:10] Processed 25011 (sansuautomotives@yahoo.com): valid - 67.195.228.94
+[2025-07-15 08:55:12] Processed 25017 (santasil@yahoo.com): valid - 67.195.204.74
+[2025-07-15 08:55:12] Processed 25017 (santasil@yahoo.com): valid - 67.195.204.74
+[2025-07-15 08:55:13] Processed 25033 (santhoshsjmobile@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:13] Processed 25033 (santhoshsjmobile@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:15] Processed 25039 (santosh.bharwad@yahoo.com): valid - 67.195.204.73
+[2025-07-15 08:55:15] Processed 25039 (santosh.bharwad@yahoo.com): valid - 98.136.96.74
+[2025-07-15 08:55:17] Processed 25044 (santosh.gupta@kappa.in): invalid - 550 5.1.1 <santosh.gupta@kappa.in>: Recipient address rejected: User unknown in virtual mailbox table
+
+[2025-07-15 08:55:17] Processed 25044 (santosh.gupta@kappa.in): invalid - 550 5.1.1 <santosh.gupta@kappa.in>: Recipient address rejected: User unknown in virtual mailbox table
+
+[2025-07-15 08:55:19] Processed 25093 (santoshgirig8@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:19] Processed 25093 (santoshgirig8@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:21] Processed 25146 (saradac@frost.com): invalid - 451 Internal resource temporarily unavailable - https://community.mimecast.com/docs/DOC-1369#451 [X_3uhS58MqCEzNRAyWg-Yw.us625]
+
+[2025-07-15 08:55:21] Processed 25146 (saradac@frost.com): invalid - 451 Internal resource temporarily unavailable - https://community.mimecast.com/docs/DOC-1369#451 [hlNDR2LvPZKsE3LCD0M1vQ.us625]
+
+[2025-07-15 08:55:23] Processed 25175 (saravanasmallys@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:23] Processed 25175 (saravanasmallys@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:24] Processed 25183 (sardaironsteel@yahoo.com): valid - 67.195.204.74
+[2025-07-15 08:55:24] Processed 25183 (sardaironsteel@yahoo.com): valid - 67.195.204.73
+[2025-07-15 08:55:25] Processed 25194 (saritakashtkala@yahoo.co.in): valid - 106.10.248.74
+[2025-07-15 08:55:25] Processed 25194 (saritakashtkala@yahoo.co.in): valid - 106.10.248.74
+[2025-07-15 08:55:26] Processed 25323 (satish@astrametals.com): invalid - 554 5.7.1 Service unavailable; Client host [203.192.210.211] blocked using b.barracudacentral.org; http://www.barracudanetworks.com/reputation/?pr=1&ip=203.192.210.211
+
+[2025-07-15 08:55:26] Processed 25323 (satish@astrametals.com): invalid - 554 5.7.1 Service unavailable; Client host [203.192.210.211] blocked using b.barracudacentral.org; http://www.barracudanetworks.com/reputation/?pr=1&ip=203.192.210.211
+
+[2025-07-15 08:55:27] Processed 43997 (chetnaparmar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:28] Processed 44065 (chintamani.p@arcolab.com): valid - 91.220.42.201
+[2025-07-15 08:55:30] Processed 44066 (chintamani.p@stridesarco.com): valid - 91.220.42.241
+[2025-07-15 08:55:31] Processed 44122 (chitra@rexabroking.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:55:31] Processed 44123 (chitra@rexasolutions.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:55:32] Processed 44472 (compliance@akrspi.org): invalid - 451 4.4.4 Mail received as unauthenticated, incoming to a recipient domain configured in a hosted tenant which has no mail-enabled subscriptions. ATTR5 [OSA0EPF000000CA.apcprd02.prod.outlook.com 2025-07-15T06:55:32.563Z 08DDC294EDD301C8]
+
+[2025-07-15 08:55:33] Processed 44483 (compliance@sakshamgroup.in): invalid - 451 Open relay not allowed - https://community.mimecast.com/docs/DOC-1369#451 [vDGJFwzrNPqDPVDo6dnlNg.uk99]
+
+[2025-07-15 08:55:34] Processed 44715 (corporatehr@mmforgings.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:55:35] Processed 44769 (cpmbggpo@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:55:37] Processed 44917 (cs@eurosafetygroup.in): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:55:37] Processed 44940 (cs@kkvagropowers.com): invalid - 450 4.7.1 Client host rejected: cannot find your hostname, [203.192.210.211]
+
+[2025-07-15 08:55:52] Processed 44941 (cs@kprmill.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:56:08] Processed 44942 (cs@kserasera.com): invalid - Connection failed: Connection timed out
+[2025-07-15 08:56:08] Processed 44952 (cs@neccgroup.com): invalid - 450 4.7.1 Try Later; see http://www.barracudacentral.org/rbl/removal-request
+
+[2025-07-15 08:56:09] Processed 45050 (csdimplenagpal@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:11] Processed 45124 (cskhushbood@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:13] Processed 45138 (cslalitnarwani@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:14] Processed 45204 (cspayaltalwar@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:16] Processed 45211 (cspmuthukumaran@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:18] Processed 45278 (csseemasharma15@gmail.com): invalid - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+
+[2025-07-15 08:56:21] Processed 45402 (cyril.dsouza@adcock.com): invalid - 550 Invalid Recipient - https://community.mimecast.com/docs/DOC-1369#550 [NHP5WaSGPzqxq1DTcWpLcA.za1]
+
+[2025-07-15 08:56:25] Processed 45450 (dafdaj@starpipeproducts.com): valid - 170.10.152.242
+[2025-07-15 08:56:27] Processed 45484 (damaciana.rebello@turbocam.com): valid - 170.10.132.242

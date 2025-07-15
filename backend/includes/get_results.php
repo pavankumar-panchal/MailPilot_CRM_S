@@ -69,18 +69,15 @@ if (isset($_GET['export'])) {
     // Stream CSV output (no memory build-up)
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
-    $sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response FROM emails $whereSql ORDER BY id ASC";
+    $sql = "SELECT id, raw_emailid AS email FROM emails $whereSql ORDER BY id ASC";
     $result = $conn->query($sql);
 
     $out = fopen('php://output', 'w');
     // Write CSV header
-    fputcsv($out, ["ID", "EMAIL", "ACCOUNT", "DOMAIN", "VERIFIED", "STATUS", "RESPONSE"]);
+    fputcsv($out, ["ID", "EMAIL"]);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            fputcsv($out, [
-                $row['id'], $row['email'], $row['sp_account'], $row['sp_domain'],
-                $row['domain_verified'], $row['domain_status'], $row['validation_response']
-            ]);
+            fputcsv($out, [$row['id'], $row['email']]);
         }
     }
     fclose($out);
