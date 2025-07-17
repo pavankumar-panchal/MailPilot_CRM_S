@@ -1,12 +1,15 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 
 require __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/db.php';
 
 date_default_timezone_set('Asia/Kolkata');
 
@@ -14,13 +17,14 @@ date_default_timezone_set('Asia/Kolkata');
 
 // $campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
 
-$campaign_id=1;
+$campaign_id = 1;
 
 $GLOBALS['campaign_id'] = $campaign_id;
-
+echo "Campaign ID: $campaign_id\n";
 // Create PID file for process tracking
-$pid_file = "/tmp/email_blaster_{$campaign_id}.pid";
+$pid_file = "/../tmp/email_blaster_{$campaign_id}.pid";
 file_put_contents($pid_file, getmypid());
+
 
 // Register shutdown function to clean up PID file
 register_shutdown_function(function () use ($pid_file) {
@@ -32,34 +36,45 @@ register_shutdown_function(function () use ($pid_file) {
 // Main processing loop
 while (true) {
     try {
-        // Check campaign status
+        echo "\n Checking campaign status...\n";
         $result = $db->query("
             SELECT status, total_emails, sent_emails, pending_emails, failed_emails
             FROM campaign_status 
             WHERE campaign_id = $campaign_id
             FOR UPDATE");
+        if (!$result) {
+            echo "DB Error: " . $db->error . "\n";
+            logMessage("DB Error fetching campaign status: " . $db->error, 'ERROR');
+            break;
+        }
 
         if ($result->num_rows === 0) {
+            echo "Campaign not found. Exiting.\n";
             logMessage("Campaign not found. Exiting.");
             break;
         }
 
         $campaign_data = $result->fetch_assoc();
         $status = $campaign_data['status'];
+        echo "Campaign status: $status\n";
 
         // Exit if campaign is paused, completed, or not running
         if ($status !== 'running') {
+            echo "Campaign status is '$status'. Exiting process.\n";
             logMessage("Campaign status is '$status'. Exiting process.");
             break;
         }
 
+        echo "Checking network connectivity...\n";
         // Check network connectivity
         if (!checkNetworkConnectivity()) {
+            echo "Network connection unavailable. Waiting to retry...\n";
             logMessage("Network connection unavailable. Waiting to retry...", 'WARNING');
             sleep(60);
             continue;
         }
 
+        echo "Checking remaining emails...\n";
         // Check remaining emails
         $remaining_result = $db->query("
             SELECT COUNT(*) as remaining FROM emails e
@@ -70,15 +85,24 @@ while (true) {
                 AND mb.campaign_id = $campaign_id
                 AND mb.status = 'success'
             )");
+        if (!$remaining_result) {
+            echo "DB Error: " . $db->error . "\n";
+            logMessage("DB Error fetching remaining emails: " . $db->error, 'ERROR');
+            break;
+        }
         $remaining_count = $remaining_result->fetch_assoc()['remaining'];
+        echo "Remaining emails: $remaining_count\n";
 
         if ($remaining_count == 0) {
+            echo "All valid emails processed. Campaign completed.\n";
             $db->query("UPDATE campaign_status SET status = 'completed', pending_emails = 0, end_time = NOW() 
                       WHERE campaign_id = $campaign_id");
             logMessage("All valid emails processed. Campaign completed.");
             break;
         }
 
+        echo "Counting total emails to process...\n";
+        // Count total emails to process
         $result = $db->query("SELECT COUNT(*) AS total FROM emails e 
         LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
         WHERE e.domain_status = 1
@@ -90,27 +114,35 @@ while (true) {
             AND mb2.status = 'success'
         )
     ");
+        if (!$result) {
+            echo "DB Error: " . $db->error . "\n";
+            logMessage("DB Error fetching total emails: " . $db->error, 'ERROR');
+            break;
+        }
         $total_email_count = (int) $result->fetch_assoc()['total'];
+        echo "Total emails to process: $total_email_count\n";
 
-
-
-
+        echo "Processing email batch...\n";
         // Process emails
         $processed_count = processEmailBatch($db, $campaign_id, $total_email_count);
+        echo "Processed count: $processed_count\n";
 
         // Adjust sleep time based on processing results
         if ($processed_count > 0) {
+            echo "Sleeping for 5 seconds...\n";
             sleep(5); // Short sleep if we processed emails
         } else {
             // No emails processed, check if we should wait longer or exit
-            $status_check = $db->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id")->fetch_assoc();
-            if ($status_check['status'] !== 'running') {
+            $status_check = $db->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
+            if ($status_check && $status_check['status'] !== 'running') {
+                echo "Campaign not running, exiting.\n";
                 break;
             }
+            echo "No emails processed, sleeping for 30 seconds...\n";
             sleep(30); // Longer sleep if no emails processed
         }
-
     } catch (Exception $e) {
+        echo "Error in main loop: " . $e->getMessage() . "\n";
         logMessage("Error in main loop: " . $e->getMessage(), 'ERROR');
         sleep(60);
     }
@@ -212,29 +244,37 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
             if ($emails_to_process <= 0)
                 continue;
 
-            $emails = $db->query("
-                SELECT e.id, e.raw_emailid
-                FROM emails e
-                LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
-                WHERE e.domain_status = 1
-                  AND (mb.id IS NULL OR (mb.status IN ('failed', 'pending') AND mb.attempt_count < $max_retries))
-                  AND NOT EXISTS (
-                      SELECT 1 FROM mail_blaster mb2 
-                      WHERE mb2.to_mail = e.raw_emailid 
-                      AND mb2.campaign_id = $campaign_id
-                      AND mb2.status = 'success'
-                  )
-                ORDER BY mb.attempt_count ASC, mb.id ASC
-                LIMIT $emails_to_process
-            ")->fetch_all(MYSQLI_ASSOC);
+            $email_query = "
+        SELECT e.id, e.raw_emailid
+        FROM emails e
+        LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
+        WHERE e.domain_status = 1
+          AND (mb.id IS NULL OR (mb.status IN ('failed', 'pending') AND mb.attempt_count < $max_retries))
+          AND NOT EXISTS (
+              SELECT 1 FROM mail_blaster mb2 
+              WHERE mb2.to_mail = e.raw_emailid 
+              AND mb2.campaign_id = $campaign_id
+              AND mb2.status = 'success'
+          )
+        ORDER BY IFNULL(mb.attempt_count, 0) ASC, IFNULL(mb.id, 0) ASC
+        LIMIT $emails_to_process
+    ";
+
+            $result = $db->query($email_query);
+            if (!$result) {
+                logMessage("DB Error fetching emails: " . $db->error, 'ERROR');
+                if (php_sapi_name() === 'cli') echo "DB Error: " . $db->error . "\n";
+                continue;
+            }
+            $emails = $result->fetch_all(MYSQLI_ASSOC);
 
             foreach ($emails as $email) {
                 try {
-                    $status = $db->query("
-                        SELECT status FROM campaign_status 
-                        WHERE campaign_id = $campaign_id
-                    ")->fetch_assoc()['status'];
-
+                    $status_result = $db->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
+                    if (!$status_result) {
+                        throw new Exception("DB Error checking campaign status: " . $db->error);
+                    }
+                    $status = $status_result->fetch_assoc()['status'];
                     if ($status !== 'running') {
                         logMessage("Campaign paused or stopped during processing");
                         break 2;
@@ -244,12 +284,15 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
 
                     recordDelivery($db, $smtp_id, $email['id'], $campaign_id, $email['raw_emailid'], 'success');
 
-                    $db->query("
-                        UPDATE campaign_status 
-                        SET sent_emails = sent_emails + 1, 
-                            pending_emails = GREATEST(0, pending_emails - 1) 
-                        WHERE campaign_id = $campaign_id
-                    ");
+                    $update_result = $db->query("
+                UPDATE campaign_status 
+                SET sent_emails = sent_emails + 1, 
+                    pending_emails = GREATEST(0, pending_emails - 1) 
+                WHERE campaign_id = $campaign_id
+            ");
+                    if (!$update_result) {
+                        logMessage("DB Error updating campaign_status: " . $db->error, 'ERROR');
+                    }
 
                     $processed_count++;
                     usleep(300000); // 0.3 seconds throttle
@@ -257,21 +300,24 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
                 } catch (Exception $e) {
                     recordDelivery($db, $smtp_id, $email['id'], $campaign_id, $email['raw_emailid'], 'failed', $e->getMessage());
 
-                    $db->query("
-                        UPDATE campaign_status 
-                        SET failed_emails = failed_emails + 1, 
-                            pending_emails = GREATEST(0, pending_emails - 1) 
-                        WHERE campaign_id = $campaign_id
-                    ");
+                    $fail_update = $db->query("
+                UPDATE campaign_status 
+                SET failed_emails = failed_emails + 1, 
+                    pending_emails = GREATEST(0, pending_emails - 1) 
+                WHERE campaign_id = $campaign_id
+            ");
+                    if (!$fail_update) {
+                        logMessage("DB Error updating failed_emails: " . $db->error, 'ERROR');
+                    }
 
                     logMessage("Failed to send to {$email['raw_emailid']}: " . $e->getMessage(), 'ERROR');
+                    if (php_sapi_name() === 'cli') echo "Failed to send to {$email['raw_emailid']}: " . $e->getMessage() . "\n";
                 }
             }
         }
 
         $db->commit();
         return $processed_count;
-
     } catch (Exception $e) {
         $db->rollback();
         logMessage("Error processing batch: " . $e->getMessage(), 'ERROR');
@@ -407,17 +453,20 @@ function recordDelivery($db, $smtpId, $emailId, $campaignId, $to_email, $status,
 
 function logMessage($message, $level = 'INFO')
 {
-    if (!file_exists('logs')) {
-        mkdir('logs', 0755, true);
+    $logDir = __DIR__ . '/logs';
+    if (!file_exists($logDir)) {
+        mkdir($logDir, 0755, true);
     }
 
     $log = "[" . date('Y-m-d H:i:s') . "] [$level] " . $message . "\n";
     $campaign_id = $GLOBALS['campaign_id'] ?? 'unknown';
-    file_put_contents("logs/campaign_{$campaign_id}.log", $log, FILE_APPEND);
+    file_put_contents("$logDir/campaign_{$campaign_id}.log", $log, FILE_APPEND);
 
     if (php_sapi_name() === 'cli') {
         echo $log;
     }
 }
+
+echo "Starting email blaster...\n";
 
 $db->close();
