@@ -231,7 +231,8 @@ function calculateOptimalDistribution($total_emails, $smtp_servers)
     return $distribution;
 }
 
-function calculateEmailDistribution($total_emails, $distributions) {
+function calculateEmailDistribution($total_emails, $distributions)
+{
     $result = [];
     $assigned = 0;
     $remainders = [];

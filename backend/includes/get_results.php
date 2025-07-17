@@ -74,10 +74,10 @@ if (isset($_GET['export'])) {
 
     $out = fopen('php://output', 'w');
     // Write CSV header
-    fputcsv($out, ["ID", "EMAIL"]);
+    fputcsv($out, ["EMAIL"]);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            fputcsv($out, [$row['id'], $row['email']]);
+            fputcsv($out, [$row['email']]);
         }
     }
     fclose($out);

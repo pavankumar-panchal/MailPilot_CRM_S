@@ -2,14 +2,21 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/autoload.php';
-require_once __DIR__ . '/../config/db.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
+require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../config/db.php';
 
 date_default_timezone_set('Asia/Kolkata');
 
 // Get campaign ID from command line
-$campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
+
+// $campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
+
+$campaign_id=1;
+
+$GLOBALS['campaign_id'] = $campaign_id;
 
 // Create PID file for process tracking
 $pid_file = "/tmp/email_blaster_{$campaign_id}.pid";

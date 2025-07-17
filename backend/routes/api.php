@@ -32,8 +32,11 @@ try {
             break;
 
         case '/api/master/campaigns':
-            // Route all methods to the unified campaigns API
             require __DIR__ . '/../includes/campaign.php';
+            break;
+
+        case '/api/master/campaigns_master':
+            require __DIR__ . '/../public/campaigns_master.php';
             break;
 
         case '/api/master/smtps':

@@ -19,13 +19,13 @@ if ($conn_logs->connect_error) exit(1);
 
 define('WORKER_ID', 1); // Set worker id here
 
-$worker_id = isset($argv[2]) ? (int)$argv[2] : 1;
+// Get ID list from argument
 $id_list = isset($argv[1]) ? $argv[1] : '';
 $ids = array_filter(explode(',', $id_list), 'is_numeric');
 if (empty($ids)) exit(0);
 
 $id_sql = implode(',', $ids);
-$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND processing=1 AND worker_id=$worker_id AND id IN ($id_sql)";
+$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID . " AND id IN ($id_sql)";
 $result = $conn->query($query);
 
 function log_worker($msg, $id_range = '') {
@@ -221,12 +221,11 @@ if ($result) {
             domain_status = ?, 
             domain_processed = 1, 
             validation_status = ?, 
-            validation_response = ?, 
-            processing = 0
+            validation_response = ? 
             WHERE id = ?");
         if ($update) {
             $update->bind_param(
-                "isssi",
+                "issi",
                 $verify['domain_status'],
                 $verify['validation_status'],
                 $verify['validation_response'],

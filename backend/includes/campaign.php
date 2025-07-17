@@ -32,11 +32,8 @@ try {
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
             if ($row) {
-                // Optionally, don't send the full attachment in list view
-                if (isset($row['attachment'])) {
-                    $row['has_attachment'] = !empty($row['attachment']);
-                    unset($row['attachment']);
-                }
+                // Use attachment_path only
+                $row['has_attachment'] = !empty($row['attachment_path']);
                 // When rendering mail_body in HTML
                 $row['mail_body'] = nl2br(htmlspecialchars($row['mail_body']));
                 echo json_encode($row);
