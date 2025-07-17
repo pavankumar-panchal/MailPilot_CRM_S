@@ -210,29 +210,11 @@ const Master = () => {
         return;
       }
 
-      // Check SMTP limits
-      const campaign = campaigns.find((c) => c.campaign_id === campaignId);
-      const overLimit = (distributions[campaignId] || []).some((dist) => {
-        const smtp = smtpServers.find((s) => String(s.id) === String(dist.smtp_id));
-        const emailCount = Math.floor(
-          campaign.valid_emails * (parseFloat(dist.percentage) || 0) / 100
-        );
-        return smtp && emailCount > smtp.daily_limit;
-      });
-
-      if (overLimit) {
-        setMessage({
-          type: "error",
-          text: "One or more SMTP distributions exceed daily limits. Please adjust percentages.",
-        });
-        return;
-      }
-
       // Save
       const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
         action: "distribute",
         campaign_id: campaignId,
-        distribution: distributions[campaignId] // <-- FIX: use distributions state directly
+        distribution: distributions[campaignId]
       });
 
       setMessage({ type: "success", text: res.data.message });
@@ -507,35 +489,6 @@ const Master = () => {
                           const percentage = Number(dist.percentage) || 0;
                           const emailCount = Math.floor(validEmails * (percentage / 100));
 
-                          let badgeClass = "bg-gray-200 text-gray-800";
-                          let badgeMsg = "";
-
-                          if (smtp) {
-                            if (emailCount > smtp.daily_limit) {
-                              badgeClass = "bg-red-100 text-red-800";
-                              badgeMsg = (
-                                <>
-                                  {" "}
-                                  <i className="fas fa-exclamation-triangle"></i> Exceeds daily limit
-                                </>
-                              );
-                            } else if (emailCount > smtp.hourly_limit * 24) {
-                              badgeClass = "bg-yellow-100 text-yellow-800";
-                              badgeMsg = (
-                                <>
-                                  {" "}
-                                  <i className="fas fa-exclamation-circle"></i> Review hourly limit
-                                </>
-                              );
-                            }
-                          }
-
-                          // Calculate max for this row: its current value + remaining
-                          const currentTotal = campaignDistributions.reduce(
-                            (sum, d, idx) => sum + (idx === index ? 0 : (parseFloat(d.percentage) || 0)), 0
-                          );
-                          const maxAllowed = 100 - currentTotal;
-
                           return (
                             <div
                               key={index}
@@ -568,14 +521,14 @@ const Master = () => {
                                 <input
                                   type="number"
                                   min="1"
-                                  max={maxAllowed}
+                                  max={100}
                                   step="0.1"
                                   value={dist.percentage}
                                   onChange={(e) => {
                                     let val = e.target.value;
                                     if (val === "") val = "";
                                     else if (parseFloat(val) < 1) val = 1;
-                                    else if (parseFloat(val) > maxAllowed) val = maxAllowed;
+                                    else if (parseFloat(val) > 100) val = 100;
                                     updateDistribution(
                                       campaign.campaign_id,
                                       index,
@@ -592,10 +545,9 @@ const Master = () => {
 
                               <div className="flex items-center space-x-2">
                                 <span
-                                  className={`email-count ${badgeClass} text-xs font-medium px-2.5 py-0.5 rounded-full`}
+                                  className={`email-count bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full`}
                                 >
                                   ~{emailCount.toLocaleString()} emails
-                                  {badgeMsg}
                                 </span>
                                 <button
                                   type="button"

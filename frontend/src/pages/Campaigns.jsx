@@ -202,26 +202,36 @@ const Campaigns = () => {
     }
   };
 
-  // Delete campaign
+  // Delete campaign (optimistic UI update)
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this campaign?"))
-      return;
+    // Optimistically remove from UI
+    setCampaigns((prev) => prev.filter((c) => c.campaign_id !== id));
+    setPagination((prev) => ({
+      ...prev,
+      total: prev.total - 1,
+    }));
+
     try {
       const res = await fetch(`${API_URL}?id=${id}`, { method: "DELETE" });
       const data = await res.json();
+
       if (data.success) {
         setMessage({ type: "success", text: "Campaign deleted successfully!" });
-        fetchCampaigns();
+        // No need to reload, already removed
       } else {
         setMessage({
           type: "error",
           text: data.message || "Failed to delete campaign.",
         });
+        // Restore if failed
+        fetchCampaigns();
       }
     } catch {
       setMessage({ type: "error", text: "Failed to delete campaign." });
+      fetchCampaigns();
     }
   };
+
 
   // Reuse campaign
   const handleReuse = async (id) => {
@@ -317,7 +327,11 @@ const Campaigns = () => {
                   <i className="fas fa-copy text-xl"></i>
                 </button>
                 <button
-                  onClick={() => handleDelete(c.campaign_id)}
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to delete this campaign?")) {
+                      handleDelete(c.campaign_id);
+                    }
+                  }}
                   className="text-red-600 hover:text-red-800 p-1 rounded"
                   title="Delete"
                 >
@@ -421,7 +435,11 @@ const Campaigns = () => {
                           <i className="fas fa-copy"></i>
                         </button>
                         <button
-                          onClick={() => handleDelete(c.campaign_id)}
+                          onClick={() => {
+                            if (window.confirm("Are you sure you want to delete this campaign?")) {
+                              handleDelete(c.campaign_id);
+                            }
+                          }}
                           className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
                           title="Delete"
                         >

@@ -76,9 +76,18 @@ try {
             $description = $conn->real_escape_string($_POST['description'] ?? '');
             $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
-            $attachment = null;
+            $attachment_path = null;
+
             if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
-                $attachment = file_get_contents($_FILES['attachment']['tmp_name']);
+                $uploadDir = __DIR__ . '/../../storage/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
+                $targetPath = $uploadDir . $filename;
+                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+                    $attachment_path = 'storage/' . $filename;
+                }
             }
 
             if (!$description || !$mail_subject || !$mail_body) {
@@ -87,11 +96,9 @@ try {
                 exit;
             }
 
-            if ($attachment !== null) {
-                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, attachment=? WHERE campaign_id=?");
-                $stmt->bind_param("ssssi", $description, $mail_subject, $mail_body, $null, $id);
-                $stmt->send_long_data(3, $attachment);
-                $null = null;
+            if ($attachment_path !== null) {
+                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, attachment_path=? WHERE campaign_id=?");
+                $stmt->bind_param("ssssi", $description, $mail_subject, $mail_body, $attachment_path, $id);
             } else {
                 $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=? WHERE campaign_id=?");
                 $stmt->bind_param("sssi", $description, $mail_subject, $mail_body, $id);
@@ -110,10 +117,18 @@ try {
         $description = $conn->real_escape_string($_POST['description'] ?? '');
         $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
+        $attachment_path = null;
 
-        $attachment = null;
         if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
-            $attachment = file_get_contents($_FILES['attachment']['tmp_name']);
+            $uploadDir = __DIR__ . '/../../storage/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
+            $targetPath = $uploadDir . $filename;
+            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+                $attachment_path = 'storage/' . $filename;
+            }
         }
 
         if (!$description || !$mail_subject || !$mail_body) {
@@ -122,11 +137,9 @@ try {
             exit;
         }
 
-        if ($attachment !== null) {
-            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $description, $mail_subject, $mail_body, $null);
-            $stmt->send_long_data(3, $attachment);
-            $null = null;
+        if ($attachment_path !== null) {
+            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("ssss", $description, $mail_subject, $mail_body, $attachment_path);
         } else {
             $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body) VALUES (?, ?, ?)");
             $stmt->bind_param("sss", $description, $mail_subject, $mail_body);

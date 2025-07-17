@@ -125,8 +125,15 @@ const EmailVerification = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const MAX_CSV_SIZE = 5 * 1024 * 1024; // 5 MB
+
   const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, csvFile: e.target.files[0] }));
+    const file = e.target.files[0];
+    if (file && file.size > MAX_CSV_SIZE) {
+      setStatus({ type: "error", message: "CSV file size must be 5 MB or less." });
+      return;
+    }
+    setFormData((prev) => ({ ...prev, csvFile: file }));
   };
 
   const handleSubmit = async (e) => {
@@ -135,6 +142,14 @@ const EmailVerification = () => {
 
     if (!formData.csvFile || !formData.listName || !formData.fileName) {
       setStatus({ type: "error", message: "All fields are required" });
+      return;
+    }
+
+    // Check if CSV file has data
+    const fileText = await formData.csvFile.text();
+    const lines = fileText.split(/\r?\n/).filter(line => line.trim() !== "");
+    if (lines.length < 2) { // Assuming first line is header
+      setStatus({ type: "error", message: "CSV file must contain at least one data row." });
       return;
     }
 
@@ -541,7 +556,7 @@ const EmailVerification = () => {
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
-                    <p className="text-xs text-gray-500">CSV files</p>
+                    <p className="text-xs text-gray-500">Only 5MB CSV files</p>
                   </>
                 )}
               </div>
@@ -901,10 +916,10 @@ const EmailVerification = () => {
                   setListPagination((prev) => ({ ...prev, page: 1 }))
                 }
                 disabled={listPagination.page === 1}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
               >
                 <svg
-                  className="w-5 h-5 text-gray-500"
+                  className="w-5 h-5 text-gray-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -925,10 +940,10 @@ const EmailVerification = () => {
                   }))
                 }
                 disabled={listPagination.page === 1}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
               >
                 <svg
-                  className="w-5 h-5 text-gray-500"
+                  className="w-5 h-5 text-gray-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -941,7 +956,7 @@ const EmailVerification = () => {
                   />
                 </svg>
               </button>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-bold text-gray-900">
                 Page {listPagination.page} of{" "}
                 {Math.max(
                   1,
@@ -964,10 +979,10 @@ const EmailVerification = () => {
                   listPagination.page >=
                   Math.ceil(listPagination.total / listPagination.rowsPerPage)
                 }
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
               >
                 <svg
-                  className="w-5 h-5 text-gray-500"
+                  className="w-5 h-5 text-gray-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -993,10 +1008,10 @@ const EmailVerification = () => {
                   listPagination.page >=
                   Math.ceil(listPagination.total / listPagination.rowsPerPage)
                 }
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
               >
                 <svg
-                  className="w-5 h-5 text-gray-500"
+                  className="w-5 h-5 text-gray-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

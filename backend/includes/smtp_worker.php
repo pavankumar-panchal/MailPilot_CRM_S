@@ -8,9 +8,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");
 if ($conn->connect_error) exit(1);
 
-define("WORKER_ID", 1);
-
-// Separate log DB credentials
 $log_db_host = "127.0.0.1";
 $log_db_user = "root";
 $log_db_pass = "";
@@ -18,11 +15,17 @@ $log_db_name = "CRM_logs";
 
 $conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
 $conn_logs->set_charset("utf8mb4");
-if ($conn_logs->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-}
+if ($conn_logs->connect_error) exit(1);
 
-$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID;
+define('WORKER_ID', 1); // Set worker id here
+
+$worker_id = isset($argv[2]) ? (int)$argv[2] : 1;
+$id_list = isset($argv[1]) ? $argv[1] : '';
+$ids = array_filter(explode(',', $id_list), 'is_numeric');
+if (empty($ids)) exit(0);
+
+$id_sql = implode(',', $ids);
+$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND processing=1 AND worker_id=$worker_id AND id IN ($id_sql)";
 $result = $conn->query($query);
 
 function log_worker($msg, $id_range = '') {
@@ -165,8 +168,8 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     fclose($smtp);
 
     // --- Sanitize validation_response for utf8mb4 ---
-    $validation_response = $rcpt_resp !== false ? mb_convert_encoding($rcpt_resp, 'UTF-8', 'UTF-8') : '';
-    $validation_response = mb_substr($validation_response, 0, 1000, 'UTF-8');
+   $validation_response = $rcpt_resp !== false ? $rcpt_resp : '';
+    $validation_response = substr($validation_response, 0, 1000);
 
     if ($responseCode == "250" || $responseCode == "251") {
         insert_smtp_log($conn_logs, $email, $steps, $ip, $validation_response);
@@ -218,11 +221,12 @@ if ($result) {
             domain_status = ?, 
             domain_processed = 1, 
             validation_status = ?, 
-            validation_response = ? 
+            validation_response = ?, 
+            processing = 0
             WHERE id = ?");
         if ($update) {
             $update->bind_param(
-                "issi",
+                "isssi",
                 $verify['domain_status'],
                 $verify['validation_status'],
                 $verify['validation_response'],
