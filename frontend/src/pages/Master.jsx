@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_PUBLIC_URL = "http://localhost/Verify_email/backend/public";
+const API_PUBLIC_URL = "http://localhost/Verify_email/backend/routes/api.php";
 
 const Master = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -31,9 +31,8 @@ const Master = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
-          action: "list",
-        });
+        // Use campaigns_master for listing campaigns and SMTP servers
+        const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, { action: "list" });
         setCampaigns(res.data.data.campaigns || []);
         setSmtpServers(res.data.data.smtp_servers || []);
         setPagination((prev) => ({
@@ -70,7 +69,7 @@ const Master = () => {
   // Fetch email counts
   const fetchEmailCounts = async (campaignId) => {
     try {
-      const res = await axios.post("http://localhost/Verify_email/backend/public/campaigns_master.php", {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "email_counts",
         campaign_id: campaignId
       });
@@ -86,7 +85,7 @@ const Master = () => {
   // Fetch distributions
   const fetchDistributions = async (campaignId) => {
     try {
-      const res = await axios.post("http://localhost/Verify_email/backend/public/campaigns_master.php", {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "get_distribution",
         campaign_id: campaignId
       });
@@ -210,8 +209,7 @@ const Master = () => {
         return;
       }
 
-      // Save
-      const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "distribute",
         campaign_id: campaignId,
         distribution: distributions[campaignId]
@@ -219,8 +217,7 @@ const Master = () => {
 
       setMessage({ type: "success", text: res.data.message });
 
-      // Refresh campaigns to get updated data
-      const listRes = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "list",
       });
       setCampaigns(listRes.data.data.campaigns || []);
@@ -235,16 +232,15 @@ const Master = () => {
   // Auto-distribute
   const autoDistribute = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "auto_distribute",
         campaign_id: campaignId,
       });
 
       setMessage({ type: "success", text: res.data.message });
 
-      // Refresh data
       await fetchDistributions(campaignId);
-      const listRes = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "list",
       });
       setCampaigns(listRes.data.data.campaigns || []);
@@ -259,15 +255,14 @@ const Master = () => {
   // Start campaign
   const startCampaign = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "start_campaign",
         campaign_id: campaignId
       });
 
       setMessage({ type: "success", text: res.data.message });
 
-      // Refresh campaigns
-      const listRes = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "list",
       });
       setCampaigns(listRes.data.data.campaigns || []);
@@ -282,15 +277,14 @@ const Master = () => {
   // Pause campaign
   const pauseCampaign = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "pause_campaign",
         campaign_id: campaignId,
       });
 
       setMessage({ type: "success", text: res.data.message });
 
-      // Refresh campaigns
-      const listRes = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "list",
       });
       setCampaigns(listRes.data.data.campaigns || []);
@@ -305,15 +299,14 @@ const Master = () => {
   // Retry failed emails
   const retryFailedEmails = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "retry_failed",
         campaign_id: campaignId,
       });
 
       setMessage({ type: "success", text: res.data.message });
 
-      // Refresh campaigns
-      const listRes = await axios.post(`${API_PUBLIC_URL}/campaigns_master.php`, {
+      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
         action: "list",
       });
       setCampaigns(listRes.data.data.campaigns || []);

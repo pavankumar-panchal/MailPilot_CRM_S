@@ -377,6 +377,22 @@ try {
     // Update status before processing
     $conn->query("UPDATE csv_list SET status = 'running' WHERE status = 'pending'");
 
+    // Check if there are emails to process
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status=1 AND domain_processed=0");
+    $row = $result->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        // No emails to process, mark csv_list as completed
+        $conn->query("UPDATE csv_list SET status = 'completed' WHERE status = 'running'");
+        echo json_encode([
+            "status"  => "success",
+            "processed" => 0,
+            "message" => "No emails found to process. Marked csv_list as completed."
+        ]);
+        $conn->close();
+        $conn_logs->close();
+        exit;
+    }
+
     $start_time = microtime(true);
     $processed = process_in_parallel($conn);
     $total_time = microtime(true) - $start_time;

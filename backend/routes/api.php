@@ -90,31 +90,31 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 
-// filepath: /opt/lampp/htdocs/Verify_email/backend/includes/get_results.php
-require_once __DIR__ . '/../db.php';
+// // filepath: /opt/lampp/htdocs/Verify_email/backend/includes/get_results.php
+// require_once __DIR__ . '/../config/db.php';
 
-// Optional: handle export requests
-if (isset($_GET['export'])) {
-    $type = $_GET['export'];
-    $status = ($type === 'valid') ? 1 : 0;
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="' . $type . '_emails.csv"');
-    $out = fopen('php://output', 'w');
-    fputcsv($out, ['email']);
-    $result = $conn->query("SELECT email FROM emails WHERE domain_status = $status");
-    while ($row = $result->fetch_assoc()) {
-        fputcsv($out, [$row['email']]);
-    }
-    fclose($out);
-    exit;
-}
+// // Optional: handle export requests
+// if (isset($_GET['export'])) {
+//     $type = $_GET['export'];
+//     $status = ($type === 'valid') ? 1 : 0;
+//     header('Content-Type: text/csv');
+//     header('Content-Disposition: attachment; filename="' . $type . '_emails.csv"');
+//     $out = fopen('php://output', 'w');
+//     fputcsv($out, ['email']);
+//     $result = $conn->query("SELECT email FROM emails WHERE domain_status = $status");
+//     while ($row = $result->fetch_assoc()) {
+//         fputcsv($out, [$row['email']]);
+//     }
+//     fclose($out);
+//     exit;
+// }
 
-// Default: return all emails as JSON
-$result = $conn->query("SELECT id, email, sp_account, sp_domain, verified, status, validation_response FROM emails ORDER BY id DESC");
-$rows = [];
-while ($row = $result->fetch_assoc()) {
-    // Optionally cast verified to boolean
-    $row['verified'] = (bool) $row['verified'];
-    $rows[] = $row;
-}
-echo json_encode($rows);
+// // Default: return all emails as JSON
+// $result = $conn->query("SELECT id, email, sp_account, sp_domain, verified, status, validation_response FROM emails ORDER BY id DESC");
+// $rows = [];
+// while ($row = $result->fetch_assoc()) {
+//     // Optionally cast verified to boolean
+//     $row['verified'] = (bool) $row['verified'];
+//     $rows[] = $row;
+// }
+// echo json_encode($rows);

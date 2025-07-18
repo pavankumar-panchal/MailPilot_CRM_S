@@ -263,7 +263,7 @@ function calculateEmailDistribution($total_emails, $distributions)
 
 function startCampaign($conn, $campaign_id)
 {
-    $max_retries = 3;
+    $max_retries = 5;
     $retry_count = 0;
     $success = false;
     while ($retry_count < $max_retries && !$success) {
@@ -335,14 +335,17 @@ function startEmailBlasterProcess($campaign_id)
     $lock_file = "/tmp/email_blaster_{$campaign_id}.lock";
     if (file_exists($lock_file)) {
         $pid = file_get_contents($lock_file);
+        // Check if process is running
         if (function_exists('posix_kill') && posix_kill((int) $pid, 0)) {
+            // Process is running, do not start another
             return;
         } else {
+            // Stale lock file, remove it
             unlink($lock_file);
         }
     }
     $php_path = '/opt/lampp/bin/php';
-    $script_path = __DIR__ . '/email_blaster.php';
+    $script_path = '/opt/lampp/htdocs/Verify_email/backend/public/email_blaster.php';
     $command = "nohup $php_path $script_path $campaign_id > /dev/null 2>&1 & echo $!";
     $pid = shell_exec($command);
     if ($pid) {
@@ -396,7 +399,7 @@ function retryFailedEmails($conn, $campaign_id)
             FROM mail_blaster 
             WHERE campaign_id = $campaign_id 
             AND status = 'failed'
-            AND attempt_count < 3
+            AND attempt_count < 5
         ");
     $failed_count = $result->fetch_assoc()['failed_count'];
     if ($failed_count > 0) {
@@ -418,6 +421,6 @@ function retryFailedEmails($conn, $campaign_id)
         startEmailBlasterProcess($campaign_id);
         return "Retrying $failed_count failed emails for campaign #$campaign_id";
     } else {
-        return "No eligible failed emails to retry for campaign #$campaign_id";
+        return "Retry campaign limit reached for campaign #$campaign_id";
     }
 }
