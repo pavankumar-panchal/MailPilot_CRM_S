@@ -3,35 +3,29 @@ $servername = "127.0.0.1";
 $username = "root";
 $password = "";
 $dbname = "CRM";
-$log_dbname = "CRM_logs";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");
 if ($conn->connect_error) exit(1);
 
+$log_db_host = "127.0.0.1";
+$log_db_user = "root";
+$log_db_pass = "";
+$log_db_name = "CRM_logs";
 
+$conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
+$conn_logs->set_charset("utf8mb4");
+if ($conn_logs->connect_error) exit(1);
 
-// Separate log DB credentials
-// $log_db_host = "127.0.0.1";           // Or your actual IP
-// $log_db_user = "CRM_logs";            // Your logs DB user
-// $log_db_pass = "55y60jgW*";           // Your logs DB password
-// $log_db_name = "CRM_logs";            // Your logs DB name
+define('WORKER_ID', 1); // Set worker id here
 
-// $conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
-// $conn_logs->set_charset("utf8mb4");
-// if ($conn_logs->connect_error) {
-//     die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-// }
+// Get ID list from argument
+$id_list = isset($argv[1]) ? $argv[1] : '';
+$ids = array_filter(explode(',', $id_list), 'is_numeric');
+if (empty($ids)) exit(0);
 
-
-$worker_id=1;
-
-
-
-$start_id = $argv[1] ?? 0;
-$end_id = $argv[2] ?? 0;
-
-$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE id BETWEEN $start_id AND $end_id AND domain_status=1 AND domain_processed=0 AND worker_id=$worker_id";
+$id_sql = implode(',', $ids);
+$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID . " AND id IN ($id_sql)";
 $result = $conn->query($query);
 
 function log_worker($msg, $id_range = '') {
@@ -41,7 +35,7 @@ function log_worker($msg, $id_range = '') {
 }
 
 function insert_smtp_log($conn_logs, $email, $steps, $validation, $validation_response) {
-    $stmt = $conn_logs->prepare("INSERT INTO email_smtp_checks 
+    $stmt = $conn_logs->prepare("INSERT INTO email_smtp_checks2 
         (email, smtp_connection, ehlo, mail_from, rcpt_to, validation, validation_response) 
         VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param(
@@ -174,8 +168,8 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     fclose($smtp);
 
     // --- Sanitize validation_response for utf8mb4 ---
-    $validation_response = $rcpt_resp !== false ? mb_convert_encoding($rcpt_resp, 'UTF-8', 'UTF-8') : '';
-    $validation_response = mb_substr($validation_response, 0, 1000, 'UTF-8');
+   $validation_response = $rcpt_resp !== false ? $rcpt_resp : '';
+    $validation_response = substr($validation_response, 0, 1000);
 
     if ($responseCode == "250" || $responseCode == "251") {
         insert_smtp_log($conn_logs, $email, $steps, $ip, $validation_response);
@@ -241,10 +235,10 @@ if ($result) {
             $update->close();
         }
 
-        log_worker("Processed $email_id ($email): {$verify['status']} - {$verify['response']}", "$start_id-$end_id");
+        log_worker("Processed $email_id ($email): {$verify['status']} - {$verify['response']}", "");
     }
 } else {
-    log_worker("Query failed: " . $conn->error, "$start_id-$end_id");
+    log_worker("Query failed: " . $conn->error, "");
 }
 $conn->close();
 $conn_logs->close();

@@ -11,12 +11,9 @@ header("Access-Control-Allow-Methods: GET");
 
 // Database configuration
 $servername = "127.0.0.1";
-$username = "root";
+$username = "root"; 
 $password = "";
 $dbname = "CRM";
-$log_dbname = "CRM_logs";
-
-$worker_id=1;
 
 // Create main connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -25,25 +22,23 @@ if ($conn->connect_error) {
     die(json_encode(["status" => "error", "message" => "Connection failed: " . $conn->connect_error]));
 }
 
+// Separate log DB credentials
+$log_db_host = "127.0.0.1";
+$log_db_user = "root";
+$log_db_pass = "";
+$log_db_name = "CRM_logs";
 
+$conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
+$conn_logs->set_charset("utf8mb4");
+if ($conn_logs->connect_error) {
+    die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
+}
 
-
-// // Separate log DB credentials
-// $log_db_host = "127.0.0.1";           // Or your actual IP
-// $log_db_user = "CRM_logs";            // Your logs DB user
-// $log_db_pass = "55y60jgW*";           // Your logs DB password
-// $log_db_name = "CRM_logs";            // Your logs DB name
-
-// $conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
-// $conn_logs->set_charset("utf8mb4");
-// if ($conn_logs->connect_error) {
-//     die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-// }
 // Configuration
-define('MAX_WORKERS', 100); // Adjust for your server
+define('MAX_WORKERS', 100);
 define('EMAILS_PER_WORKER', 500);
 define('WORKER_SCRIPT', __DIR__ . '/smtp_worker.php');
-define('LOG_FILE', __DIR__ . '/../storage/smtp_parallel.log'); // Make sure this directory exists
+define('LOG_FILE', __DIR__ . '/../storage/smtp_parallel.log');
 
 set_time_limit(0);
 ini_set('memory_limit', '512M');
@@ -56,35 +51,29 @@ $servername = "127.0.0.1";
 $username = "root";
 $password = "";
 $dbname = "CRM";
-$log_dbname = "CRM_logs";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");
 if ($conn->connect_error) exit(1);
 
+$log_db_host = "127.0.0.1";
+$log_db_user = "root";
+$log_db_pass = "";
+$log_db_name = "CRM_logs";
 
-$worker_id=1;
+$conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
+$conn_logs->set_charset("utf8mb4");
+if ($conn_logs->connect_error) exit(1);
 
-// Separate log DB credentials
-// $log_db_host = "127.0.0.1";           // Or your actual IP
-// $log_db_user = "CRM_logs";            // Your logs DB user
-// $log_db_pass = "55y60jgW*";           // Your logs DB password
-// $log_db_name = "CRM_logs";            // Your logs DB name
+define('WORKER_ID', 1); // Set worker id here
 
-// $conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
-// $conn_logs->set_charset("utf8mb4");
-// if ($conn_logs->connect_error) {
-//     die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-// }
+// Get ID list from argument
+$id_list = isset($argv[1]) ? $argv[1] : '';
+$ids = array_filter(explode(',', $id_list), 'is_numeric');
+if (empty($ids)) exit(0);
 
-
-
-
-
-$start_id = $argv[1] ?? 0;
-$end_id = $argv[2] ?? 0;
-
-$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE id BETWEEN $start_id AND $end_id AND domain_status=1 AND domain_processed=0 AND worker_id=$worker_id";
+$id_sql = implode(',', $ids);
+$query = "SELECT id, raw_emailid, sp_domain FROM emails WHERE domain_status=1 AND domain_processed=0 AND worker_id=" . WORKER_ID . " AND id IN ($id_sql)";
 $result = $conn->query($query);
 
 function log_worker($msg, $id_range = '') {
@@ -94,7 +83,7 @@ function log_worker($msg, $id_range = '') {
 }
 
 function insert_smtp_log($conn_logs, $email, $steps, $validation, $validation_response) {
-    $stmt = $conn_logs->prepare("INSERT INTO email_smtp_checks 
+    $stmt = $conn_logs->prepare("INSERT INTO email_smtp_checks2 
         (email, smtp_connection, ehlo, mail_from, rcpt_to, validation, validation_response) 
         VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param(
@@ -227,8 +216,8 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     fclose($smtp);
 
     // --- Sanitize validation_response for utf8mb4 ---
-    $validation_response = $rcpt_resp !== false ? mb_convert_encoding($rcpt_resp, 'UTF-8', 'UTF-8') : '';
-    $validation_response = mb_substr($validation_response, 0, 1000, 'UTF-8');
+   $validation_response = $rcpt_resp !== false ? $rcpt_resp : '';
+    $validation_response = substr($validation_response, 0, 1000);
 
     if ($responseCode == "250" || $responseCode == "251") {
         insert_smtp_log($conn_logs, $email, $steps, $ip, $validation_response);
@@ -294,10 +283,10 @@ if ($result) {
             $update->close();
         }
 
-        log_worker("Processed $email_id ($email): {$verify['status']} - {$verify['response']}", "$start_id-$end_id");
+        log_worker("Processed $email_id ($email): {$verify['status']} - {$verify['response']}", "");
     }
 } else {
-    log_worker("Query failed: " . $conn->error, "$start_id-$end_id");
+    log_worker("Query failed: " . $conn->error, "");
 }
 $conn->close();
 $conn_logs->close();
@@ -312,84 +301,66 @@ function write_log($msg)
     file_put_contents(LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
 }
 
-// --- Get ID ranges for parallel processing ---
-function get_id_ranges($conn, $batch_size)
+// --- Get all email IDs to process ---
+function get_all_email_ids($conn)
 {
-    $ranges = [];
-    $result = $conn->query("SELECT MIN(id) as min_id, MAX(id) as max_id, COUNT(*) as total FROM emails");
-    $row = $result->fetch_assoc();
-    if (!$row || $row['min_id'] === null || $row['max_id'] === null)
-        return $ranges;
-
-    $total = $row['total'];
-    write_log("Total emails to process: $total");
-
-    for ($i = $row['min_id']; $i <= $row['max_id']; $i += $batch_size) {
-        $end = min($i + $batch_size - 1, $row['max_id']);
-        $ranges[] = [
-            'start' => $i,
-            'end' => $end,
-            'count' => $end - $i + 1
-        ];
+    $ids = [];
+    $result = $conn->query("SELECT id FROM emails WHERE domain_status=1 AND domain_processed=0");
+    while ($row = $result->fetch_assoc()) {
+        $ids[] = $row['id'];
     }
-    write_log("Total batches: " . count($ranges) . ", Batch size: $batch_size");
-    return $ranges;
+    return $ids;
+}
+
+// --- Split IDs into N workers ---
+function split_ids($ids, $num_workers)
+{
+    $chunks = array_chunk($ids, ceil(count($ids) / $num_workers));
+    return $chunks;
 }
 
 // --- Parallel SMTP processing ---
 function process_in_parallel($conn)
 {
-    $batch_size = EMAILS_PER_WORKER;
-    $ranges = get_id_ranges($conn, $batch_size);
-    $total_batches = count($ranges);
-    $processed = 0;
+    $ids = get_all_email_ids($conn);
+    $num_workers = MAX_WORKERS;
+    $chunks = split_ids($ids, $num_workers);
     $active_procs = [];
-    $batch_idx = 0;
+    $processed = 0;
 
-    write_log("Starting parallel SMTP processing with MAX_WORKERS=" . MAX_WORKERS);
+    write_log("Starting parallel SMTP processing with MAX_WORKERS=" . $num_workers);
 
-    while ($batch_idx < $total_batches || count($active_procs) > 0) {
-        // Start new workers if under limit
-        while (count($active_procs) < MAX_WORKERS && $batch_idx < $total_batches) {
-            $range = $ranges[$batch_idx];
-            $cmd = "php " . escapeshellarg(WORKER_SCRIPT) . " {$range['start']} {$range['end']}";
-            $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
-            $proc = proc_open($cmd, $descriptorspec, $pipes);
-            if (is_resource($proc)) {
-                $active_procs[] = [
-                    'proc' => $proc,
-                    'pipes' => $pipes,
-                    'range' => $range
-                ];
-                write_log("Started worker for IDs {$range['start']} - {$range['end']} ({$range['count']} emails)");
-            }
-            $processed += $range['count'];
-            $batch_idx++;
+    foreach ($chunks as $worker_id => $id_chunk) {
+        if (empty($id_chunk)) continue;
+        $id_list = implode(',', $id_chunk);
+        $cmd = "php " . escapeshellarg(WORKER_SCRIPT) . " " . escapeshellarg($id_list) . " $worker_id";
+        $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
+        $proc = proc_open($cmd, $descriptorspec, $pipes);
+        if (is_resource($proc)) {
+            $active_procs[] = [
+                'proc' => $proc,
+                'pipes' => $pipes,
+                'worker_id' => $worker_id,
+                'count' => count($id_chunk)
+            ];
+            write_log("Started worker $worker_id for " . count($id_chunk) . " emails");
+            $processed += count($id_chunk);
         }
+    }
 
-        // Check for finished workers
-        foreach ($active_procs as $key => $worker) {
+    // Wait for all workers to finish
+    foreach ($active_procs as $worker) {
+        $status = proc_get_status($worker['proc']);
+        while ($status['running']) {
+            usleep(100000);
             $status = proc_get_status($worker['proc']);
-            if (!$status['running']) {
-                // Read output and errors
-                $stdout = stream_get_contents($worker['pipes'][1]);
-                $stderr = stream_get_contents($worker['pipes'][2]);
-                if (trim($stdout)) {
-                    write_log("Worker [IDs {$worker['range']['start']}-{$worker['range']['end']}] OUTPUT: $stdout");
-                }
-                if (trim($stderr)) {
-                    write_log("Worker [IDs {$worker['range']['start']}-{$worker['range']['end']}] ERROR: $stderr");
-                }
-                // Close pipes and remove from active list
-                foreach ($worker['pipes'] as $pipe)
-                    fclose($pipe);
-                proc_close($worker['proc']);
-                unset($active_procs[$key]);
-            }
         }
-        // Prevent busy waiting
-        usleep(100000); // 0.1s
-        $active_procs = array_values($active_procs); // reindex
+        $stdout = stream_get_contents($worker['pipes'][1]);
+        $stderr = stream_get_contents($worker['pipes'][2]);
+        if (trim($stdout)) write_log("Worker {$worker['worker_id']} OUTPUT: $stdout");
+        if (trim($stderr)) write_log("Worker {$worker['worker_id']} ERROR: $stderr");
+        foreach ($worker['pipes'] as $pipe) fclose($pipe);
+        proc_close($worker['proc']);
     }
 
     // Log how many emails remain to process
@@ -405,6 +376,22 @@ function process_in_parallel($conn)
 try {
     // Update status before processing
     $conn->query("UPDATE csv_list SET status = 'running' WHERE status = 'pending'");
+
+    // Check if there are emails to process
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status=1 AND domain_processed=0");
+    $row = $result->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        // No emails to process, mark csv_list as completed
+        $conn->query("UPDATE csv_list SET status = 'completed' WHERE status = 'running'");
+        echo json_encode([
+            "status"  => "success",
+            "processed" => 0,
+            "message" => "No emails found to process. Marked csv_list as completed."
+        ]);
+        $conn->close();
+        $conn_logs->close();
+        exit;
+    }
 
     $start_time = microtime(true);
     $processed = process_in_parallel($conn);
@@ -424,7 +411,7 @@ try {
     $invalid  = $conn->query("SELECT COUNT(*) as invalid FROM emails WHERE domain_status = 0")->fetch_row()[0];
 
     // Update csv_list with valid and invalid counts (safe, as values are integers)
-    $conn->query("UPDATE csv_list SET valid_count = $verified, invalid_count = $invalid WHERE status IN ('running', 'completed')");
+    update_all_csv_list_stats($conn);
 
     echo json_encode([
         "status"           => "success",
@@ -443,4 +430,26 @@ try {
     ]);
 } finally {
     $conn->close();
+    $conn_logs->close();
+}
+
+function update_all_csv_list_stats($conn) {
+    $bulkUpdateSql = "
+        UPDATE csv_list cl
+        JOIN (
+          SELECT 
+            csv_list_id,
+            SUM(CASE WHEN domain_status = 1 THEN 1 ELSE 0 END) AS valid_count,
+            SUM(CASE WHEN domain_status = 0 THEN 1 ELSE 0 END) AS invalid_count,
+            COUNT(*) AS total_emails
+          FROM emails
+          WHERE domain_status IN (0, 1)
+          GROUP BY csv_list_id
+        ) e ON e.csv_list_id = cl.id
+        SET 
+          cl.valid_count = e.valid_count,
+          cl.invalid_count = e.invalid_count,
+          cl.total_emails = e.total_emails
+    ";
+    $conn->query($bulkUpdateSql);
 }

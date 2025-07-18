@@ -1,10 +1,20 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 ini_set('memory_limit', '1024M');
 ini_set('max_execution_time', 300);
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+
+// Ensure REQUEST_METHOD is set for CLI runs
+if (!isset($_SERVER['REQUEST_METHOD'])) {
+    $_SERVER['REQUEST_METHOD'] = php_sapi_name() === 'cli' ? 'CLI' : 'GET';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -59,18 +69,15 @@ if (isset($_GET['export'])) {
     // Stream CSV output (no memory build-up)
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
-    $sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response FROM emails $whereSql ORDER BY id ASC";
+    $sql = "SELECT id, raw_emailid AS email FROM emails $whereSql ORDER BY id ASC";
     $result = $conn->query($sql);
 
     $out = fopen('php://output', 'w');
     // Write CSV header
-    fputcsv($out, ["ID", "EMAIL", "ACCOUNT", "DOMAIN", "VERIFIED", "STATUS", "RESPONSE"]);
+    fputcsv($out, ["EMAIL"]);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            fputcsv($out, [
-                $row['id'], $row['email'], $row['sp_account'], $row['sp_domain'],
-                $row['domain_verified'], $row['domain_status'], $row['validation_response']
-            ]);
+            fputcsv($out, [$row['email']]);
         }
     }
     fclose($out);

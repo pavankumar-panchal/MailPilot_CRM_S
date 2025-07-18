@@ -216,7 +216,7 @@ const Workers = () => {
   }, [status]);
 
   return (
-    <main className="max-w-4xl mx-auto px-4 mt-14 sm:px-6 py-6">
+    <main className="max-w-7xl mx-auto px-4 mt-14 sm:px-6 py-6">
       <StatusMessage status={status} onClose={() => setStatus(null)} />
 
       <div className="flex justify-between items-center mb-6">

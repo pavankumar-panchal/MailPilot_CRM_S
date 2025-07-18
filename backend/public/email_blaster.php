@@ -1,19 +1,34 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/autoload.php';
-require_once __DIR__ . '/../config/db.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
+
+require __DIR__ . '/../vendor/autoload.php';
+// require __DIR__ . '/../config/db.php';
 
 date_default_timezone_set('Asia/Kolkata');
 
 // Get campaign ID from command line
+
 $campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
 
+// $campaign_id = 1;
+
+$GLOBALS['campaign_id'] = $campaign_id;
+
 // Create PID file for process tracking
-$pid_file = "/tmp/email_blaster_{$campaign_id}.pid";
+$pid_dir = __DIR__ . '/../tmp';
+if (!is_dir($pid_dir)) {
+    mkdir($pid_dir, 0777, true); // create tmp directory if not exists
+}
+$pid_file = $pid_dir . "/email_blaster_{$campaign_id}.pid";
 file_put_contents($pid_file, getmypid());
+
 
 // Register shutdown function to clean up PID file
 register_shutdown_function(function () use ($pid_file) {
@@ -25,8 +40,26 @@ register_shutdown_function(function () use ($pid_file) {
 // Main processing loop
 while (true) {
     try {
+
+$dbConfig = [
+    'host' => '127.0.0.1',
+    'username' => 'root',
+    'password' => '',
+    'name' => 'CRM',
+    'port' => 3306
+];
+
+$conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+
+
         // Check campaign status
-        $result = $db->query("
+        $result = $conn->query("
             SELECT status, total_emails, sent_emails, pending_emails, failed_emails
             FROM campaign_status 
             WHERE campaign_id = $campaign_id
@@ -54,7 +87,7 @@ while (true) {
         }
 
         // Check remaining emails
-        $remaining_result = $db->query("
+        $remaining_result = $conn->query("
             SELECT COUNT(*) as remaining FROM emails e
             WHERE e.domain_status = 1
             AND NOT EXISTS (
@@ -66,13 +99,13 @@ while (true) {
         $remaining_count = $remaining_result->fetch_assoc()['remaining'];
 
         if ($remaining_count == 0) {
-            $db->query("UPDATE campaign_status SET status = 'completed', pending_emails = 0, end_time = NOW() 
+            $conn->query("UPDATE campaign_status SET status = 'completed', pending_emails = 0, end_time = NOW() 
                       WHERE campaign_id = $campaign_id");
             logMessage("All valid emails processed. Campaign completed.");
             break;
         }
 
-        $result = $db->query("SELECT COUNT(*) AS total FROM emails e 
+        $result = $conn->query("SELECT COUNT(*) AS total FROM emails e 
         LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
         WHERE e.domain_status = 1
         AND (mb.id IS NULL OR (mb.status IN ('failed', 'pending') AND mb.attempt_count < 3))
@@ -89,20 +122,19 @@ while (true) {
 
 
         // Process emails
-        $processed_count = processEmailBatch($db, $campaign_id, $total_email_count);
+        $processed_count = processEmailBatch($conn, $campaign_id, $total_email_count);
 
         // Adjust sleep time based on processing results
         if ($processed_count > 0) {
             sleep(5); // Short sleep if we processed emails
         } else {
             // No emails processed, check if we should wait longer or exit
-            $status_check = $db->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id")->fetch_assoc();
+            $status_check = $conn->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id")->fetch_assoc();
             if ($status_check['status'] !== 'running') {
                 break;
             }
             sleep(30); // Longer sleep if no emails processed
         }
-
     } catch (Exception $e) {
         logMessage("Error in main loop: " . $e->getMessage(), 'ERROR');
         sleep(60);
@@ -264,7 +296,6 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
 
         $db->commit();
         return $processed_count;
-
     } catch (Exception $e) {
         $db->rollback();
         logMessage("Error processing batch: " . $e->getMessage(), 'ERROR');
@@ -400,17 +431,18 @@ function recordDelivery($db, $smtpId, $emailId, $campaignId, $to_email, $status,
 
 function logMessage($message, $level = 'INFO')
 {
-    if (!file_exists('logs')) {
-        mkdir('logs', 0755, true);
+    $logDir = __DIR__ . '/logs';
+    if (!file_exists($logDir)) {
+        mkdir($logDir, 0755, true);
     }
 
     $log = "[" . date('Y-m-d H:i:s') . "] [$level] " . $message . "\n";
     $campaign_id = $GLOBALS['campaign_id'] ?? 'unknown';
-    file_put_contents("logs/campaign_{$campaign_id}.log", $log, FILE_APPEND);
+    file_put_contents("$logDir/campaign_{$campaign_id}.log", $log, FILE_APPEND);
 
     if (php_sapi_name() === 'cli') {
         echo $log;
     }
 }
 
-$db->close();
+$conn->close();

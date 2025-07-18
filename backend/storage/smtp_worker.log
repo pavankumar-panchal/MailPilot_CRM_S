@@ -1,114 +1,140 @@
-[2025-07-09 10:56:22][1-99] Processed 1 (anilpateliyab@gmail.com): valid - 142.250.101.27
-[2025-07-09 10:56:23][1-99] Processed 2 (anilpatialkaku@gmail.com): valid - 192.178.163.26
-[2025-07-09 10:56:26][1-99] Processed 3 (anilpatil1@gmail.com): valid - 173.194.208.26
-[2025-07-09 10:56:27][1-99] Processed 4 (anilpatil1505@gmail.com): valid - 142.251.10.27
-[2025-07-09 10:56:29][1-99] Processed 5 (anilpatil2884@gmail.com): valid - 142.251.10.27
-[2025-07-09 10:56:30][1-99] Processed 6 (anilpatil3578@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:31][1-99] Processed 7 (anilpatil439@mail.com): invalid - SMTP server not ready or no response
-[2025-07-09 10:58:32][1-99] Processed 8 (anilpattnaik73@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:34][1-99] Processed 9 (anilpatwal17@gmail.com): valid - 173.194.208.26
-[2025-07-09 10:58:35][1-99] Processed 10 (anilpatwari10@gmail.com): valid - 142.251.10.27
-[2025-07-09 10:58:37][1-99] Processed 11 (anilpaul9949058127@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 05:19:54][] Processed 133 (animabhattacharya@yahoo.in): valid - 106.10.248.74
+[2025-07-18 05:19:54][] Processed 128 (anilzagade@yahoo.co.in): valid - 106.10.248.73
+[2025-07-18 05:19:54][] Processed 131 (anima_paul62@yahoo.co.in): valid - 106.10.248.73
+[2025-07-18 05:19:54][] Processed 118 (anilyadav@karam.in): valid - 52.101.144.0
+[2025-07-18 05:19:54][] Processed 107 (anilvishnu.2008@rediffmail.com): valid - 202.137.234.32
+[2025-07-18 05:19:54][] Processed 102 (anilvidhan@rediffmail.com): valid - 202.137.234.32
+[2025-07-18 05:19:54][] Processed 119 (anilyadav@taehwaindia.com): invalid - MAIL FROM failed
+[2025-07-18 05:19:55][] Processed 138 (animalstore@gmail.com): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
 
-[2025-07-09 10:58:39][1-99] Processed 12 (anilpavers14@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:41][1-99] Processed 13 (anilpawar1852@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:45][1-99] Processed 14 (anilpawar3456@gmail.com): valid - 142.251.10.27
-[2025-07-09 10:58:47][1-99] Processed 15 (anilpawar417@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:49][1-99] Processed 16 (anilpawar4881@gmail.com): valid - 192.178.163.26
-[2025-07-09 10:58:51][1-99] Processed 17 (anilpawase9883@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:58:53][1-99] Processed 18 (anilpayre@yahoo.com): invalid - 
-[2025-07-09 10:58:55][1-99] Processed 19 (anilpb@rediffmail.com): invalid - 553 delivery from 171.48.96.197 is rejected. The connecting IP is blocked ; For further details, please check  https://check.spamhaus.org/results?query=171.48.96.197
+[2025-07-18 05:19:55][] Processed 134 (animabid@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 116 (anilworks55@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 101 (anilvermadms@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 136 (animahardware@gmail.com): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
 
-[2025-07-09 10:58:57][1-99] Processed 20 (anilpetpacks@gmail.com): valid - 142.251.10.27
-[2025-07-09 10:59:00][1-99] Processed 21 (anilpglobal@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:02][1-99] Processed 22 (anilph81@gmail.com): valid - 142.250.101.27
-[2025-07-09 10:59:04][1-99] Processed 23 (anilphad1971@gmail.com): valid - 142.250.4.27
-[2025-07-09 10:59:06][1-99] Processed 24 (anilphadnis72@gmail.com): valid - 142.250.4.27
-[2025-07-09 10:59:08][1-99] Processed 25 (anilpillaikanti@gmail.com): valid - 192.178.163.26
-[2025-07-09 10:59:25][1-99] Processed 26 (anilpillai@exotique-exports.com): invalid - SMTP server not ready or no response
-[2025-07-09 10:59:25][1-99] Processed 27 (anilpillai2008@yahoo.in): invalid - 
-[2025-07-09 10:59:27][1-99] Processed 28 (anilpimpalkar@lupin.com): invalid - 550 5.7.1 Service unavailable, Client host [171.48.96.197] blocked using Spamhaus. To request removal from this list see https://www.spamhaus.org/query/ip/171.48.96.197 AS(1450) [SG2PEPF000B66CB.apcprd03.prod.outlook.com 2025-07-09T08:59:27.349Z 08DDB67E486EB693]
+[2025-07-18 05:19:55][] Processed 111 (anilvsw@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 120 (anilyadav11@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 110 (anilvohra60@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 113 (anilvyas513@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 127 (anilyp0000@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 106 (anilvikas04@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 103 (anilvig@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 117 (anily@ddsolar.in): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
 
-[2025-07-09 10:59:29][1-99] Processed 29 (anilpipawat729@gmail.com): valid - 142.250.101.27
-[2025-07-09 10:59:31][1-99] Processed 30 (anilpipes@yahoo.com): invalid - 
-[2025-07-09 10:59:32][1-99] Processed 31 (anilpisalchemicals@rediffmail.com): invalid - 553 delivery from 171.48.96.197 is rejected. The connecting IP is blocked ; For further details, please check  https://check.spamhaus.org/results?query=171.48.96.197
+[2025-07-18 05:19:55][] Processed 108 (anilvkarma11@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 129 (anilzxi11@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 125 (anilyadavr1991@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 10:59:34][1-99] Processed 32 (anilpitaleamra@gmail.com): valid - 142.250.101.27
-[2025-07-09 10:59:34][1-99] Processed 33 (anilpithva@yahoo.co.in): invalid - 
-[2025-07-09 10:59:37][1-99] Processed 34 (anilpjoseph@gmail.com): valid - 173.194.208.26
-[2025-07-09 10:59:39][1-99] Processed 35 (anilpkarayi@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:42][1-99] Processed 36 (anilplastic274@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:44][1-99] Processed 37 (anilplsql69@gmail.com): valid - 173.194.208.26
-[2025-07-09 10:59:46][1-99] Processed 38 (anilpmsc@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:48][1-99] Processed 39 (anilpoddars68@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:51][1-99] Processed 40 (anilpokharana@gmail.com): valid - 192.178.163.26
-[2025-07-09 10:59:54][1-99] Processed 41 (anilprabhakar111@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:54][1-99] Processed 42 (anilprabhu_pune@yahoo.co.in): invalid - 
-[2025-07-09 10:59:56][1-99] Processed 43 (anilprabhu86@gmail.com): valid - 192.178.164.27
-[2025-07-09 10:59:57][1-99] Processed 44 (anilprachulu@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 05:19:55][] Processed 121 (anilyadav2k2@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 123 (anilyadavforever007@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 114 (anilwaje11@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 126 (anilyes@yahoo.com): valid - 98.136.96.91
+[2025-07-18 05:19:55][] Processed 105 (anilvijay8@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 104 (anilvijay390@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 124 (anilyadavpop@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 11:00:00][1-99] Processed 45 (anilprajapati100@gmail.com): valid - 192.178.163.26
-[2025-07-09 11:00:02][1-99] Processed 46 (anilprajapati22@ymail.com): invalid - 
-[2025-07-09 11:00:06][1-99] Processed 47 (anilprajapati8605@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:00:09][1-99] Processed 48 (anilprasadvr@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:00:10][1-99] Processed 49 (anilprint@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:00:12][1-99] Processed 50 (anilpriyanka55@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:00:16][1-99] Processed 51 (anilpsinghal@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:00:18][1-99] Processed 52 (anilpujari1988@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:00:19][1-99] Processed 53 (anilpuram2013@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:00:23][1-99] Processed 54 (anilpuri@essendeinki.com): invalid - 550 5.1.1 <anilpuri@essendeinki.com>: Recipient address rejected: User unknown in virtual mailbox table
+[2025-07-18 05:19:55][] Processed 144 (animatexinstruments@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 137 (animalontrack@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 109 (anilvkm28@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:19:55][] Processed 122 (anilyadav861@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:55][] Processed 142 (animateexim@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:19:55][] Processed 145 (animation108@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:55][] Processed 148 (animatornitesh@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:19:55][] Processed 141 (animateengravings@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:55][] Processed 146 (animatolalit@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:56][] Processed 112 (anilvyas157@gmail.com): valid - 173.194.208.26
+[2025-07-18 05:19:56][] Processed 143 (animatepharma@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:56][] Processed 100 (anilverma965@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 11:00:25][1-99] Processed 55 (anilpurohit@live.com): invalid - 
-[2025-07-09 11:00:27][1-99] Processed 56 (anilpurohit@vsnl.net): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
+[2025-07-18 05:19:56][] Processed 149 (animaxenterprise@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:19:56][] Processed 139 (animaroy285@yahoo.com): valid - 98.136.96.74
+[2025-07-18 05:19:56][] Processed 147 (animatormaac@gmail.com): valid - 173.194.208.26
+[2025-07-18 05:19:56][] Processed 132 (animaaquaengineers@gmail.com): valid - 173.194.208.26
+[2025-07-18 05:19:56][] Processed 115 (anilwakchaware99@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:09][] Processed 135 (animah@vsnl.com): invalid - Connection failed: Connection timed out
+[2025-07-18 05:20:23][] Processed 151 (animed6@yahoo.co.in): valid - 106.10.248.74
+[2025-07-18 05:20:23][] Processed 174 (animesh@unimeditrek.com): valid - 190.92.174.90
+[2025-07-18 05:20:23][] Processed 175 (animesh_31@yahoo.co.in): valid - 106.10.248.74
+[2025-07-18 05:20:24][] Processed 184 (animeshadak87@yahoo.in): valid - 106.10.248.73
+[2025-07-18 05:20:24][] Processed 173 (animesh@singhalcommodities.com): invalid - MAIL FROM failed
+[2025-07-18 05:20:24][] Processed 172 (animesh@ranktechsolutions.com): invalid - 550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors [MA1PEPF000072B1.INDPRD01.PROD.OUTLOOK.COM 2025-07-18T05:20:24.382Z 08DDC45A03F87038]
 
-[2025-07-09 11:00:29][1-99] Processed 57 (anilpurohit1972@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:00:30][1-99] Processed 58 (anilpurohit99@yahoo.co.in): invalid - 
-[2025-07-09 11:00:32][1-99] Processed 59 (anilquartz@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:00:34][1-99] Processed 60 (anilr_chopra@yahoo.com): invalid - 
-[2025-07-09 11:00:37][1-99] Processed 61 (anilraghav001@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 05:20:24][] Processed 156 (animeshjain@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:24][] Processed 165 (animesh.pandey@yesgroup.co.in): invalid - 550 Requested action not taken: mailbox unavailable
 
-[2025-07-09 11:00:39][1-99] Processed 62 (anilraghula009@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:00:42][1-99] Processed 63 (anilraheja04@gmail.com): valid - 192.178.163.26
-[2025-07-09 11:00:43][1-99] Processed 64 (anilraheja99@hotmail.com): invalid - 
-[2025-07-09 11:00:45][1-99] Processed 65 (anilraiks@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:00:48][1-99] Processed 66 (anilrai037@yahoo.com): invalid - 
-[2025-07-09 11:00:53][1-99] Processed 67 (anilrai792@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:00:55][1-99] Processed 68 (anilraj253177@gmail.com): valid - 192.178.163.26
-[2025-07-09 11:00:56][1-99] Processed 69 (anilraj555@yahoo.in): invalid - 
-[2025-07-09 11:00:57][1-99] Processed 70 (anilraja2014@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:00:59][1-99] Processed 71 (anilrajbala11@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:01:01][1-99] Processed 72 (anilrajbhatnagar@yahoo.com): invalid - 
-[2025-07-09 11:01:01][1-99] Processed 73 (anilrajdev65@rediffmail.com): invalid - 553 delivery from 171.48.96.197 is rejected. The connecting IP is blocked ; For further details, please check  https://check.spamhaus.org/results?query=171.48.96.197
+[2025-07-18 05:20:24][] Processed 164 (animesh.nandy@in.atlascopco.com): invalid - 550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors [AMS0EPF00000198.eurprd05.prod.outlook.com 2025-07-18T05:20:24.509Z 08DDC45C13E1C416]
 
-[2025-07-09 11:01:03][1-99] Processed 74 (anilrajoria76@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:01:05][1-99] Processed 75 (anilrajpacking@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:07][1-99] Processed 76 (anilrajpal897@gmail.com): valid - 192.178.163.26
-[2025-07-09 11:01:09][1-99] Processed 77 (anilrajpara111@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 05:20:24][] Processed 158 (animeshjr@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:24][] Processed 176 (animesh_mk@hotmail.com): valid - 52.101.9.27
+[2025-07-18 05:20:24][] Processed 182 (animesh331@hotmail.com): valid - 52.101.9.27
+[2025-07-18 05:20:24][] Processed 161 (animesh.mhatra@imprintindia.com): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
 
-[2025-07-09 11:01:11][1-99] Processed 78 (anilrajprajapti@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:01:14][1-99] Processed 79 (anilrajput8880971269@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:01:16][1-99] Processed 80 (anilrajput987@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:01:18][1-99] Processed 81 (anilraju472@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:01:19][1-99] Processed 82 (anilramose@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:01:21][1-99] Processed 83 (anilrana@sugatsune.in): invalid - 550 5.7.1 Service unavailable, Client host [171.48.96.197] blocked using Spamhaus. To request removal from this list see https://www.spamhaus.org/query/ip/171.48.96.197 AS(1450) [TY2PEPF0000AB89.apcprd03.prod.outlook.com 2025-07-09T09:01:21.659Z 08DDBEAA23F897D0]
+[2025-07-18 05:20:24][] Processed 152 (animeshag20@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:24][] Processed 166 (animeshtry99@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:24][] Processed 193 (animeshdubey22@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:24][] Processed 150 (animchandan@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:20:24][] Processed 154 (animeshdoodledesign@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:24][] Processed 178 (animesh04101981@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:24][] Processed 153 (animesh.bose@almatis.com): valid - 18.185.115.250
+[2025-07-18 05:20:24][] Processed 183 (animesh97mahato@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:24][] Processed 187 (animeshbardhan@yahoo.com): valid - 98.136.96.74
+[2025-07-18 05:20:25][] Processed 179 (animesh1972birla@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:25][] Processed 195 (animeshdutta45@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:25][] Processed 159 (animesh.kumar@iup-services.com): valid - 192.178.164.27
+[2025-07-18 05:20:25][] Processed 160 (animesh.lakhotia@lakhotiagroup.com): valid - 192.178.163.26
+[2025-07-18 05:20:25][] Processed 194 (animeshdutta@redifmail.com): valid - 103.224.212.34
+[2025-07-18 05:20:25][] Processed 157 (animeshjainagro@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:20:25][] Processed 163 (animeshmondal786@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 197 (animeshgoel1@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 168 (animesh@avanitalc.com): valid - 173.194.208.26
+[2025-07-18 05:20:25][] Processed 155 (animeshidea@gmail.com): valid - 142.251.10.27
+[2025-07-18 05:20:25][] Processed 199 (animeshgupta150@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:25][] Processed 180 (animesh1saha@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 162 (animeshmittal20@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:20:25][] Processed 191 (animeshdalui2012@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 185 (animeshb244@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:20:25][] Processed 188 (animeshbindal2@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 181 (animesh2394@gmail.com): valid - 173.194.208.26
+[2025-07-18 05:20:25][] Processed 198 (animeshgondalia@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 192 (animeshdas31881@gmail.com): valid - 173.194.208.26
+[2025-07-18 05:20:25][] Processed 169 (animesh@celsius.in): valid - 67.195.204.83
+[2025-07-18 05:20:25][] Processed 177 (animesh_singal@yahoo.com): valid - 98.136.96.74
+[2025-07-18 05:20:25][] Processed 196 (animeshghosh27@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:20:25][] Processed 167 (animeshvbmv@gmail.com): valid - 142.250.101.26
+[2025-07-18 05:20:25][] Processed 190 (animeshchakdgp79@gmail.com): valid - 192.178.164.27
+[2025-07-18 05:20:25][] Processed 186 (animeshbanerjee@tapengineering.com): valid - 149.13.75.27
+[2025-07-18 05:20:26][] Processed 171 (animesh@protekgulf.com): valid - 135.148.130.76
+[2025-07-18 05:20:26][] Processed 189 (animeshbiswas606@gmail.com): valid - 192.178.163.27
+[2025-07-18 05:22:59][] Processed 200 (panchalpavan800@gmail.com): valid - 192.178.163.27
+[2025-07-18 07:11:34][] Processed 4 (anilvidhan@rediffmail.com): valid - 202.137.234.30
+[2025-07-18 07:11:34][] Processed 9 (anilvishnu.2008@rediffmail.com): valid - 202.137.234.30
+[2025-07-18 07:11:35][] Processed 5 (anilvig@gmail.com): valid - 192.178.163.27
+[2025-07-18 07:11:35][] Processed 14 (anilvyas157@gmail.com): valid - 142.251.10.26
+[2025-07-18 07:11:35][] Processed 13 (anilvsw@gmail.com): valid - 142.251.10.26
+[2025-07-18 07:11:35][] Processed 2 (anilverma965@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 11:01:22][1-99] Processed 84 (anilrana61@rediffmail.com): invalid - 553 delivery from 171.48.96.197 is rejected. The connecting IP is blocked ; For further details, please check  https://check.spamhaus.org/results?query=171.48.96.197
+[2025-07-18 07:11:36][] Processed 12 (anilvohra60@gmail.com): valid - 142.251.10.26
+[2025-07-18 07:11:36][] Processed 10 (anilvkarma11@gmail.com): valid - 192.178.164.26
+[2025-07-18 07:11:36][] Processed 11 (anilvkm28@gmail.com): valid - 192.178.164.26
+[2025-07-18 07:11:36][] Processed 3 (anilvermadms@gmail.com): valid - 142.250.101.26
+[2025-07-18 07:11:36][] Processed 8 (anilvikas04@gmail.com): valid - 192.178.164.26
+[2025-07-18 07:11:36][] Processed 1 (panchalpavan800@gmail.com): valid - 142.250.101.26
+[2025-07-18 07:11:36][] Processed 7 (anilvijay8@gmail.com): valid - 192.178.164.26
+[2025-07-18 07:11:36][] Processed 6 (anilvijay390@gmail.com): valid - 142.250.101.26
+[2025-07-18 07:12:32][] Processed 20 (anilyadav@karam.in): invalid - 530 Authentication required
 
-[2025-07-09 11:01:23][1-99] Processed 85 (anilranasy@gmail.com): valid - 192.178.164.27
-[2025-07-09 11:01:25][1-99] Processed 86 (anilranimgr@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:27][1-99] Processed 87 (anilranka44@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 07:12:32][] Processed 15 (anilvyas513@gmail.com): valid - 142.251.10.26
+[2025-07-18 07:12:32][] Processed 19 (anily@ddsolar.in): invalid - 550-5.1.1 The email account that you tried to reach does not exist. Please try
 
-[2025-07-09 11:01:29][1-99] Processed 88 (anilrashmienterprises@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:01:29][1-99] Processed 89 (anilrathaur@rediffmail.com): invalid - 553 delivery from 171.48.96.197 is rejected. The connecting IP is blocked ; For further details, please check  https://check.spamhaus.org/results?query=171.48.96.197
+[2025-07-18 07:12:32][] Processed 25 (anilyadavforever007@gmail.com): valid - 192.178.163.27
+[2025-07-18 07:12:32][] Processed 17 (anilwakchaware99@gmail.com): valid - 142.250.101.26
+[2025-07-18 07:12:32][] Processed 16 (anilwaje11@gmail.com): valid - 192.178.163.27
+[2025-07-18 07:12:32][] Processed 24 (anilyadav861@gmail.com): valid - 192.178.163.27
+[2025-07-18 07:12:32][] Processed 22 (anilyadav11@gmail.com): valid - 142.250.101.26
+[2025-07-18 07:12:32][] Processed 26 (anilyadavpop@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 11:01:31][1-99] Processed 90 (anilrathi091@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:32][1-99] Processed 91 (anilrathod7111@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
+[2025-07-18 07:12:32][] Processed 21 (anilyadav@taehwaindia.com): invalid - MAIL FROM failed
+[2025-07-18 07:12:33][] Processed 27 (anilyadavr1991@gmail.com): retryable - 452-4.2.2 The recipient's inbox is out of storage space. Please direct the
 
-[2025-07-09 11:01:33][1-99] Processed 92 (anilrathore437@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:35][1-99] Processed 93 (anilraunchhela@yahoo.com): invalid - 
-[2025-07-09 11:01:37][1-99] Processed 94 (anilraut2008@gmail.com): valid - 173.194.208.26
-[2025-07-09 11:01:38][1-99] Processed 95 (anilraval1976@gmail.com): valid - 192.178.163.26
-[2025-07-09 11:01:40][1-99] Processed 96 (anilravani111@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:42][1-99] Processed 97 (anilrawat575705@gmail.com): valid - 142.250.101.27
-[2025-07-09 11:01:44][1-99] Processed 98 (anilrawatgram@gmail.com): valid - 142.250.4.27
-[2025-07-09 11:01:44][1-99] Processed 99 (anilray45@yahoo.in): invalid - 
+[2025-07-18 07:12:33][] Processed 23 (anilyadav2k2@gmail.com): valid - 192.178.164.26
+[2025-07-18 07:12:33][] Processed 18 (anilworks55@gmail.com): valid - 173.194.208.26

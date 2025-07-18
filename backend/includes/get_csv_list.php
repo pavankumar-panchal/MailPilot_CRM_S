@@ -18,11 +18,7 @@ $params = [];
 $where = '';
 
 if ($search !== '') {
-    $where = "WHERE csv_list.list_name LIKE ? OR csv_list.file_name LIKE ? OR EXISTS (
-        SELECT 1 FROM emails WHERE emails.csv_list_id = csv_list.id AND emails.email LIKE ?
-    )";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $where = "WHERE csv_list.list_name LIKE ?";
     $params[] = "%$search%";
 }
 

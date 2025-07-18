@@ -4,9 +4,9 @@ import { Link, NavLink } from "react-router-dom";
 const navLinks = [
   { to: "/", icon: "fa-check-circle", label: "Verification" },
   { to: "/smtp", icon: "fa-server", label: "SMTP" },
+  { to: "/workers", icon: "fa-users-cog", label: "Workers" }, // Moved Workers link here
   { to: "/campaigns", icon: "fa-bullhorn", label: "Campaigns" },
   { to: "/master", icon: "fa-crown", label: "Master" },
-  { to: "/workers", icon: "fa-users-cog", label: "Workers" }, // Added Workers link
 ];
 
 const monitorLinks = [

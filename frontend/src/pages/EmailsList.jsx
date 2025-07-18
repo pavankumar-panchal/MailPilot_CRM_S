@@ -302,13 +302,16 @@ const EmailsList = ({ listId, onClose }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                    </div>
-                  </td>
-                </tr>
+                // Skeleton rows for smooth loading
+                Array.from({ length: pagination.rowsPerPage }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    {Array.from({ length: 7 }).map((__, colIdx) => (
+                      <td key={colIdx} className="px-6 py-4">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
               ) : paginatedEmails.length === 0 ? (
                 <tr>
                   <td
@@ -320,7 +323,7 @@ const EmailsList = ({ listId, onClose }) => {
                 </tr>
               ) : (
                 paginatedEmails.map((email) => (
-                  <tr key={email.id} className="hover:bg-gray-50">
+                  <tr key={email.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {email.id}
                     </td>
