@@ -11,43 +11,43 @@ $fullPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $basePath = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
 $request = str_replace($basePath, '', $fullPath);
 
-$method = $_SERVER['REQUEST_METHOD'];
-
-// Normalize request for query params (so /api/master/campaigns and /api/master/campaigns?id=1 both match)
+// Remove query params
 $request = preg_replace('/\?.*/', '', $request);
 
+$method = $_SERVER['REQUEST_METHOD'];
+
 try {
-    switch ($request) {
-        case '/api/upload':
+    switch (true) {
+        case ($request === '/api/upload'):
             require __DIR__ . '/../public/email_processor.php';
             break;
 
-        case '/api/results':
+        case ($request === '/api/results'):
             require __DIR__ . '/../includes/get_results.php';
             break;
 
-        case '/api/monitor/campaigns':
+        case ($request === '/api/monitor/campaigns'):
             if ($method === 'GET')
                 require __DIR__ . '/../includes/monitor_campaigns.php';
             break;
 
-        case '/api/master/campaigns':
+        case ($request === '/api/master/campaigns'):
             require __DIR__ . '/../includes/campaign.php';
             break;
 
-        case '/api/master/campaigns_master':
+        case ($request === '/api/master/campaigns_master'):
             require __DIR__ . '/../public/campaigns_master.php';
             break;
 
-        case '/api/master/smtps':
+        case ($request === '/api/master/smtps'):
             require __DIR__ . '/../includes/master_smtps.php';
             break;
 
-        case '/api/master/distribution':
+        case ($request === '/api/master/distribution'):
             require __DIR__ . '/../includes/campaign_distribution.php';
             break;
 
-        case '/api/retry-failed':
+        case ($request === '/api/retry-failed'):
             if ($method === 'POST') {
                 $cmd = 'php ' . escapeshellarg(__DIR__ . '/../includes/retry_smtp.php') . ' > /dev/null 2>&1 &';
                 exec($cmd);
@@ -55,8 +55,7 @@ try {
             }
             break;
 
-        case '/api/master/email-counts':
-            // Return total, pending, sent, failed counts
+        case ($request === '/api/master/email-counts'):
             $result = $conn->query("
                 SELECT
                     COUNT(*) AS total_valid,
@@ -76,8 +75,14 @@ try {
             ]);
             break;
 
-        case '/api/workers':
+        case ($request === '/api/workers'):
             require __DIR__ . '/../includes/workers.php';
+            break;
+
+        case ($request === '/api/received-response'):
+        case ($request === '/api/emails'):
+        case (strpos($request, '/api/emails') === 0):
+            require __DIR__ . '/../app/received_response.php';
             break;
 
         default:
@@ -89,32 +94,3 @@ try {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
-
-// // filepath: /opt/lampp/htdocs/Verify_email/backend/includes/get_results.php
-// require_once __DIR__ . '/../config/db.php';
-
-// // Optional: handle export requests
-// if (isset($_GET['export'])) {
-//     $type = $_GET['export'];
-//     $status = ($type === 'valid') ? 1 : 0;
-//     header('Content-Type: text/csv');
-//     header('Content-Disposition: attachment; filename="' . $type . '_emails.csv"');
-//     $out = fopen('php://output', 'w');
-//     fputcsv($out, ['email']);
-//     $result = $conn->query("SELECT email FROM emails WHERE domain_status = $status");
-//     while ($row = $result->fetch_assoc()) {
-//         fputcsv($out, [$row['email']]);
-//     }
-//     fclose($out);
-//     exit;
-// }
-
-// // Default: return all emails as JSON
-// $result = $conn->query("SELECT id, email, sp_account, sp_domain, verified, status, validation_response FROM emails ORDER BY id DESC");
-// $rows = [];
-// while ($row = $result->fetch_assoc()) {
-//     // Optionally cast verified to boolean
-//     $row['verified'] = (bool) $row['verified'];
-//     $rows[] = $row;
-// }
-// echo json_encode($rows);
