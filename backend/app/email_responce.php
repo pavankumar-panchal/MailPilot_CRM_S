@@ -6,6 +6,8 @@ if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
 
+
+
 // Get active SMTP servers
 $smtps = $db->query("SELECT * FROM smtp_servers WHERE is_active = 1")->fetch_all(MYSQLI_ASSOC);
 
