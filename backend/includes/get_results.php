@@ -124,37 +124,71 @@ if (isset($_GET['retry_failed']) && $_GET['retry_failed'] == '1') {
 
 // --- PAGINATED EMAIL LIST (STRICT, SAFE FOR 2 CRORE DATA) ---
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 100; // default 100 rows per page
+$limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 100;
 $offset = ($page - 1) * $limit;
 
 $csv_list_id = isset($_GET['csv_list_id']) ? intval($_GET['csv_list_id']) : 0;
 $filter = isset($_GET['filter']) ? $_GET['filter'] : '';
 $whereParts = [];
+$params = [];
+$types = '';
+
 if ($csv_list_id > 0) {
-    $whereParts[] = "csv_list_id = $csv_list_id";
+    $whereParts[] = "csv_list_id = ?";
+    $params[] = $csv_list_id;
+    $types .= 'i';
 }
 if ($filter !== '') {
-    if ($filter === 'valid') $whereParts[] = "domain_status = 1";
-    if ($filter === 'invalid') $whereParts[] = "domain_status = 0";
-    if ($filter === 'timeout') $whereParts[] = "(validation_response LIKE '%timeout%' OR validation_response LIKE '%Connection refused%' OR validation_response LIKE '%failed to connect%')";
+    if ($filter === 'valid') {
+        $whereParts[] = "domain_status = ?";
+        $params[] = 1;
+        $types .= 'i';
+    }
+    if ($filter === 'invalid') {
+        $whereParts[] = "domain_status = ?";
+        $params[] = 0;
+        $types .= 'i';
+    }
+    if ($filter === 'timeout') {
+        $whereParts[] = "(validation_response LIKE ? OR validation_response LIKE ? OR validation_response LIKE ?)";
+        $params[] = '%timeout%';
+        $params[] = '%Connection refused%';
+        $params[] = '%failed to connect%';
+        $types .= 'sss';
+    }
 }
 $where = count($whereParts) ? 'WHERE ' . implode(' AND ', $whereParts) : '';
 
-// Always use pagination for all list endpoints
-$sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response 
-        FROM emails $where ORDER BY id ASC LIMIT $limit OFFSET $offset";
-$countResult = $conn->query("SELECT COUNT(*) as cnt FROM emails $where");
+// Get total count
+$countSql = "SELECT COUNT(*) as cnt FROM emails $where";
+$countStmt = $conn->prepare($countSql);
+if ($params) $countStmt->bind_param($types, ...$params);
+$countStmt->execute();
+$countResult = $countStmt->get_result();
 $total = $countResult ? (int) $countResult->fetch_assoc()['cnt'] : 0;
+$countStmt->close();
 
-$result = $conn->query($sql);
-$emails = [];
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['domain_verified'] = (bool) $row['domain_verified'];
-        $row['domain_status'] = (int) $row['domain_status'];
-        $emails[] = $row;
-    }
+// Get paginated data
+$sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response 
+        FROM emails $where ORDER BY id ASC LIMIT ? OFFSET ?";
+$dataStmt = $conn->prepare($sql);
+if ($params) {
+    $typesWithLimit = $types . 'ii';
+    $dataParams = array_merge($params, [$limit, $offset]);
+    $dataStmt->bind_param($typesWithLimit, ...$dataParams);
+} else {
+    $dataStmt->bind_param('ii', $limit, $offset);
 }
+$dataStmt->execute();
+$result = $dataStmt->get_result();
+
+$emails = [];
+while ($row = $result->fetch_assoc()) {
+    $row['domain_verified'] = (bool) $row['domain_verified'];
+    $row['domain_status'] = (int) $row['domain_status'];
+    $emails[] = $row;
+}
+$dataStmt->close();
 
 echo json_encode([
     "data" => $emails,

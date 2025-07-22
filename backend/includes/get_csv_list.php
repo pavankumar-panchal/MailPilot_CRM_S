@@ -25,17 +25,19 @@ if ($search !== '') {
 // Get total count
 $countSql = "SELECT COUNT(*) as total FROM csv_list $where";
 $stmt = $conn->prepare($countSql);
-if ($where !== '')
+if ($where !== '') {
     $stmt->bind_param(str_repeat('s', count($params)), ...$params);
+}
 $stmt->execute();
 $countResult = $stmt->get_result();
 $total = $countResult->fetch_assoc()['total'] ?? 0;
+$stmt->close();
 
 // Get paginated data
 $sql = "SELECT * FROM csv_list $where ORDER BY id DESC LIMIT ? OFFSET ?";
-$stmt = $conn->prepare($sql);
 $bindTypes = ($where !== '') ? str_repeat('s', count($params)) . "ii" : "ii";
 $bindParams = ($where !== '') ? array_merge($params, [$limit, $offset]) : [$limit, $offset];
+$stmt = $conn->prepare($sql);
 $stmt->bind_param($bindTypes, ...$bindParams);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -53,6 +55,7 @@ while ($row = $result->fetch_assoc()) {
 
     $lists[] = $row;
 }
+$stmt->close();
 
 echo json_encode([
     'data' => $lists,

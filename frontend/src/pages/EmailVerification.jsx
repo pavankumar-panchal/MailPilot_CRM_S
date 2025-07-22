@@ -133,7 +133,10 @@ const EmailVerification = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.size > MAX_CSV_SIZE) {
-      setStatus({ type: "error", message: "CSV file size must be 5 MB or less." });
+      setStatus({
+        type: "error",
+        message: "CSV file size must be 5 MB or less.",
+      });
       return;
     }
     setFormData((prev) => ({ ...prev, csvFile: file }));
@@ -150,9 +153,13 @@ const EmailVerification = () => {
 
     // Check if CSV file has data
     const fileText = await formData.csvFile.text();
-    const lines = fileText.split(/\r?\n/).filter(line => line.trim() !== "");
-    if (lines.length < 2) { // Assuming first line is header
-      setStatus({ type: "error", message: "CSV file must contain at least one data row." });
+    const lines = fileText.split(/\r?\n/).filter((line) => line.trim() !== "");
+    if (lines.length < 2) {
+      // Assuming first line is header
+      setStatus({
+        type: "error",
+        message: "CSV file must contain at least one data row.",
+      });
       return;
     }
 
@@ -396,7 +403,10 @@ const EmailVerification = () => {
       const countData = await resCount.json();
 
       if (!countData.total || countData.total === 0) {
-        setStatus({ type: "error", message: "No failed emails to retry for this list" });
+        setStatus({
+          type: "error",
+          message: "No failed emails to retry for this list",
+        });
         setRetryingList((prev) => ({ ...prev, [listId]: false }));
         return;
       }
@@ -731,7 +741,6 @@ const EmailVerification = () => {
                 </svg>
                 {loading ? "Retrying..." : `Retry Failed (${retryFailedCount})`}
               </button> */}
-           
             </div>
           </div>
         </div>
@@ -762,7 +771,19 @@ const EmailVerification = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {lists.length === 0 ? (
+              {loading ? (
+                Array.from({ length: listPagination.rowsPerPage }).map(
+                  (_, idx) => (
+                    <tr key={idx} className="animate-pulse">
+                      {Array.from({ length: 6 }).map((__, colIdx) => (
+                        <td key={colIdx} className="px-6 py-4">
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                )
+              ) : lists.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -774,7 +795,6 @@ const EmailVerification = () => {
                   </td>
                 </tr>
               ) : (
-                // Filter lists by list name (case-insensitive)
                 lists
                   .filter((list) =>
                     list.list_name
@@ -885,7 +905,9 @@ const EmailVerification = () => {
                           title="Retry failed emails for this list"
                         >
                           <svg
-                            className={`w-4 h-4 mr-1 ${retryingList[list.id] ? "animate-spin" : ""}`}
+                            className={`w-4 h-4 mr-1 ${
+                              retryingList[list.id] ? "animate-spin" : ""
+                            }`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
