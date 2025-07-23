@@ -35,13 +35,13 @@ if ($conn_logs->connect_error) {
 }
 
 // Configuration
-define('MAX_WORKERS', 100);
+define('MAX_WORKERS', 200);
 define('EMAILS_PER_WORKER', 500);
 define('WORKER_SCRIPT', __DIR__ . '/smtp_worker2.php');
 define('LOG_FILE', __DIR__ . '/../storage/smtp_parallel.log');
 
 set_time_limit(0);
-ini_set('memory_limit', '512M');
+ini_set('memory_limit', '2048M');
 
 // Create worker script if not exists
 if (!file_exists(WORKER_SCRIPT)) {

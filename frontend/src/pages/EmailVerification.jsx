@@ -110,15 +110,6 @@ const EmailVerification = () => {
     fetchRetryFailedCount();
   }, [lists]);
 
-  // Optionally, poll lists and retry count every 5 seconds for live updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLists();
-      fetchRetryFailedCount();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   useEffect(() => {
     fetchLists();
   }, [listPagination.page, listPagination.rowsPerPage, listPagination.search]);
