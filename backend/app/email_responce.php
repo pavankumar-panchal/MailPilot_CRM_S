@@ -1,11 +1,14 @@
 <?php
 // DB Connection
+
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
+
 error_reporting(0);
 $db = new mysqli("localhost", "root", "", "CRM");
 if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
-
 
 
 // Get active SMTP servers
@@ -160,7 +163,7 @@ function storeEmail($email, $db)
     // Convert date to MySQL format
     $date_received = date('Y-m-d H:i:s', strtotime($email['date']));
 
-    $query = "INSERT INTO processed_emails 
+    $query = "INSERT IGNORE INTO processed_emails 
               (smtp_server_id, from_email, from_name, subject, body, headers, 
                is_unsubscribe, is_bounce, bounce_reason, unsubscribe_method, 
                date_received, uid)
@@ -194,7 +197,7 @@ function storeEmail($email, $db)
     $unsubscribes_count = $is_unsubscribe ? 1 : 0;
     $bounces_count = $is_bounce ? 1 : 0;
 
-    $query = "INSERT INTO email_processing_logs 
+    $query = "INSERT IGNORE INTO email_processing_logs 
               (smtp_server_id, processed_count, unsubscribes_count, bounces_count)
               VALUES 
               ($account_id, $processed_count, $unsubscribes_count, $bounces_count)";
@@ -276,4 +279,3 @@ function formatDate($dateString, $full = false)
 }
 
 $dbStats = getDashboardStats($db);
-?>
