@@ -60,9 +60,8 @@ const EmailVerification = () => {
   // Search input state
   const [searchInput, setSearchInput] = useState("");
 
-  // Fetch lists, but keep current page if possible
-  const fetchLists = async (keepPage = false) => {
-    setLoading(true); // Show skeleton immediately
+  // Fetch lists
+  const fetchLists = async () => {
     try {
       const params = new URLSearchParams({
         page: listPagination.page,
@@ -76,27 +75,12 @@ const EmailVerification = () => {
       const data = await res.json();
 
       setLists(Array.isArray(data.data) ? data.data : []);
-      // Only update total and page if keepPage is true
-      if (keepPage) {
-        const maxPage = Math.max(
-          1,
-          Math.ceil((data.total || 0) / listPagination.rowsPerPage)
-        );
-        setListPagination((prev) => ({
-          ...prev,
-          total: data.total || 0,
-          page: Math.min(prev.page, maxPage),
-        }));
-      } else {
-        setListPagination((prev) => ({ ...prev, total: data.total || 0 }));
-      }
+      setListPagination((prev) => ({ ...prev, total: data.total || 0 }));
     } catch (error) {
       console.error("Error fetching lists:", error);
       setLists([]);
       setListPagination((prev) => ({ ...prev, total: 0 }));
       setStatus({ type: "error", message: "Failed to load lists" });
-    } finally {
-      setLoading(false); // Hide skeleton after fetch
     }
   };
 
@@ -109,12 +93,15 @@ const EmailVerification = () => {
       const data = await res.json();
       if (data.status === "success") {
         setRetryFailedCount(data.total);
+        // setStatus({ type: "success", message: data.message });
       } else {
         setRetryFailedCount(0);
+        // setStatus({ type: "error", message: data.message });
       }
     } catch (error) {
       console.error("Error fetching retry failed count:", error);
       setRetryFailedCount(0);
+      // setStatus({ type: "error", message: "Failed to fetch retry failed count" });
     }
   };
 
@@ -123,31 +110,18 @@ const EmailVerification = () => {
     fetchRetryFailedCount();
   }, [lists]);
 
-  // Poll lists only during progress (preserves pagination)
+  // Optionally, poll lists and retry count every 5 seconds for live updates
   useEffect(() => {
-    let interval;
-    if (showProgress) {
-      fetchLists(true); // fetch immediately, preserve page
-      fetchRetryFailedCount(); // fetch retry count immediately
-      interval = setInterval(() => {
-        fetchLists(true); // keep current page
-        fetchRetryFailedCount(); // keep retry count updated
-      }, 2000);
-    }
-    return () => clearInterval(interval);
-  }, [showProgress]);
-
-  // Fetch lists on pagination/search change (normal user navigation)
-  useEffect(() => {
-    if (!showProgress) {
+    const interval = setInterval(() => {
       fetchLists();
-    }
-  }, [
-    listPagination.page,
-    listPagination.rowsPerPage,
-    listPagination.search,
-    showProgress,
-  ]);
+      fetchRetryFailedCount();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchLists();
+  }, [listPagination.page, listPagination.rowsPerPage, listPagination.search]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -159,10 +133,7 @@ const EmailVerification = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.size > MAX_CSV_SIZE) {
-      setStatus({
-        type: "error",
-        message: "CSV file size must be 5 MB or less.",
-      });
+      setStatus({ type: "error", message: "CSV file size must be 5 MB or less." });
       return;
     }
     setFormData((prev) => ({ ...prev, csvFile: file }));
@@ -179,13 +150,9 @@ const EmailVerification = () => {
 
     // Check if CSV file has data
     const fileText = await formData.csvFile.text();
-    const lines = fileText.split(/\r?\n/).filter((line) => line.trim() !== "");
-    if (lines.length < 2) {
-      // Assuming first line is header
-      setStatus({
-        type: "error",
-        message: "CSV file must contain at least one data row.",
-      });
+    const lines = fileText.split(/\r?\n/).filter(line => line.trim() !== "");
+    if (lines.length < 2) { // Assuming first line is header
+      setStatus({ type: "error", message: "CSV file must contain at least one data row." });
       return;
     }
 
@@ -255,9 +222,9 @@ const EmailVerification = () => {
         const data = await res.json();
         setProgress(data);
 
-        // Only update lists and pagination if verification is running
-        fetchLists(true);
+        fetchLists();
 
+        // FIX: Replace invalid unicode 'U+0030' with 0
         if (data.total > 0 && data.processed >= data.total) {
           clearInterval(progressInterval.current);
           setTimeout(() => {
@@ -328,6 +295,16 @@ const EmailVerification = () => {
       return () => clearTimeout(timer);
     }
   }, [status]);
+
+  useEffect(() => {
+    let interval;
+    if (showProgress) {
+      interval = setInterval(() => {
+        fetchLists();
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [showProgress]);
 
   // Update handleSearchChange to update local input state immediately
   const handleSearchChange = (e) => {
@@ -419,10 +396,7 @@ const EmailVerification = () => {
       const countData = await resCount.json();
 
       if (!countData.total || countData.total === 0) {
-        setStatus({
-          type: "error",
-          message: "No failed emails to retry for this list",
-        });
+        setStatus({ type: "error", message: "No failed emails to retry for this list" });
         setRetryingList((prev) => ({ ...prev, [listId]: false }));
         return;
       }
@@ -757,6 +731,7 @@ const EmailVerification = () => {
                 </svg>
                 {loading ? "Retrying..." : `Retry Failed (${retryFailedCount})`}
               </button> */}
+           
             </div>
           </div>
         </div>
@@ -787,9 +762,7 @@ const EmailVerification = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <TableSkeleton rows={listPagination.rowsPerPage} />
-              ) : lists.length === 0 ? (
+              {lists.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -801,131 +774,136 @@ const EmailVerification = () => {
                   </td>
                 </tr>
               ) : (
-                lists.map((list) => (
-                  <tr
-                    key={list.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {list.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {list.list_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeColor(
-                          list.status
-                        )}`}
-                      >
-                        {list.status.charAt(0).toUpperCase() +
-                          list.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {list.total_emails} total
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="text-emerald-600 font-medium">
-                        {list.valid_count || 0} valid
-                      </span>{" "}
-                      /{" "}
-                      <span className="text-red-600 font-medium">
-                        {list.invalid_count || 0} invalid
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
-                      <button
-                        onClick={() => setExpandedListId(list.id)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors flex items-center"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                // Filter lists by list name (case-insensitive)
+                lists
+                  .filter((list) =>
+                    list.list_name
+                      .toLowerCase()
+                      .includes(listPagination.search.toLowerCase())
+                  )
+                  .map((list) => (
+                    <tr
+                      key={list.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {list.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {list.list_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeColor(
+                            list.status
+                          )}`}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                        View
-                      </button>
-                      <button
-                        onClick={() => exportEmails("valid", list.id)}
-                        className="text-green-600 hover:text-green-800 transition-colors flex items-center"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          {list.status.charAt(0).toUpperCase() +
+                            list.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {list.total_emails} total
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className="text-emerald-600 font-medium">
+                          {list.valid_count || 0} valid
+                        </span>{" "}
+                        /{" "}
+                        <span className="text-red-600 font-medium">
+                          {list.invalid_count || 0} invalid
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                        <button
+                          onClick={() => setExpandedListId(list.id)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors flex items-center"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        Valid
-                      </button>
-                      <button
-                        onClick={() => exportEmails("invalid", list.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors flex items-center"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                          View
+                        </button>
+                        <button
+                          onClick={() => exportEmails("valid", list.id)}
+                          className="text-green-600 hover:text-green-800 transition-colors flex items-center"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        Invalid
-                      </button>
-                      <button
-                        onClick={() => handleRetryFailedByList(list.id)}
-                        disabled={retryingList[list.id] || !list.failed_count}
-                        className="text-yellow-600 hover:text-yellow-800 transition-colors flex items-center border border-yellow-300 rounded px-2 py-1 disabled:opacity-60"
-                        title="Retry failed emails for this list"
-                      >
-                        <svg
-                          className={`w-4 h-4 mr-1 ${
-                            retryingList[list.id] ? "animate-spin" : ""
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          Valid
+                        </button>
+                        <button
+                          onClick={() => exportEmails("invalid", list.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors flex items-center"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 4v5h5M20 20v-5h-5M5.5 8.5a8 8 0 0113 0M18.5 15.5a8 8 0 01-13 0"
-                          />
-                        </svg>
-                        {retryingList[list.id]
-                          ? "Retrying..."
-                          : `Retry (${list.failed_count || 0})`}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          Invalid
+                        </button>
+                        <button
+                          onClick={() => handleRetryFailedByList(list.id)}
+                          disabled={retryingList[list.id] || !list.failed_count}
+                          className="text-yellow-600 hover:text-yellow-800 transition-colors flex items-center border border-yellow-300 rounded px-2 py-1 disabled:opacity-60"
+                          title="Retry failed emails for this list"
+                        >
+                          <svg
+                            className={`w-4 h-4 mr-1 ${retryingList[list.id] ? "animate-spin" : ""}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 4v5h5M20 20v-5h-5M5.5 8.5a8 8 0 0113 0M18.5 15.5a8 8 0 01-13 0"
+                            />
+                          </svg>
+                          {retryingList[list.id]
+                            ? "Retrying..."
+                            : `Retry (${list.failed_count || 0})`}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
@@ -1095,20 +1073,5 @@ const EmailVerification = () => {
     </div>
   );
 };
-
-// Skeleton loader for table rows
-const TableSkeleton = ({ rows = 10 }) => (
-  <>
-    {Array.from({ length: rows }).map((_, idx) => (
-      <tr key={idx} className="animate-pulse">
-        {Array.from({ length: 6 }).map((__, colIdx) => (
-          <td key={colIdx} className="px-6 py-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-          </td>
-        ))}
-      </tr>
-    ))}
-  </>
-);
 
 export default EmailVerification;

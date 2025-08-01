@@ -15,9 +15,9 @@ date_default_timezone_set('Asia/Kolkata');
 
 // Get campaign ID from command line
 
-$campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
+// $campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
 
-// $campaign_id = 1;
+$campaign_id = 1;
 
 $GLOBALS['campaign_id'] = $campaign_id;
 
@@ -40,25 +40,23 @@ register_shutdown_function(function () use ($pid_file) {
 // Main processing loop
 while (true) {
     try {
+        $dbConfig = [
+            'host' => '127.0.0.1',
+            'username' => 'root',
+            'password' => '',
+            'name' => 'CRM',
+            'port' => 3306
+        ];
 
-$dbConfig = [
-    'host' => '127.0.0.1',
-    'username' => 'root',
-    'password' => '',
-    'name' => 'CRM',
-    'port' => 3306
-];
+        $conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
 
-$conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-
-
-        // Check campaign status
+        // Lock only for status check/update
+        $conn->begin_transaction();
         $result = $conn->query("
             SELECT status, total_emails, sent_emails, pending_emails, failed_emails
             FROM campaign_status 
@@ -67,6 +65,7 @@ if ($conn->connect_error) {
 
         if ($result->num_rows === 0) {
             logMessage("Campaign not found. Exiting.");
+            $conn->commit();
             break;
         }
 
@@ -76,9 +75,13 @@ if ($conn->connect_error) {
         // Exit if campaign is paused, completed, or not running
         if ($status !== 'running') {
             logMessage("Campaign status is '$status'. Exiting process.");
+            $conn->commit();
             break;
         }
 
+        $conn->commit(); // Release lock ASAP
+
+        // All other queries and processing outside transaction
         // Check network connectivity
         if (!checkNetworkConnectivity()) {
             logMessage("Network connection unavailable. Waiting to retry...", 'WARNING');
@@ -102,6 +105,7 @@ if ($conn->connect_error) {
             $conn->query("UPDATE campaign_status SET status = 'completed', pending_emails = 0, end_time = NOW() 
                       WHERE campaign_id = $campaign_id");
             logMessage("All valid emails processed. Campaign completed.");
+            $conn->commit(); // Release lock
             break;
         }
 
@@ -135,6 +139,7 @@ if ($conn->connect_error) {
             }
             sleep(30); // Longer sleep if no emails processed
         }
+        $conn->commit(); // Release lock after processing
     } catch (Exception $e) {
         logMessage("Error in main loop: " . $e->getMessage(), 'ERROR');
         sleep(60);
