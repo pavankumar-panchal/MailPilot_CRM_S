@@ -19,46 +19,28 @@ $totalStats = [
 
 function fetchReplies($smtp, $db)
 {
-    global $totalStats;
     $host = trim($smtp['host']);
-    $port = 995; // Secure POP3
+    $port = 995;
     $protocol = 'pop3';
     $encryption = 'ssl';
-
-    // Mailbox connection string
     $mailbox = "{" . $host . ":" . $port . "/" . $protocol . "/" . $encryption . "/novalidate-cert}INBOX";
-
-    // Open mailbox
-
     $inbox = @imap_open($mailbox, $smtp['email'], $smtp['password']);
-    if (!$inbox) {
-        return ["error" => imap_last_error()];
-    }
+    if (!$inbox) return;
 
+    // Get last fetched UID from DB
+    $last_uid = intval($smtp['last_uid'] ?? 0);
 
-    $emails = @imap_search($inbox, 'UNSEEN', SE_UID);
-    if (!$emails) {
-        imap_close($inbox);
-        return ["error" => imap_last_error()];
-    }
-
-    // Process in batches
-    $batchSize = 20;
-    $messages = [
-        'regular' => [],
-        'unsubscribes' => [],
-        'bounces' => []
-    ];
+    // Fetch only emails with UID greater than last_uid
+    $search_criteria = $last_uid > 0 ? "UID " . ($last_uid + 1) . ":*" : "ALL";
+    $emails = @imap_search($inbox, $search_criteria, SE_UID);
 
     if ($emails) {
         rsort($emails);
-        $emails = array_slice($emails, 0, 50); // Increased limit
-
-        foreach ($emails as $email_number) {
-            $overview = imap_fetch_overview($inbox, $email_number, 0)[0];
-            $body = imap_fetchbody($inbox, $email_number, 1);
-            $headers = imap_headerinfo($inbox, $email_number);
-            $headers_raw = imap_fetchheader($inbox, $email_number);
+        foreach ($emails as $email_uid) {
+            $overview = imap_fetch_overview($inbox, $email_uid, 0)[0];
+            $body = imap_fetchbody($inbox, $email_uid, 1);
+            $headers = imap_headerinfo($inbox, $email_uid);
+            $headers_raw = imap_fetchheader($inbox, $email_uid);
             $body_text = quoted_printable_decode($body);
 
             // Extract from email
@@ -110,7 +92,7 @@ function fetchReplies($smtp, $db)
                 "date" => $overview->date ?? '',
                 "body" => $body_text,
                 "headers" => $headers_raw,
-                "uid" => $overview->uid ?? $email_number,
+                "uid" => $overview->uid ?? $email_uid,
                 "seen" => $overview->seen ?? false,
                 "is_unsubscribe" => $is_unsubscribe,
                 "unsubscribe_method" => $unsubscribe_method,
@@ -122,22 +104,13 @@ function fetchReplies($smtp, $db)
             // Store email in database
             storeEmail($message, $db);
 
-            if ($is_bounce) {
-                $messages['bounces'][] = $message;
-                $totalStats['bounces']++;
-            } elseif ($is_unsubscribe) {
-                $messages['unsubscribes'][] = $message;
-                $totalStats['unsubscribes']++;
-            } else {
-                $messages['regular'][] = $message;
-                $totalStats['replies']++;
-            }
-            $totalStats['total_emails']++;
+            // After storing, update last_uid if this is the highest
+            if ($email_uid > $last_uid) $last_uid = $email_uid;
         }
+        // Update last_uid in DB
+        $db->query("UPDATE smtp_servers SET last_uid = $last_uid WHERE id = " . intval($smtp['id']));
     }
-
     imap_close($inbox);
-    return $messages;
 }
 
 function storeEmail($email, $db)

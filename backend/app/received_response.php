@@ -31,7 +31,7 @@ if (!$smtp) {
     exit;
 }
 
-// Fetch new emails from mailbox and store in DB
+// Fetch only new emails for this SMTP account
 fetchReplies($smtp, $db);
 
 // Build WHERE clause for filtering

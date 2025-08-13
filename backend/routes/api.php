@@ -6,14 +6,14 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
 
-// Get URI path after the script path
+// Get request path
 $fullPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $basePath = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
 $request = str_replace($basePath, '', $fullPath);
 
 // Remove query params
 $request = preg_replace('/\?.*/', '', $request);
-
+$request = rtrim($request, '/'); // remove trailing slash
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
@@ -26,9 +26,8 @@ try {
             require __DIR__ . '/../includes/get_results.php';
             break;
 
-        case ($request === '/api/monitor/campaigns'):
-            if ($method === 'GET')
-                require __DIR__ . '/../includes/monitor_campaigns.php';
+        case ($request === '/api/monitor/campaigns' && $method === 'GET'):
+            require __DIR__ . '/../includes/monitor_campaigns.php';
             break;
 
         case ($request === '/api/master/campaigns'):
@@ -47,12 +46,10 @@ try {
             require __DIR__ . '/../includes/campaign_distribution.php';
             break;
 
-        case ($request === '/api/retry-failed'):
-            if ($method === 'POST') {
-                $cmd = 'php ' . escapeshellarg(__DIR__ . '/../includes/retry_smtp.php') . ' > /dev/null 2>&1 &';
-                exec($cmd);
-                echo json_encode(['status' => 'success', 'message' => 'Retry process started in background.']);
-            }
+        case ($request === '/api/retry-failed' && $method === 'POST'):
+            $cmd = 'php ' . escapeshellarg(__DIR__ . '/../includes/retry_smtp.php') . ' > /dev/null 2>&1 &';
+            exec($cmd);
+            echo json_encode(['status' => 'success', 'message' => 'Retry process started in background.']);
             break;
 
         case ($request === '/api/master/email-counts'):
@@ -83,6 +80,17 @@ try {
         case ($request === '/api/emails'):
         case (strpos($request, '/api/emails') === 0):
             require __DIR__ . '/../app/received_response.php';
+            break;
+
+        case (preg_match('#^/api/master/smtps/(\d+)/accounts/(\d+)$#', $request, $m) ? true : false):
+            $_GET['smtp_server_id'] = $m[1];
+            $_GET['account_id'] = $m[2];
+            require __DIR__ . '/../includes/smtp_accounts.php';
+            break;
+
+        case (preg_match('#^/api/master/smtps/(\d+)/accounts$#', $request, $m) ? true : false):
+            $_GET['smtp_server_id'] = $m[1];
+            require __DIR__ . '/../includes/smtp_accounts.php';
             break;
 
         default:
