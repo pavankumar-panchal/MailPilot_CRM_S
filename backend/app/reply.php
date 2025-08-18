@@ -1,90 +1,57 @@
 <?php
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 
-
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require __DIR__ . '/../vendor/autoload.php';
-
-$dbConfig = [
-    'host' => '127.0.0.1',
-    'username' => 'root',
-    'password' => '',
-    'name' => 'CRM',
-    'port' => 3306
-];
-
-$conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
-if ($conn->connect_error) {
+$db = new mysqli("localhost", "root", "", "CRM");
+if ($db->connect_error) {
     echo json_encode(["success" => false, "message" => "DB connection failed"]);
     exit;
 }
 
-// Read JSON input from frontend
-$data = json_decode(file_get_contents("php://input"), true);
-$account_id = isset($data['account_id']) ? intval($data['account_id']) : 0;
-$to = trim($data['to'] ?? '');
-$subject = trim($data['subject'] ?? '');
-$body = trim($data['body'] ?? '');
+$input = json_decode(file_get_contents("php://input"), true);
+$to = $input['to'] ?? '';
+$subject = $input['subject'] ?? '';
+$body = $input['body'] ?? '';
+$account_id = intval($input['account_id'] ?? 0);
 
-if (!$account_id || !$to || !$subject || !$body) {
-    echo json_encode(["success" => false, "message" => "Missing required fields"]);
-    exit;
-}
-
-// Fetch SMTP details
-$stmt = $conn->prepare("SELECT host, port, email, password, encryption FROM smtp_servers WHERE id = ?");
+// Get SMTP credentials
+$stmt = $db->prepare("SELECT a.email, a.password, s.host, s.port
+                      FROM smtp_accounts a
+                      JOIN smtp_servers s ON s.id = a.smtp_server_id
+                      WHERE s.id = ? AND a.is_active = 1");
 $stmt->bind_param("i", $account_id);
 $stmt->execute();
-$result = $stmt->get_result();
-$smtp = $result->fetch_assoc();
+$result = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$smtp) {
-    echo json_encode(["success" => false, "message" => "SMTP server not found"]);
+if (!$result) {
+    echo json_encode(["success" => false, "message" => "SMTP account not found"]);
     exit;
 }
 
-// Send mail using PHPMailer
+// Send email (use PHPMailer or native mail)
+// Example using PHPMailer:
+require_once 'vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+
 $mail = new PHPMailer(true);
 try {
     $mail->isSMTP();
-    $mail->Host = $smtp['host'];
-    $mail->Port = $smtp['port'];
+    $mail->Host = $result['host'];
     $mail->SMTPAuth = true;
-    $mail->Username = $smtp['email'];
-    $mail->Password = $smtp['password'];
-    $mail->Timeout = 30;
+    $mail->Username = $result['email'];
+    $mail->Password = $result['password'];
+    $mail->SMTPSecure = 'ssl';
+    $mail->Port = $result['port'];
 
-    if ($smtp['encryption'] === 'ssl') {
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    } elseif ($smtp['encryption'] === 'tls') {
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    }
-
-    $mail->setFrom($smtp['email']);
+    $mail->setFrom($result['email']);
     $mail->addAddress($to);
     $mail->Subject = $subject;
     $mail->Body = $body;
-    $mail->isHTML(false); // Plain text reply
 
     $mail->send();
-
-    echo json_encode(["success" => true, "message" => "Reply sent!"]);
+    echo json_encode(["success" => true]);
 } catch (Exception $e) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Mailer Error: " . $mail->ErrorInfo
-    ]);
+    echo json_encode(["success" => false, "message" => $mail->ErrorInfo]);
 }
-
-$conn->close();
+?>
