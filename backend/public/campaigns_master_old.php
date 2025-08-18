@@ -38,22 +38,46 @@ try {
             $msg = retryFailedEmails($conn, $campaign_id);
             $response['success'] = true;
             $response['message'] = $msg;
+        } elseif ($action === 'distribute') {
+            $campaign_id = (int)$input['campaign_id'];
+            $distributions = $input['distribution'] ?? [];
+            $msg = saveDistribution($conn, $campaign_id, $distributions);
+            $response['success'] = true;
+            $response['message'] = $msg;
+        } elseif ($action === 'auto_distribute') {
+            $campaign_id = (int)$input['campaign_id'];
+            $msg = autoDistribute($conn, $campaign_id);
+            $response['success'] = true;
+            $response['message'] = $msg;
         } elseif ($action === 'list') {
             $response['success'] = true;
             $response['data'] = [
-                'campaigns' => getCampaignsWithStats()
+                'campaigns' => getCampaignsWithStats(),
+                'smtp_servers' => getSMTPServers()
             ];
         } elseif ($action === 'email_counts') {
             $campaign_id = (int)($input['campaign_id'] ?? 0);
             $response['success'] = true;
             $response['data'] = getEmailCounts($conn, $campaign_id);
+        } elseif ($action === 'get_distribution') {
+            $campaign_id = (int)$input['campaign_id'];
+            $stmt = $conn->prepare("SELECT cd.smtp_id, cd.percentage, ss.name, ss.daily_limit, ss.hourly_limit
+                                    FROM campaign_distribution cd
+                                    JOIN smtp_servers ss ON cd.smtp_id = ss.id
+                                    WHERE cd.campaign_id = ?");
+            $stmt->bind_param("i", $campaign_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $response['success'] = true;
+            $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
         } else {
             throw new Exception('Invalid action');
         }
     } elseif ($method === 'GET') {
         $response['success'] = true;
         $response['data'] = [
-            'campaigns' => getCampaignsWithStats()
+            'campaigns' => getCampaignsWithStats(),
+            'smtp_servers' => getSMTPServers()
         ];
     } else {
         throw new Exception('Invalid request method');
@@ -67,6 +91,64 @@ echo json_encode($response);
 
 // --- Helper Functions ---
 
+function saveDistribution($conn, $campaign_id, $distributions)
+{
+    $conn->begin_transaction();
+    try {
+        $delete_stmt = $conn->prepare("DELETE FROM campaign_distribution WHERE campaign_id = ?");
+        $delete_stmt->bind_param("i", $campaign_id);
+        $delete_stmt->execute();
+
+        $insert_stmt = $conn->prepare("INSERT INTO campaign_distribution (campaign_id, smtp_id, percentage) VALUES (?, ?, ?)");
+        $total_percentage = 0;
+        foreach ($distributions as $dist) {
+            if (!isset($dist['smtp_id']) || !isset($dist['percentage'])) {
+                throw new Exception("Invalid distribution data");
+            }
+            $smtp_id = (int)$dist['smtp_id'];
+            $percentage = (float)$dist['percentage'];
+            $total_percentage += $percentage;
+            $insert_stmt->bind_param("iid", $campaign_id, $smtp_id, $percentage);
+            $insert_stmt->execute();
+        }
+        if ($total_percentage > 100) {
+            throw new Exception("Total distribution cannot exceed 100%");
+        }
+        $conn->commit();
+        return "Distribution saved successfully!";
+    } catch (Exception $e) {
+        $conn->rollback();
+        throw $e;
+    }
+}
+
+function autoDistribute($conn, $campaign_id)
+{
+    $email_result = $conn->query("SELECT COUNT(*) AS total FROM emails WHERE domain_status = 1");
+    $email_data = $email_result->fetch_assoc();
+    $total_emails = $email_data['total'];
+    $smtp_servers = getSMTPServers();
+    $optimal_distribution = calculateOptimalDistribution($total_emails, $smtp_servers);
+
+    $conn->begin_transaction();
+    try {
+        $delete_stmt = $conn->prepare("DELETE FROM campaign_distribution WHERE campaign_id = ?");
+        $delete_stmt->bind_param("i", $campaign_id);
+        $delete_stmt->execute();
+
+        $insert_stmt = $conn->prepare("INSERT INTO campaign_distribution (campaign_id, smtp_id, percentage) VALUES (?, ?, ?)");
+        foreach ($optimal_distribution as $dist) {
+            $insert_stmt->bind_param("iid", $campaign_id, $dist['smtp_id'], $dist['percentage']);
+            $insert_stmt->execute();
+        }
+        $conn->commit();
+        return "Optimal distribution calculated and saved!";
+    } catch (Exception $e) {
+        $conn->rollback();
+        throw $e;
+    }
+}
+
 function getCampaignsWithStats()
 {
     global $conn;
@@ -75,6 +157,7 @@ function getCampaignsWithStats()
                 cm.description, 
                 cm.mail_subject,
                 COALESCE((SELECT COUNT(*) FROM emails WHERE domain_status = 1 AND domain_processed = 1), 0) AS valid_emails,
+                (SELECT SUM(percentage) FROM campaign_distribution WHERE campaign_id = cm.campaign_id) AS distributed_percentage,
                 cs.status as campaign_status,
                 COALESCE(cs.total_emails, 0) as total_emails,
                 COALESCE(cs.pending_emails, 0) as pending_emails,
@@ -90,15 +173,92 @@ function getCampaignsWithStats()
 
     foreach ($campaigns as &$campaign) {
         $campaign['valid_emails'] = (int)($campaign['valid_emails'] ?? 0);
+        $campaign['distributed_percentage'] = (float)($campaign['distributed_percentage'] ?? 0);
         $campaign['total_emails'] = (int)($campaign['total_emails'] ?? 0);
         $campaign['pending_emails'] = (int)($campaign['pending_emails'] ?? 0);
         $campaign['sent_emails'] = (int)($campaign['sent_emails'] ?? 0);
         $campaign['failed_emails'] = (int)($campaign['failed_emails'] ?? 0);
+        $campaign['remaining_percentage'] = 100 - ($campaign['distributed_percentage'] ?? 0);
         $total = max($campaign['total_emails'], 1);
         $sent = min($campaign['sent_emails'], $total);
         $campaign['progress'] = round(($sent / $total) * 100);
+
+        $dist_stmt = $conn->prepare("SELECT 
+                                    cd.smtp_id, 
+                                    cd.percentage, 
+                                    ss.name,
+                                    ss.daily_limit,
+                                    ss.hourly_limit
+                                FROM campaign_distribution cd
+                                JOIN smtp_servers ss ON cd.smtp_id = ss.id
+                                WHERE cd.campaign_id = ?");
+        $dist_stmt->bind_param("i", $campaign['campaign_id']);
+        $dist_stmt->execute();
+        $dist_result = $dist_stmt->get_result();
+        $raw_distributions = $dist_result->fetch_all(MYSQLI_ASSOC);
+
+        // Calculate email_count using the helper
+        $campaign['current_distributions'] = calculateEmailDistribution(
+            $campaign['valid_emails'],
+            $raw_distributions
+        );
     }
     return $campaigns;
+}
+
+function getSMTPServers()
+{
+    global $conn;
+    $query = "SELECT id, name, host, email, daily_limit, hourly_limit FROM smtp_servers WHERE is_active = 1";
+    $result = $conn->query($query);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function calculateOptimalDistribution($total_emails, $smtp_servers)
+{
+    $distribution = [];
+    $count = count($smtp_servers);
+    if ($count > 0) {
+        $equal_percentage = round(100 / $count, 2);
+        foreach ($smtp_servers as $server) {
+            $distribution[] = [
+                'smtp_id' => $server['id'],
+                'percentage' => $equal_percentage,
+                'email_count' => floor($total_emails * $equal_percentage / 100)
+            ];
+        }
+    }
+    return $distribution;
+}
+
+function calculateEmailDistribution($total_emails, $distributions)
+{
+    $result = [];
+    $assigned = 0;
+    $remainders = [];
+
+    foreach ($distributions as $i => $dist) {
+        $raw = $total_emails * ($dist['percentage'] / 100);
+        $floored = floor($raw);
+        $assigned += $floored;
+        $result[$i] = [
+            'smtp_id' => $dist['smtp_id'],
+            'percentage' => $dist['percentage'],
+            'email_count' => $floored,
+        ];
+        $remainders[$i] = $raw - $floored;
+    }
+
+    // Distribute the remaining emails to the largest remainders
+    $left = $total_emails - $assigned;
+    arsort($remainders); // sort by largest remainder
+    foreach (array_keys($remainders) as $i) {
+        if ($left <= 0) break;
+        $result[$i]['email_count'] += 1;
+        $left--;
+    }
+
+    return $result;
 }
 
 function startCampaign($conn, $campaign_id)
@@ -245,7 +405,7 @@ function retryFailedEmails($conn, $campaign_id)
     if ($failed_count > 0) {
         $conn->query("
                 UPDATE mail_blaster 
-                SET status = 'pending',     
+                SET status = 'pending', 
                     error_message = NULL,
                     attempt_count = attempt_count + 1
                 WHERE campaign_id = $campaign_id 
