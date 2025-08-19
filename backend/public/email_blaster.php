@@ -162,7 +162,8 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
             sa.hourly_limit,
             ss.host,
             ss.port,
-            ss.encryption
+            ss.encryption,
+            ss.received_email
         FROM smtp_accounts sa
         JOIN smtp_servers ss ON sa.smtp_server_id = ss.id
         WHERE sa.is_active = 1 AND ss.is_active = 1
@@ -247,7 +248,8 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
                 'port' => $smtp['port'],
                 'email' => $smtp['smtp_email'],
                 'password' => $smtp['smtp_password'],
-                'encryption' => $smtp['encryption']
+                'encryption' => $smtp['encryption'],
+                'received_email' => $smtp['received_email'] // <-- Pass this!
             ], $to, $campaign['mail_subject'], $campaign['mail_body']);
 
             recordDelivery($db, $smtp['smtp_account_id'], $emailId, $campaign_id, $to, 'success');
@@ -326,6 +328,12 @@ function sendEmail($smtp, $to_email, $subject, $body)
         $mail->Subject = $subject;
         $mail->Body = $body;
         $mail->isHTML(true);
+
+        // Always set Reply-To to received_email from smtp_servers
+        if (!empty($smtp['received_email'])) {
+            $mail->clearReplyTos();
+            $mail->addReplyTo($smtp['received_email']);
+        }
 
         if (!$mail->send()) {
             throw new Exception($mail->ErrorInfo);
