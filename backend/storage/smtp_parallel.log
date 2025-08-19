@@ -1,904 +1,169 @@
-[2025-07-22 13:07:00] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-22 13:07:00] Started worker 0 for 1 emails
-[2025-07-22 13:07:00] Started worker 1 for 1 emails
-[2025-07-22 13:07:00] Started worker 2 for 1 emails
-[2025-07-22 13:07:00] Started worker 3 for 1 emails
-[2025-07-22 13:07:00] Started worker 4 for 1 emails
-[2025-07-22 13:07:00] Started worker 5 for 1 emails
-[2025-07-22 13:07:00] Started worker 6 for 1 emails
-[2025-07-22 13:07:00] Started worker 7 for 1 emails
-[2025-07-22 13:07:00] Started worker 8 for 1 emails
-[2025-07-22 13:07:00] Started worker 9 for 1 emails
-[2025-07-22 13:07:00] Started worker 10 for 1 emails
-[2025-07-22 13:07:00] Started worker 11 for 1 emails
-[2025-07-22 13:07:00] Started worker 12 for 1 emails
-[2025-07-22 13:07:00] Started worker 13 for 1 emails
-[2025-07-22 13:07:00] Started worker 14 for 1 emails
-[2025-07-22 13:07:05] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:05] Worker 1 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:05] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:05] Worker 9 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:05] Worker 11 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:05] Worker 12 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-22 13:07:06] Processing complete. Remaining unprocessed emails: 93566
-[2025-07-22 13:07:22] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-22 13:07:22] Started worker 0 for 1 emails
-[2025-07-22 13:07:22] Started worker 1 for 1 emails
-[2025-07-22 13:07:22] Started worker 2 for 1 emails
-[2025-07-22 13:07:22] Started worker 3 for 1 emails
-[2025-07-22 13:07:22] Started worker 4 for 1 emails
-[2025-07-22 13:07:22] Started worker 5 for 1 emails
-[2025-07-22 13:07:22] Started worker 6 for 1 emails
-[2025-07-22 13:07:22] Started worker 7 for 1 emails
-[2025-07-22 13:07:22] Started worker 8 for 1 emails
-[2025-07-22 13:07:22] Started worker 9 for 1 emails
-[2025-07-22 13:07:22] Started worker 10 for 1 emails
-[2025-07-22 13:07:22] Started worker 11 for 1 emails
-[2025-07-22 13:07:22] Started worker 12 for 1 emails
-[2025-07-22 13:07:22] Started worker 13 for 1 emails
-[2025-07-22 13:07:22] Started worker 14 for 1 emails
-[2025-07-22 13:07:25] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 4 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 6 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 7 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 8 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 10 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 13 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:25] Worker 14 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-22 13:07:26] Processing complete. Remaining unprocessed emails: 93566
-[2025-07-23 05:54:08] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 05:54:08] Started worker 0 for 1 emails
-[2025-07-23 05:54:08] Started worker 1 for 1 emails
-[2025-07-23 05:54:08] Started worker 2 for 1 emails
-[2025-07-23 05:54:08] Started worker 3 for 1 emails
-[2025-07-23 05:54:08] Started worker 4 for 1 emails
-[2025-07-23 05:54:08] Started worker 5 for 1 emails
-[2025-07-23 05:54:08] Started worker 6 for 1 emails
-[2025-07-23 05:54:08] Started worker 7 for 1 emails
-[2025-07-23 05:54:08] Started worker 8 for 1 emails
-[2025-07-23 05:54:08] Started worker 9 for 1 emails
-[2025-07-23 05:54:08] Started worker 10 for 1 emails
-[2025-07-23 05:54:08] Started worker 11 for 1 emails
-[2025-07-23 05:54:08] Started worker 12 for 1 emails
-[2025-07-23 05:54:08] Started worker 13 for 1 emails
-[2025-07-23 05:54:08] Started worker 14 for 1 emails
-[2025-07-23 05:54:08] Started worker 15 for 1 emails
-[2025-07-23 05:54:08] Started worker 16 for 1 emails
-[2025-07-23 05:54:08] Started worker 17 for 1 emails
-[2025-07-23 05:54:08] Started worker 18 for 1 emails
-[2025-07-23 05:54:08] Started worker 19 for 1 emails
-[2025-07-23 05:54:08] Started worker 20 for 1 emails
-[2025-07-23 05:54:08] Started worker 21 for 1 emails
-[2025-07-23 05:54:08] Started worker 22 for 1 emails
-[2025-07-23 05:54:08] Started worker 23 for 1 emails
-[2025-07-23 05:54:08] Started worker 24 for 1 emails
-[2025-07-23 05:54:08] Started worker 25 for 1 emails
-[2025-07-23 05:54:08] Started worker 26 for 1 emails
-[2025-07-23 05:54:08] Started worker 27 for 1 emails
-[2025-07-23 05:54:08] Started worker 28 for 1 emails
-[2025-07-23 05:54:08] Started worker 29 for 1 emails
-[2025-07-23 05:54:08] Started worker 30 for 1 emails
-[2025-07-23 05:54:08] Started worker 31 for 1 emails
-[2025-07-23 05:54:08] Started worker 32 for 1 emails
-[2025-07-23 05:54:08] Started worker 33 for 1 emails
-[2025-07-23 05:54:08] Started worker 34 for 1 emails
-[2025-07-23 05:54:08] Started worker 35 for 1 emails
-[2025-07-23 05:54:08] Started worker 36 for 1 emails
-[2025-07-23 05:54:08] Started worker 37 for 1 emails
-[2025-07-23 05:54:08] Started worker 38 for 1 emails
-[2025-07-23 05:54:08] Started worker 39 for 1 emails
-[2025-07-23 05:54:08] Started worker 40 for 1 emails
-[2025-07-23 05:54:08] Started worker 41 for 1 emails
-[2025-07-23 05:54:08] Started worker 42 for 1 emails
-[2025-07-23 05:54:08] Started worker 43 for 1 emails
-[2025-07-23 05:54:08] Started worker 44 for 1 emails
-[2025-07-23 05:54:08] Started worker 45 for 1 emails
-[2025-07-23 05:54:08] Started worker 46 for 1 emails
-[2025-07-23 05:54:08] Started worker 47 for 1 emails
-[2025-07-23 05:54:08] Started worker 48 for 1 emails
-[2025-07-23 05:54:08] Started worker 49 for 1 emails
-[2025-07-23 05:54:08] Started worker 50 for 1 emails
-[2025-07-23 05:54:08] Started worker 51 for 1 emails
-[2025-07-23 05:54:08] Started worker 52 for 1 emails
-[2025-07-23 05:54:08] Started worker 53 for 1 emails
-[2025-07-23 05:54:08] Started worker 54 for 1 emails
-[2025-07-23 05:54:08] Started worker 55 for 1 emails
-[2025-07-23 05:54:08] Started worker 56 for 1 emails
-[2025-07-23 05:54:08] Started worker 57 for 1 emails
-[2025-07-23 05:54:08] Started worker 58 for 1 emails
-[2025-07-23 05:54:08] Started worker 59 for 1 emails
-[2025-07-23 05:54:08] Started worker 60 for 1 emails
-[2025-07-23 05:54:08] Started worker 61 for 1 emails
-[2025-07-23 05:54:08] Started worker 62 for 1 emails
-[2025-07-23 05:54:08] Started worker 63 for 1 emails
-[2025-07-23 05:54:08] Started worker 64 for 1 emails
-[2025-07-23 05:54:08] Started worker 65 for 1 emails
-[2025-07-23 05:54:08] Started worker 66 for 1 emails
-[2025-07-23 05:54:08] Started worker 67 for 1 emails
-[2025-07-23 05:54:08] Started worker 68 for 1 emails
-[2025-07-23 05:54:08] Started worker 69 for 1 emails
-[2025-07-23 05:54:08] Started worker 70 for 1 emails
-[2025-07-23 05:54:08] Started worker 71 for 1 emails
-[2025-07-23 05:54:08] Started worker 72 for 1 emails
-[2025-07-23 05:54:08] Started worker 73 for 1 emails
-[2025-07-23 05:54:08] Started worker 74 for 1 emails
-[2025-07-23 05:54:08] Started worker 75 for 1 emails
-[2025-07-23 05:54:08] Started worker 76 for 1 emails
-[2025-07-23 05:54:08] Started worker 77 for 1 emails
-[2025-07-23 05:54:08] Started worker 78 for 1 emails
-[2025-07-23 05:54:08] Started worker 79 for 1 emails
-[2025-07-23 05:54:08] Started worker 80 for 1 emails
-[2025-07-23 05:54:08] Started worker 81 for 1 emails
-[2025-07-23 05:54:08] Started worker 82 for 1 emails
-[2025-07-23 05:54:08] Started worker 83 for 1 emails
-[2025-07-23 05:54:08] Started worker 84 for 1 emails
-[2025-07-23 05:54:08] Started worker 85 for 1 emails
-[2025-07-23 05:54:08] Started worker 86 for 1 emails
-[2025-07-23 05:54:08] Started worker 87 for 1 emails
-[2025-07-23 05:54:08] Started worker 88 for 1 emails
-[2025-07-23 05:54:08] Started worker 89 for 1 emails
-[2025-07-23 05:54:09] Started worker 90 for 1 emails
-[2025-07-23 05:54:09] Started worker 91 for 1 emails
-[2025-07-23 05:54:09] Started worker 92 for 1 emails
-[2025-07-23 05:54:09] Started worker 93 for 1 emails
-[2025-07-23 05:54:09] Started worker 94 for 1 emails
-[2025-07-23 05:54:09] Started worker 95 for 1 emails
-[2025-07-23 05:54:09] Started worker 96 for 1 emails
-[2025-07-23 05:54:09] Started worker 97 for 1 emails
-[2025-07-23 05:54:09] Started worker 98 for 1 emails
-[2025-07-23 05:54:09] Started worker 99 for 1 emails
-[2025-07-23 05:54:09] Started worker 100 for 1 emails
-[2025-07-23 05:54:09] Started worker 101 for 1 emails
-[2025-07-23 05:54:09] Started worker 102 for 1 emails
-[2025-07-23 05:54:09] Started worker 103 for 1 emails
-[2025-07-23 05:54:09] Started worker 104 for 1 emails
-[2025-07-23 05:54:09] Started worker 105 for 1 emails
-[2025-07-23 05:54:09] Started worker 106 for 1 emails
-[2025-07-23 05:54:09] Started worker 107 for 1 emails
-[2025-07-23 05:54:09] Started worker 108 for 1 emails
-[2025-07-23 05:54:09] Started worker 109 for 1 emails
-[2025-07-23 05:54:09] Started worker 110 for 1 emails
-[2025-07-23 05:54:12] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:12] Worker 1 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:12] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:12] Worker 9 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:12] Worker 11 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:12] Worker 12 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 05:54:24] Processing complete. Remaining unprocessed emails: 93614
-[2025-07-23 05:54:44] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 05:54:44] Started worker 0 for 1 emails
-[2025-07-23 05:54:44] Started worker 1 for 1 emails
-[2025-07-23 05:54:44] Started worker 2 for 1 emails
-[2025-07-23 05:54:44] Started worker 3 for 1 emails
-[2025-07-23 05:54:44] Started worker 4 for 1 emails
-[2025-07-23 05:54:44] Started worker 5 for 1 emails
-[2025-07-23 05:54:44] Started worker 6 for 1 emails
-[2025-07-23 05:54:44] Started worker 7 for 1 emails
-[2025-07-23 05:54:44] Started worker 8 for 1 emails
-[2025-07-23 05:54:44] Started worker 9 for 1 emails
-[2025-07-23 05:54:44] Started worker 10 for 1 emails
-[2025-07-23 05:54:44] Started worker 11 for 1 emails
-[2025-07-23 05:54:44] Started worker 12 for 1 emails
-[2025-07-23 05:54:44] Started worker 13 for 1 emails
-[2025-07-23 05:54:44] Started worker 14 for 1 emails
-[2025-07-23 05:54:44] Started worker 15 for 1 emails
-[2025-07-23 05:54:44] Started worker 16 for 1 emails
-[2025-07-23 05:54:44] Started worker 17 for 1 emails
-[2025-07-23 05:54:44] Started worker 18 for 1 emails
-[2025-07-23 05:54:44] Started worker 19 for 1 emails
-[2025-07-23 05:54:44] Started worker 20 for 1 emails
-[2025-07-23 05:54:44] Started worker 21 for 1 emails
-[2025-07-23 05:54:44] Started worker 22 for 1 emails
-[2025-07-23 05:54:44] Started worker 23 for 1 emails
-[2025-07-23 05:54:44] Started worker 24 for 1 emails
-[2025-07-23 05:54:44] Started worker 25 for 1 emails
-[2025-07-23 05:54:44] Started worker 26 for 1 emails
-[2025-07-23 05:54:44] Started worker 27 for 1 emails
-[2025-07-23 05:54:44] Started worker 28 for 1 emails
-[2025-07-23 05:54:44] Started worker 29 for 1 emails
-[2025-07-23 05:54:44] Started worker 30 for 1 emails
-[2025-07-23 05:54:44] Started worker 31 for 1 emails
-[2025-07-23 05:54:44] Started worker 32 for 1 emails
-[2025-07-23 05:54:44] Started worker 33 for 1 emails
-[2025-07-23 05:54:44] Started worker 34 for 1 emails
-[2025-07-23 05:54:44] Started worker 35 for 1 emails
-[2025-07-23 05:54:44] Started worker 36 for 1 emails
-[2025-07-23 05:54:44] Started worker 37 for 1 emails
-[2025-07-23 05:54:44] Started worker 38 for 1 emails
-[2025-07-23 05:54:44] Started worker 39 for 1 emails
-[2025-07-23 05:54:44] Started worker 40 for 1 emails
-[2025-07-23 05:54:44] Started worker 41 for 1 emails
-[2025-07-23 05:54:44] Started worker 42 for 1 emails
-[2025-07-23 05:54:44] Started worker 43 for 1 emails
-[2025-07-23 05:54:44] Started worker 44 for 1 emails
-[2025-07-23 05:54:44] Started worker 45 for 1 emails
-[2025-07-23 05:54:44] Started worker 46 for 1 emails
-[2025-07-23 05:54:44] Started worker 47 for 1 emails
-[2025-07-23 05:54:44] Started worker 48 for 1 emails
-[2025-07-23 05:54:44] Started worker 49 for 1 emails
-[2025-07-23 05:54:44] Started worker 50 for 1 emails
-[2025-07-23 05:54:44] Started worker 51 for 1 emails
-[2025-07-23 05:54:44] Started worker 52 for 1 emails
-[2025-07-23 05:54:44] Started worker 53 for 1 emails
-[2025-07-23 05:54:44] Started worker 54 for 1 emails
-[2025-07-23 05:54:44] Started worker 55 for 1 emails
-[2025-07-23 05:54:44] Started worker 56 for 1 emails
-[2025-07-23 05:54:44] Started worker 57 for 1 emails
-[2025-07-23 05:54:44] Started worker 58 for 1 emails
-[2025-07-23 05:54:44] Started worker 59 for 1 emails
-[2025-07-23 05:54:44] Started worker 60 for 1 emails
-[2025-07-23 05:54:44] Started worker 61 for 1 emails
-[2025-07-23 05:54:44] Started worker 62 for 1 emails
-[2025-07-23 05:54:47] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:47] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:47] Worker 4 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:47] Worker 6 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:47] Worker 7 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:51] Worker 8 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:51] Worker 10 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:51] Worker 13 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:51] Worker 14 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 05:54:51] Processing complete. Remaining unprocessed emails: 93566
-[2025-07-23 06:13:25] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 06:13:25] Started worker 0 for 1 emails
-[2025-07-23 06:13:25] Started worker 1 for 1 emails
-[2025-07-23 06:13:25] Started worker 2 for 1 emails
-[2025-07-23 06:13:25] Started worker 3 for 1 emails
-[2025-07-23 06:13:25] Started worker 4 for 1 emails
-[2025-07-23 06:13:25] Started worker 5 for 1 emails
-[2025-07-23 06:13:25] Started worker 6 for 1 emails
-[2025-07-23 06:13:25] Started worker 7 for 1 emails
-[2025-07-23 06:13:25] Started worker 8 for 1 emails
-[2025-07-23 06:13:25] Started worker 9 for 1 emails
-[2025-07-23 06:13:25] Started worker 10 for 1 emails
-[2025-07-23 06:13:25] Started worker 11 for 1 emails
-[2025-07-23 06:13:25] Started worker 12 for 1 emails
-[2025-07-23 06:13:25] Started worker 13 for 1 emails
-[2025-07-23 06:13:25] Started worker 14 for 1 emails
-[2025-07-23 06:13:25] Started worker 15 for 1 emails
-[2025-07-23 06:13:25] Started worker 16 for 1 emails
-[2025-07-23 06:13:25] Started worker 17 for 1 emails
-[2025-07-23 06:13:25] Started worker 18 for 1 emails
-[2025-07-23 06:13:25] Started worker 19 for 1 emails
-[2025-07-23 06:13:25] Started worker 20 for 1 emails
-[2025-07-23 06:13:25] Started worker 21 for 1 emails
-[2025-07-23 06:13:25] Started worker 22 for 1 emails
-[2025-07-23 06:13:25] Started worker 23 for 1 emails
-[2025-07-23 06:13:25] Started worker 24 for 1 emails
-[2025-07-23 06:13:25] Started worker 25 for 1 emails
-[2025-07-23 06:13:25] Started worker 26 for 1 emails
-[2025-07-23 06:13:25] Started worker 27 for 1 emails
-[2025-07-23 06:13:25] Started worker 28 for 1 emails
-[2025-07-23 06:13:25] Started worker 29 for 1 emails
-[2025-07-23 06:13:25] Started worker 30 for 1 emails
-[2025-07-23 06:13:25] Started worker 31 for 1 emails
-[2025-07-23 06:13:25] Started worker 32 for 1 emails
-[2025-07-23 06:13:25] Started worker 33 for 1 emails
-[2025-07-23 06:13:25] Started worker 34 for 1 emails
-[2025-07-23 06:13:25] Started worker 35 for 1 emails
-[2025-07-23 06:13:25] Started worker 36 for 1 emails
-[2025-07-23 06:13:25] Started worker 37 for 1 emails
-[2025-07-23 06:13:25] Started worker 38 for 1 emails
-[2025-07-23 06:13:25] Started worker 39 for 1 emails
-[2025-07-23 06:13:25] Started worker 40 for 1 emails
-[2025-07-23 06:13:25] Started worker 41 for 1 emails
-[2025-07-23 06:13:25] Started worker 42 for 1 emails
-[2025-07-23 06:13:25] Started worker 43 for 1 emails
-[2025-07-23 06:13:25] Started worker 44 for 1 emails
-[2025-07-23 06:13:25] Started worker 45 for 1 emails
-[2025-07-23 06:13:25] Started worker 46 for 1 emails
-[2025-07-23 06:13:25] Started worker 47 for 1 emails
-[2025-07-23 06:13:25] Started worker 48 for 1 emails
-[2025-07-23 06:13:25] Started worker 49 for 1 emails
-[2025-07-23 06:13:25] Started worker 50 for 1 emails
-[2025-07-23 06:13:25] Started worker 51 for 1 emails
-[2025-07-23 06:13:25] Started worker 52 for 1 emails
-[2025-07-23 06:13:25] Started worker 53 for 1 emails
-[2025-07-23 06:13:25] Started worker 54 for 1 emails
-[2025-07-23 06:13:25] Started worker 55 for 1 emails
-[2025-07-23 06:13:25] Started worker 56 for 1 emails
-[2025-07-23 06:13:25] Started worker 57 for 1 emails
-[2025-07-23 06:13:25] Started worker 58 for 1 emails
-[2025-07-23 06:13:25] Started worker 59 for 1 emails
-[2025-07-23 06:13:25] Started worker 60 for 1 emails
-[2025-07-23 06:13:25] Started worker 61 for 1 emails
-[2025-07-23 06:13:25] Started worker 62 for 1 emails
-[2025-07-23 06:13:25] Started worker 63 for 1 emails
-[2025-07-23 06:13:25] Started worker 64 for 1 emails
-[2025-07-23 06:13:25] Started worker 65 for 1 emails
-[2025-07-23 06:13:25] Started worker 66 for 1 emails
-[2025-07-23 06:13:25] Started worker 67 for 1 emails
-[2025-07-23 06:13:25] Started worker 68 for 1 emails
-[2025-07-23 06:13:25] Started worker 69 for 1 emails
-[2025-07-23 06:13:25] Started worker 70 for 1 emails
-[2025-07-23 06:13:25] Started worker 71 for 1 emails
-[2025-07-23 06:13:25] Started worker 72 for 1 emails
-[2025-07-23 06:13:25] Started worker 73 for 1 emails
-[2025-07-23 06:13:25] Started worker 74 for 1 emails
-[2025-07-23 06:13:25] Started worker 75 for 1 emails
-[2025-07-23 06:13:25] Started worker 76 for 1 emails
-[2025-07-23 06:13:25] Started worker 77 for 1 emails
-[2025-07-23 06:13:25] Started worker 78 for 1 emails
-[2025-07-23 06:13:25] Started worker 79 for 1 emails
-[2025-07-23 06:13:25] Started worker 80 for 1 emails
-[2025-07-23 06:13:25] Started worker 81 for 1 emails
-[2025-07-23 06:13:25] Started worker 82 for 1 emails
-[2025-07-23 06:13:25] Started worker 83 for 1 emails
-[2025-07-23 06:13:25] Started worker 84 for 1 emails
-[2025-07-23 06:13:25] Started worker 85 for 1 emails
-[2025-07-23 06:13:25] Started worker 86 for 1 emails
-[2025-07-23 06:13:25] Started worker 87 for 1 emails
-[2025-07-23 06:13:25] Started worker 88 for 1 emails
-[2025-07-23 06:13:25] Started worker 89 for 1 emails
-[2025-07-23 06:13:25] Started worker 90 for 1 emails
-[2025-07-23 06:13:25] Started worker 91 for 1 emails
-[2025-07-23 06:13:26] Started worker 92 for 1 emails
-[2025-07-23 06:13:26] Started worker 93 for 1 emails
-[2025-07-23 06:13:26] Started worker 94 for 1 emails
-[2025-07-23 06:13:26] Started worker 95 for 1 emails
-[2025-07-23 06:13:26] Started worker 96 for 1 emails
-[2025-07-23 06:13:26] Started worker 97 for 1 emails
-[2025-07-23 06:13:26] Started worker 98 for 1 emails
-[2025-07-23 06:13:26] Started worker 99 for 1 emails
-[2025-07-23 06:13:26] Started worker 100 for 1 emails
-[2025-07-23 06:13:26] Started worker 101 for 1 emails
-[2025-07-23 06:13:26] Started worker 102 for 1 emails
-[2025-07-23 06:13:26] Started worker 103 for 1 emails
-[2025-07-23 06:13:26] Started worker 104 for 1 emails
-[2025-07-23 06:13:26] Started worker 105 for 1 emails
-[2025-07-23 06:13:26] Started worker 106 for 1 emails
-[2025-07-23 06:13:26] Started worker 107 for 1 emails
-[2025-07-23 06:13:26] Started worker 108 for 1 emails
-[2025-07-23 06:13:26] Started worker 109 for 1 emails
-[2025-07-23 06:13:26] Started worker 110 for 1 emails
-[2025-07-23 06:13:29] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:29] Worker 1 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:29] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:29] Worker 9 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:29] Worker 11 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:29] Worker 12 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:13:41] Processing complete. Remaining unprocessed emails: 93614
-[2025-07-23 06:13:53] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 06:13:53] Started worker 0 for 1 emails
-[2025-07-23 06:13:53] Started worker 1 for 1 emails
-[2025-07-23 06:13:53] Started worker 2 for 1 emails
-[2025-07-23 06:13:53] Started worker 3 for 1 emails
-[2025-07-23 06:13:53] Started worker 4 for 1 emails
-[2025-07-23 06:13:53] Started worker 5 for 1 emails
-[2025-07-23 06:13:53] Started worker 6 for 1 emails
-[2025-07-23 06:13:53] Started worker 7 for 1 emails
-[2025-07-23 06:13:53] Started worker 8 for 1 emails
-[2025-07-23 06:13:53] Started worker 9 for 1 emails
-[2025-07-23 06:13:53] Started worker 10 for 1 emails
-[2025-07-23 06:13:53] Started worker 11 for 1 emails
-[2025-07-23 06:13:53] Started worker 12 for 1 emails
-[2025-07-23 06:13:53] Started worker 13 for 1 emails
-[2025-07-23 06:13:53] Started worker 14 for 1 emails
-[2025-07-23 06:13:53] Started worker 15 for 1 emails
-[2025-07-23 06:13:53] Started worker 16 for 1 emails
-[2025-07-23 06:13:53] Started worker 17 for 1 emails
-[2025-07-23 06:13:53] Started worker 18 for 1 emails
-[2025-07-23 06:13:53] Started worker 19 for 1 emails
-[2025-07-23 06:13:53] Started worker 20 for 1 emails
-[2025-07-23 06:13:53] Started worker 21 for 1 emails
-[2025-07-23 06:13:53] Started worker 22 for 1 emails
-[2025-07-23 06:13:53] Started worker 23 for 1 emails
-[2025-07-23 06:13:53] Started worker 24 for 1 emails
-[2025-07-23 06:13:53] Started worker 25 for 1 emails
-[2025-07-23 06:13:53] Started worker 26 for 1 emails
-[2025-07-23 06:13:53] Started worker 27 for 1 emails
-[2025-07-23 06:13:53] Started worker 28 for 1 emails
-[2025-07-23 06:13:53] Started worker 29 for 1 emails
-[2025-07-23 06:13:53] Started worker 30 for 1 emails
-[2025-07-23 06:13:53] Started worker 31 for 1 emails
-[2025-07-23 06:13:53] Started worker 32 for 1 emails
-[2025-07-23 06:13:53] Started worker 33 for 1 emails
-[2025-07-23 06:13:53] Started worker 34 for 1 emails
-[2025-07-23 06:13:53] Started worker 35 for 1 emails
-[2025-07-23 06:13:53] Started worker 36 for 1 emails
-[2025-07-23 06:13:53] Started worker 37 for 1 emails
-[2025-07-23 06:13:53] Started worker 38 for 1 emails
-[2025-07-23 06:13:53] Started worker 39 for 1 emails
-[2025-07-23 06:13:53] Started worker 40 for 1 emails
-[2025-07-23 06:13:53] Started worker 41 for 1 emails
-[2025-07-23 06:13:53] Started worker 42 for 1 emails
-[2025-07-23 06:13:53] Started worker 43 for 1 emails
-[2025-07-23 06:13:53] Started worker 44 for 1 emails
-[2025-07-23 06:13:53] Started worker 45 for 1 emails
-[2025-07-23 06:13:53] Started worker 46 for 1 emails
-[2025-07-23 06:13:53] Started worker 47 for 1 emails
-[2025-07-23 06:13:53] Started worker 48 for 1 emails
-[2025-07-23 06:13:53] Started worker 49 for 1 emails
-[2025-07-23 06:13:53] Started worker 50 for 1 emails
-[2025-07-23 06:13:53] Started worker 51 for 1 emails
-[2025-07-23 06:13:53] Started worker 52 for 1 emails
-[2025-07-23 06:13:53] Started worker 53 for 1 emails
-[2025-07-23 06:13:53] Started worker 54 for 1 emails
-[2025-07-23 06:13:53] Started worker 55 for 1 emails
-[2025-07-23 06:13:53] Started worker 56 for 1 emails
-[2025-07-23 06:13:53] Started worker 57 for 1 emails
-[2025-07-23 06:13:53] Started worker 58 for 1 emails
-[2025-07-23 06:13:53] Started worker 59 for 1 emails
-[2025-07-23 06:13:53] Started worker 60 for 1 emails
-[2025-07-23 06:13:53] Started worker 61 for 1 emails
-[2025-07-23 06:13:53] Started worker 62 for 1 emails
-[2025-07-23 06:13:55] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 4 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 6 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 7 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 8 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:58] Worker 10 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:59] Worker 13 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:13:59] Worker 14 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:14:09] Processing complete. Remaining unprocessed emails: 93566
-[2025-07-23 06:29:28] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 06:29:28] Started worker 0 for 1 emails
-[2025-07-23 06:29:28] Started worker 1 for 1 emails
-[2025-07-23 06:29:28] Started worker 2 for 1 emails
-[2025-07-23 06:29:28] Started worker 3 for 1 emails
-[2025-07-23 06:29:28] Started worker 4 for 1 emails
-[2025-07-23 06:29:28] Started worker 5 for 1 emails
-[2025-07-23 06:29:28] Started worker 6 for 1 emails
-[2025-07-23 06:29:28] Started worker 7 for 1 emails
-[2025-07-23 06:29:28] Started worker 8 for 1 emails
-[2025-07-23 06:29:28] Started worker 9 for 1 emails
-[2025-07-23 06:29:28] Started worker 10 for 1 emails
-[2025-07-23 06:29:28] Started worker 11 for 1 emails
-[2025-07-23 06:29:28] Started worker 12 for 1 emails
-[2025-07-23 06:29:28] Started worker 13 for 1 emails
-[2025-07-23 06:29:28] Started worker 14 for 1 emails
-[2025-07-23 06:29:31] Worker 0 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:31] Worker 1 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:33] Worker 5 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:33] Worker 9 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:33] Worker 11 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:33] Worker 12 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker.php on line 51
-
-[2025-07-23 06:29:34] Processing complete. Remaining unprocessed emails: 93566
-[2025-07-23 06:29:43] Starting parallel SMTP processing with MAX_WORKERS=200
-[2025-07-23 06:29:43] Started worker 0 for 1 emails
-[2025-07-23 06:29:43] Started worker 1 for 1 emails
-[2025-07-23 06:29:43] Started worker 2 for 1 emails
-[2025-07-23 06:29:43] Started worker 3 for 1 emails
-[2025-07-23 06:29:43] Started worker 4 for 1 emails
-[2025-07-23 06:29:43] Started worker 5 for 1 emails
-[2025-07-23 06:29:43] Started worker 6 for 1 emails
-[2025-07-23 06:29:43] Started worker 7 for 1 emails
-[2025-07-23 06:29:43] Started worker 8 for 1 emails
-[2025-07-23 06:29:43] Started worker 9 for 1 emails
-[2025-07-23 06:29:43] Started worker 10 for 1 emails
-[2025-07-23 06:29:43] Started worker 11 for 1 emails
-[2025-07-23 06:29:43] Started worker 12 for 1 emails
-[2025-07-23 06:29:43] Started worker 13 for 1 emails
-[2025-07-23 06:29:43] Started worker 14 for 1 emails
-[2025-07-23 06:29:46] Worker 2 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 3 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 4 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 6 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 7 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 8 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:46] Worker 10 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:47] Worker 13 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:47] Worker 14 ERROR: PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect string value: '\xD3\xCA\xCF\xE4\xB2\xBB...' for column `CRM_logs`.`email_smtp_checks2`.`validation` at row 1 in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php:51
-Stack trace:
-#0 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(51): mysqli_stmt->execute()
-#1 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(195): insert_smtp_log()
-#2 /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php(212): verifyEmailViaSMTP()
-#3 {main}
-  thrown in /opt/lampp/htdocs/Verify_email/backend/includes/smtp_worker2.php on line 51
-
-[2025-07-23 06:29:47] Processing complete. Remaining unprocessed emails: 93566
+[2025-08-18 12:50:56] Starting parallel SMTP processing with MAX_WORKERS=200
+[2025-08-18 12:50:56] Started worker 0 for 1 emails
+[2025-08-18 12:50:56] Started worker 1 for 1 emails
+[2025-08-18 12:50:56] Started worker 2 for 1 emails
+[2025-08-18 12:50:56] Started worker 3 for 1 emails
+[2025-08-18 12:50:56] Started worker 4 for 1 emails
+[2025-08-18 12:50:56] Started worker 5 for 1 emails
+[2025-08-18 12:50:56] Started worker 6 for 1 emails
+[2025-08-18 12:50:56] Started worker 7 for 1 emails
+[2025-08-18 12:50:56] Started worker 8 for 1 emails
+[2025-08-18 12:50:56] Started worker 9 for 1 emails
+[2025-08-18 12:50:56] Started worker 10 for 1 emails
+[2025-08-18 12:50:56] Started worker 11 for 1 emails
+[2025-08-18 12:50:56] Started worker 12 for 1 emails
+[2025-08-18 12:50:56] Started worker 13 for 1 emails
+[2025-08-18 12:50:56] Started worker 14 for 1 emails
+[2025-08-18 12:50:56] Started worker 15 for 1 emails
+[2025-08-18 12:50:56] Started worker 16 for 1 emails
+[2025-08-18 12:50:56] Started worker 17 for 1 emails
+[2025-08-18 12:50:56] Started worker 18 for 1 emails
+[2025-08-18 12:50:56] Started worker 19 for 1 emails
+[2025-08-18 12:50:56] Started worker 20 for 1 emails
+[2025-08-18 12:50:56] Started worker 21 for 1 emails
+[2025-08-18 12:50:56] Started worker 22 for 1 emails
+[2025-08-18 12:50:56] Started worker 23 for 1 emails
+[2025-08-18 12:50:56] Started worker 24 for 1 emails
+[2025-08-18 12:50:56] Started worker 25 for 1 emails
+[2025-08-18 12:50:56] Started worker 26 for 1 emails
+[2025-08-18 12:50:56] Started worker 27 for 1 emails
+[2025-08-18 12:50:56] Started worker 28 for 1 emails
+[2025-08-18 12:50:56] Started worker 29 for 1 emails
+[2025-08-18 12:50:56] Started worker 30 for 1 emails
+[2025-08-18 12:50:56] Started worker 31 for 1 emails
+[2025-08-18 12:50:56] Started worker 32 for 1 emails
+[2025-08-18 12:50:56] Started worker 33 for 1 emails
+[2025-08-18 12:50:56] Started worker 34 for 1 emails
+[2025-08-18 12:50:56] Started worker 35 for 1 emails
+[2025-08-18 12:50:56] Started worker 36 for 1 emails
+[2025-08-18 12:50:56] Started worker 37 for 1 emails
+[2025-08-18 12:50:56] Started worker 38 for 1 emails
+[2025-08-18 12:50:56] Started worker 39 for 1 emails
+[2025-08-18 12:50:56] Started worker 40 for 1 emails
+[2025-08-18 12:50:56] Started worker 41 for 1 emails
+[2025-08-18 12:50:56] Started worker 42 for 1 emails
+[2025-08-18 12:50:56] Started worker 43 for 1 emails
+[2025-08-18 12:50:56] Started worker 44 for 1 emails
+[2025-08-18 12:50:56] Started worker 45 for 1 emails
+[2025-08-18 12:50:56] Started worker 46 for 1 emails
+[2025-08-18 12:50:56] Started worker 47 for 1 emails
+[2025-08-18 12:50:56] Started worker 48 for 1 emails
+[2025-08-18 12:50:56] Started worker 49 for 1 emails
+[2025-08-18 12:50:56] Started worker 50 for 1 emails
+[2025-08-18 12:50:56] Started worker 51 for 1 emails
+[2025-08-18 12:50:56] Started worker 52 for 1 emails
+[2025-08-18 12:50:56] Started worker 53 for 1 emails
+[2025-08-18 12:50:56] Started worker 54 for 1 emails
+[2025-08-18 12:50:56] Started worker 55 for 1 emails
+[2025-08-18 12:50:56] Started worker 56 for 1 emails
+[2025-08-18 12:50:56] Started worker 57 for 1 emails
+[2025-08-18 12:50:56] Started worker 58 for 1 emails
+[2025-08-18 12:50:56] Started worker 59 for 1 emails
+[2025-08-18 12:50:56] Started worker 60 for 1 emails
+[2025-08-18 12:50:56] Started worker 61 for 1 emails
+[2025-08-18 12:50:56] Started worker 62 for 1 emails
+[2025-08-18 12:50:56] Started worker 63 for 1 emails
+[2025-08-18 12:50:56] Started worker 64 for 1 emails
+[2025-08-18 12:50:56] Started worker 65 for 1 emails
+[2025-08-18 12:50:56] Started worker 66 for 1 emails
+[2025-08-18 12:50:56] Started worker 67 for 1 emails
+[2025-08-18 12:50:57] Started worker 68 for 1 emails
+[2025-08-18 12:50:57] Started worker 69 for 1 emails
+[2025-08-18 12:50:57] Started worker 70 for 1 emails
+[2025-08-18 12:50:57] Started worker 71 for 1 emails
+[2025-08-18 12:50:57] Started worker 72 for 1 emails
+[2025-08-18 12:50:57] Started worker 73 for 1 emails
+[2025-08-18 12:50:57] Started worker 74 for 1 emails
+[2025-08-18 12:50:57] Started worker 75 for 1 emails
+[2025-08-18 12:50:57] Started worker 76 for 1 emails
+[2025-08-18 12:50:57] Started worker 77 for 1 emails
+[2025-08-18 12:50:57] Started worker 78 for 1 emails
+[2025-08-18 12:50:57] Started worker 79 for 1 emails
+[2025-08-18 12:50:57] Started worker 80 for 1 emails
+[2025-08-18 12:50:57] Started worker 81 for 1 emails
+[2025-08-18 12:50:57] Started worker 82 for 1 emails
+[2025-08-18 12:50:57] Started worker 83 for 1 emails
+[2025-08-18 12:50:57] Started worker 84 for 1 emails
+[2025-08-18 12:50:57] Started worker 85 for 1 emails
+[2025-08-18 12:50:57] Started worker 86 for 1 emails
+[2025-08-18 12:50:57] Started worker 87 for 1 emails
+[2025-08-18 12:50:57] Started worker 88 for 1 emails
+[2025-08-18 12:50:57] Started worker 89 for 1 emails
+[2025-08-18 12:50:57] Started worker 90 for 1 emails
+[2025-08-18 12:50:57] Started worker 91 for 1 emails
+[2025-08-18 12:50:57] Started worker 92 for 1 emails
+[2025-08-18 12:50:57] Started worker 93 for 1 emails
+[2025-08-18 12:50:57] Started worker 94 for 1 emails
+[2025-08-18 12:50:57] Started worker 95 for 1 emails
+[2025-08-18 12:50:57] Started worker 96 for 1 emails
+[2025-08-18 12:51:12] Processing complete. Remaining unprocessed emails: 53
+[2025-08-18 12:51:20] Starting parallel SMTP processing with MAX_WORKERS=200
+[2025-08-18 12:51:20] Started worker 0 for 1 emails
+[2025-08-18 12:51:20] Started worker 1 for 1 emails
+[2025-08-18 12:51:20] Started worker 2 for 1 emails
+[2025-08-18 12:51:20] Started worker 3 for 1 emails
+[2025-08-18 12:51:20] Started worker 4 for 1 emails
+[2025-08-18 12:51:20] Started worker 5 for 1 emails
+[2025-08-18 12:51:20] Started worker 6 for 1 emails
+[2025-08-18 12:51:20] Started worker 7 for 1 emails
+[2025-08-18 12:51:20] Started worker 8 for 1 emails
+[2025-08-18 12:51:20] Started worker 9 for 1 emails
+[2025-08-18 12:51:20] Started worker 10 for 1 emails
+[2025-08-18 12:51:20] Started worker 11 for 1 emails
+[2025-08-18 12:51:20] Started worker 12 for 1 emails
+[2025-08-18 12:51:20] Started worker 13 for 1 emails
+[2025-08-18 12:51:20] Started worker 14 for 1 emails
+[2025-08-18 12:51:20] Started worker 15 for 1 emails
+[2025-08-18 12:51:20] Started worker 16 for 1 emails
+[2025-08-18 12:51:20] Started worker 17 for 1 emails
+[2025-08-18 12:51:20] Started worker 18 for 1 emails
+[2025-08-18 12:51:20] Started worker 19 for 1 emails
+[2025-08-18 12:51:20] Started worker 20 for 1 emails
+[2025-08-18 12:51:20] Started worker 21 for 1 emails
+[2025-08-18 12:51:20] Started worker 22 for 1 emails
+[2025-08-18 12:51:20] Started worker 23 for 1 emails
+[2025-08-18 12:51:20] Started worker 24 for 1 emails
+[2025-08-18 12:51:20] Started worker 25 for 1 emails
+[2025-08-18 12:51:20] Started worker 26 for 1 emails
+[2025-08-18 12:51:20] Started worker 27 for 1 emails
+[2025-08-18 12:51:20] Started worker 28 for 1 emails
+[2025-08-18 12:51:20] Started worker 29 for 1 emails
+[2025-08-18 12:51:20] Started worker 30 for 1 emails
+[2025-08-18 12:51:20] Started worker 31 for 1 emails
+[2025-08-18 12:51:20] Started worker 32 for 1 emails
+[2025-08-18 12:51:20] Started worker 33 for 1 emails
+[2025-08-18 12:51:20] Started worker 34 for 1 emails
+[2025-08-18 12:51:20] Started worker 35 for 1 emails
+[2025-08-18 12:51:20] Started worker 36 for 1 emails
+[2025-08-18 12:51:20] Started worker 37 for 1 emails
+[2025-08-18 12:51:20] Started worker 38 for 1 emails
+[2025-08-18 12:51:20] Started worker 39 for 1 emails
+[2025-08-18 12:51:20] Started worker 40 for 1 emails
+[2025-08-18 12:51:20] Started worker 41 for 1 emails
+[2025-08-18 12:51:20] Started worker 42 for 1 emails
+[2025-08-18 12:51:20] Started worker 43 for 1 emails
+[2025-08-18 12:51:20] Started worker 44 for 1 emails
+[2025-08-18 12:51:20] Started worker 45 for 1 emails
+[2025-08-18 12:51:20] Started worker 46 for 1 emails
+[2025-08-18 12:51:20] Started worker 47 for 1 emails
+[2025-08-18 12:51:20] Started worker 48 for 1 emails
+[2025-08-18 12:51:20] Started worker 49 for 1 emails
+[2025-08-18 12:51:22] Processing complete. Remaining unprocessed emails: 3
+[2025-08-18 12:55:06] Starting parallel SMTP processing with MAX_WORKERS=200
+[2025-08-18 12:55:06] Started worker 0 for 1 emails
+[2025-08-18 12:55:06] Started worker 1 for 1 emails
+[2025-08-18 12:55:06] Started worker 2 for 1 emails
+[2025-08-18 12:55:06] Started worker 3 for 1 emails
+[2025-08-18 12:55:06] Started worker 4 for 1 emails
+[2025-08-18 12:55:06] Started worker 5 for 1 emails
+[2025-08-18 12:55:06] Started worker 6 for 1 emails
+[2025-08-18 12:55:06] Started worker 7 for 1 emails
+[2025-08-18 12:55:06] Started worker 8 for 1 emails
+[2025-08-18 12:55:08] Processing complete. Remaining unprocessed emails: 6
+[2025-08-18 12:55:13] Starting parallel SMTP processing with MAX_WORKERS=200
+[2025-08-18 12:55:13] Started worker 0 for 1 emails
+[2025-08-18 12:55:13] Started worker 1 for 1 emails
+[2025-08-18 12:55:13] Started worker 2 for 1 emails
+[2025-08-18 12:55:13] Started worker 3 for 1 emails
+[2025-08-18 12:55:13] Started worker 4 for 1 emails
+[2025-08-18 12:55:14] Processing complete. Remaining unprocessed emails: 1

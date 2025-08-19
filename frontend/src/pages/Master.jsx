@@ -5,11 +5,9 @@ const API_PUBLIC_URL = "http://localhost/Verify_email/backend/routes/api.php";
 
 const Master = () => {
   const [campaigns, setCampaigns] = useState([]);
-  const [smtpServers, setSmtpServers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [expandedCampaigns, setExpandedCampaigns] = useState({});
-  const [distributions, setDistributions] = useState({});
   const [emailCounts, setEmailCounts] = useState({});
 
   // Pagination state
@@ -27,14 +25,12 @@ const Master = () => {
     }
   }, [message]);
 
-  // Fetch campaigns and SMTP servers on mount
+  // Fetch campaigns on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use campaigns_master for listing campaigns and SMTP servers
         const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, { action: "list" });
         setCampaigns(res.data.data.campaigns || []);
-        setSmtpServers(res.data.data.smtp_servers || []);
         setPagination((prev) => ({
           ...prev,
           total: (res.data.data.campaigns || []).length,
@@ -62,7 +58,6 @@ const Master = () => {
 
     if (isExpanded) {
       await fetchEmailCounts(campaignId);
-      await fetchDistributions(campaignId);
     }
   };
 
@@ -79,176 +74,6 @@ const Master = () => {
       }));
     } catch (error) {
       setMessage({ type: "error", text: "Failed to fetch email counts" });
-    }
-  };
-
-  // Fetch distributions
-  const fetchDistributions = async (campaignId) => {
-    try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "get_distribution",
-        campaign_id: campaignId
-      });
-      setDistributions((prev) => ({
-        ...prev,
-        [campaignId]: res.data.data,
-      }));
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to fetch distributions" });
-    }
-  };
-
-  // Add distribution row
-  const addDistribution = (campaignId) => {
-    const campaign = campaigns.find((c) => c.campaign_id === campaignId);
-    if (!campaign) return;
-
-    const currentTotal = (distributions[campaignId] || []).reduce(
-      (sum, d) => sum + (parseFloat(d.percentage) || 0), 0
-    );
-    const availablePercentage = 100 - currentTotal;
-
-    if (availablePercentage <= 0) {
-      setMessage({
-        type: "error",
-        text: "You have already allocated 100% of emails",
-      });
-      return;
-    }
-
-    if (!smtpServers.length) {
-      setMessage({ type: "error", text: "No SMTP servers available" });
-      return;
-    }
-
-    setDistributions((prev) => ({
-      ...prev,
-      [campaignId]: [
-        ...(prev[campaignId] || []),
-        {
-          smtp_id: smtpServers[0]?.id || "",
-          percentage: Math.min(10, availablePercentage).toFixed(1),
-          email_count: Math.floor(campaign.valid_emails * Math.min(10, availablePercentage) / 100),
-        },
-      ],
-    }));
-  };
-
-  // Remove distribution row
-  const removeDistribution = (campaignId, index) => {
-    setDistributions((prev) => ({
-      ...prev,
-      [campaignId]: prev[campaignId].filter((_, i) => i !== index),
-    }));
-  };
-
-  // Update distribution field
-  const updateDistribution = (campaignId, index, field, value) => {
-    const campaign = campaigns.find((c) => c.campaign_id === campaignId);
-    if (!campaign) return;
-
-    setDistributions((prev) => {
-      const newDistributions = prev[campaignId].map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      );
-
-      // Recalculate email counts if percentage changed
-      if (field === "percentage") {
-        let pct = parseFloat(value) || 0;
-        if (pct < 1) pct = 1;
-        const currentTotal = newDistributions.reduce(
-          (sum, d, idx) => sum + (idx === index ? 0 : (parseFloat(d.percentage) || 0)),
-          0
-        );
-        const maxAllowed = 100 - currentTotal;
-        if (pct > maxAllowed) pct = maxAllowed;
-        newDistributions[index].percentage = pct;
-        newDistributions[index].email_count = Math.floor(
-          campaign.valid_emails * pct / 100
-        );
-      }
-
-      return {
-        ...prev,
-        [campaignId]: newDistributions,
-      };
-    });
-  };
-
-  // Calculate remaining percentage for a campaign
-  const getRemainingPercentage = (campaignId) => {
-    const campaign = campaigns.find((c) => c.campaign_id === campaignId);
-    if (!campaign) return 0;
-
-    // If distributions are loaded, use them; otherwise, use backend value
-    if (distributions[campaignId] && distributions[campaignId].length > 0) {
-      const currentTotal = distributions[campaignId].reduce(
-        (sum, d) => sum + (parseFloat(d.percentage) || 0),
-        0
-      );
-      return Math.max(0, 100 - currentTotal);
-    } else {
-      // Use backend value as fallback
-      return Math.max(0, 100 - (parseFloat(campaign.distributed_percentage) || 0));
-    }
-  };
-
-  // Save distribution
-  const saveDistribution = async (campaignId) => {
-    try {
-      const total = (distributions[campaignId] || []).reduce(
-        (sum, d) => sum + (parseFloat(d.percentage) || 0),
-        0
-      );
-
-      if (total > 100) {
-        setMessage({
-          type: "error",
-          text: `Total distribution percentage cannot exceed 100% (Current: ${total.toFixed(1)}%)`,
-        });
-        return;
-      }
-
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "distribute",
-        campaign_id: campaignId,
-        distribution: distributions[campaignId]
-      });
-
-      setMessage({ type: "success", text: res.data.message });
-
-      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "list",
-      });
-      setCampaigns(listRes.data.data.campaigns || []);
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error.response?.data?.error || "Failed to save distribution",
-      });
-    }
-  };
-
-  // Auto-distribute
-  const autoDistribute = async (campaignId) => {
-    try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "auto_distribute",
-        campaign_id: campaignId,
-      });
-
-      setMessage({ type: "success", text: res.data.message });
-
-      await fetchDistributions(campaignId);
-      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "list",
-      });
-      setCampaigns(listRes.data.data.campaigns || []);
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error.response?.data?.error || "Failed to auto-distribute",
-      });
     }
   };
 
@@ -387,8 +212,6 @@ const Master = () => {
 
         <div className="grid grid-cols-1 gap-4 sm:gap-6">
           {paginatedCampaigns.map((campaign) => {
-            const remainingPercentage = getRemainingPercentage(campaign.campaign_id);
-            const campaignDistributions = distributions[campaign.campaign_id] || [];
             const counts = emailCounts[campaign.campaign_id] || {};
 
             return (
@@ -410,17 +233,6 @@ const Master = () => {
                           <i className="fas fa-envelope mr-1"></i>
                           {Number(campaign.valid_emails)?.toLocaleString()} Emails
                         </span>
-                        {remainingPercentage > 0 ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs sm:text-sm font-medium">
-                            <i className="fas fa-clock mr-1"></i>
-                            {remainingPercentage}% Remaining
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium">
-                            <i className="fas fa-check-circle mr-1"></i>
-                            Fully Allocated
-                          </span>
-                        )}
                         <StatusBadge status={campaign.campaign_status} />
                       </div>
                     </div>
@@ -435,12 +247,6 @@ const Master = () => {
                             : "fa-chevron-down"
                             } text-sm`}
                         ></i>
-                      </button>
-                      <button
-                        onClick={() => autoDistribute(campaign.campaign_id)}
-                        className="px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                      >
-                        <i className="fas fa-magic mr-1"></i> Auto-Distribute
                       </button>
                       {campaign.campaign_status === "running" ? (
                         <button
@@ -476,118 +282,23 @@ const Master = () => {
                   {expandedCampaigns[campaign.campaign_id] && (
                     <div className="mt-6">
                       <div className="space-y-3 mb-4">
-                        {campaignDistributions.map((dist, index) => {
-                          const smtp = smtpServers.find((s) => String(s.id) === String(dist.smtp_id));
-                          const validEmails = Number(campaign.valid_emails) || 0;
-                          const percentage = Number(dist.percentage) || 0;
-                          const emailCount = Math.floor(validEmails * (percentage / 100));
-
-                          return (
-                            <div
-                              key={index}
-                              className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
-                            >
-                              <select
-                                value={dist.smtp_id}
-                                onChange={(e) =>
-                                  updateDistribution(
-                                    campaign.campaign_id,
-                                    index,
-                                    "smtp_id",
-                                    e.target.value
-                                  )
-                                }
-                                className="flex-1 min-w-0 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                {smtpServers.length === 0 ? (
-                                  <option value="">No SMTP servers available</option>
-                                ) : (
-                                  smtpServers.map((server) => (
-                                    <option key={server.id} value={server.id}>
-                                      {server.name} ({server.daily_limit.toLocaleString()}/day)
-                                    </option>
-                                  ))
-                                )}
-                              </select>
-
-                              <div className="relative w-32">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={100}
-                                  step="0.1"
-                                  value={dist.percentage}
-                                  onChange={(e) => {
-                                    let val = e.target.value;
-                                    if (val === "") val = "";
-                                    else if (parseFloat(val) < 1) val = 1;
-                                    else if (parseFloat(val) > 100) val = 100;
-                                    updateDistribution(
-                                      campaign.campaign_id,
-                                      index,
-                                      "percentage",
-                                      val
-                                    );
-                                  }}
-                                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 pr-8 w-full focus:ring-blue-500 focus:border-blue-500"
-                                />
-                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                                  %
-                                </span>
-                              </div>
-
-                              <div className="flex items-center space-x-2">
-                                <span
-                                  className={`email-count bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full`}
-                                >
-                                  ~{emailCount.toLocaleString()} emails
-                                </span>
-                                <button
-                                  type="button"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() => removeDistribution(campaign.campaign_id, index)}
-                                >
-                                  <i className="fas fa-trash-alt"></i>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <button
-                          type="button"
-                          disabled={remainingPercentage <= 0}
-                          onClick={() => addDistribution(campaign.campaign_id)}
-                          className={`px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50
-                            ${remainingPercentage <= 0 ? "opacity-50 cursor-not-allowed" : ""}
-                          `}
-                        >
-                          <i className="fas fa-plus mr-1"></i> Add SMTP Server
-                        </button>
-
-                        <div className="flex space-x-3">
-                          <span className="text-sm text-gray-600">
-                            {remainingPercentage > 0 ? (
-                              <>
-                                <i className="fas fa-info-circle text-blue-500 mr-1"></i>
-                                {remainingPercentage}% remaining to allocate
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-check-circle text-green-500 mr-1"></i>
-                                Fully allocated
-                              </>
-                            )}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => saveDistribution(campaign.campaign_id)}
-                            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-                          >
-                            <i className="fas fa-save mr-1"></i> Save Distribution
-                          </button>
+                        <div className="flex flex-wrap gap-4">
+                          <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
+                            <span className="text-xs text-gray-500">Pending</span>
+                            <span className="font-bold text-lg text-blue-700">{counts.pending || campaign.pending_emails || 0}</span>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
+                            <span className="text-xs text-gray-500">Sent</span>
+                            <span className="font-bold text-lg text-green-700">{counts.sent || campaign.sent_emails || 0}</span>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
+                            <span className="text-xs text-gray-500">Failed</span>
+                            <span className="font-bold text-lg text-red-700">{counts.failed || campaign.failed_emails || 0}</span>
+                          </div>
+                        </div>
+                        <div className="mt-4 text-xs text-gray-500">
+                          Started: {campaign.start_time ? campaign.start_time : "N/A"}<br />
+                          Ended: {campaign.end_time ? campaign.end_time : "N/A"}
                         </div>
                       </div>
                     </div>

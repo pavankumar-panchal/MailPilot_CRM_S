@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 
-
 // Initialize message variables
 $message = '';
 $message_type = ''; // 'success' or 'error'
@@ -20,8 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($conn->query($sql)) {
             $message = 'Campaign added successfully!';
             $message_type = 'success';
-
-
             header("Location: campaigns.php?message=" . urlencode($message) . "&message_type=$message_type");
             exit();
         } else {
@@ -97,9 +94,6 @@ if (isset($_GET['edit'])) {
 
 $conn->close();
 ?>
-
-
-
 
 <!DOCTYPE html>
 <html lang="en">
