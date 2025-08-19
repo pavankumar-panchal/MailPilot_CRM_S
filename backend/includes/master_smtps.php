@@ -7,7 +7,6 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
 
-// Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -52,10 +51,11 @@ if ($method === 'POST') {
     $host = $conn->real_escape_string($data['host'] ?? '');
     $port = intval($data['port'] ?? 465);
     $encryption = $conn->real_escape_string($data['encryption'] ?? '');
+    $received_email = $conn->real_escape_string($data['received_email'] ?? '');
     $is_active = !empty($data['is_active']) ? 1 : 0;
 
-    $sql = "INSERT INTO smtp_servers (name, host, port, encryption, is_active)
-            VALUES ('$name', '$host', $port, '$encryption', $is_active)";
+    $sql = "INSERT INTO smtp_servers (name, host, port, encryption, received_email, is_active)
+            VALUES ('$name', '$host', $port, '$encryption', '$received_email', $is_active)";
 
     if (!$conn->query($sql)) {
         echo json_encode(['success' => false, 'message' => 'Error adding SMTP server: ' . $conn->error]);
@@ -69,7 +69,7 @@ if ($method === 'POST') {
         foreach ($data['accounts'] as $acc) {
             $email = trim($conn->real_escape_string($acc['email'] ?? ''));
             $password = trim($conn->real_escape_string($acc['password'] ?? ''));
-            if ($email === '' || $password === '') continue; // <-- skip blank accounts
+            if ($email === '' || $password === '') continue;
 
             $daily_limit = intval($acc['daily_limit'] ?? 500);
             $hourly_limit = intval($acc['hourly_limit'] ?? 100);
@@ -104,6 +104,7 @@ if ($method === 'PUT') {
         $host = $conn->real_escape_string($srv['host'] ?? '');
         $port = intval($srv['port'] ?? 465);
         $encryption = $conn->real_escape_string($srv['encryption'] ?? '');
+        $received_email = $conn->real_escape_string($srv['received_email'] ?? '');
         $is_active = !empty($srv['is_active']) ? 1 : 0;
 
         $conn->query("UPDATE smtp_servers SET
@@ -111,6 +112,7 @@ if ($method === 'PUT') {
             host = '$host',
             port = $port,
             encryption = '$encryption',
+            received_email = '$received_email',
             is_active = $is_active
             WHERE id = $id");
     }
@@ -163,7 +165,7 @@ if ($method === 'DELETE') {
         exit;
     }
 
-    $conn->query("DELETE FROM smtp_servers WHERE id = $id"); // Accounts will be deleted via ON DELETE CASCADE
+    $conn->query("DELETE FROM smtp_servers WHERE id = $id");
 
     echo json_encode(['success' => true, 'message' => 'SMTP server and accounts deleted successfully!']);
     $conn->close();

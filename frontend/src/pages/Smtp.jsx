@@ -11,6 +11,7 @@ const emptyServer = {
   port: 465,
   encryption: "ssl",
   is_active: true,
+  received_email: "", // <-- Add this field
   accounts: [
     {
       email: "",
@@ -190,6 +191,7 @@ const Smtp = () => {
             port: form.port,
             encryption: form.encryption,
             is_active: form.is_active,
+            received_email: form.received_email, // <-- Add this line!
           },
           accounts: form.accounts,
         }),
@@ -723,6 +725,20 @@ const Smtp = () => {
                       <option value="">None</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Received Email
+                    </label>
+                    <input
+                      type="email"
+                      name="received_email"
+                      required
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                      placeholder="inbox@example.com"
+                      value={form.received_email}
+                      onChange={handleChange}
+                    />
+                  </div>
                   <div className="flex items-center mt-2">
                     <input
                       type="checkbox"
@@ -901,7 +917,7 @@ const Smtp = () => {
               onSubmit={handleUpdate}
             >
               <input type="hidden" name="id" value={editId} />
-              {/* Name + Host */}
+              {/* Name + Host + Received Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -929,9 +945,6 @@ const Smtp = () => {
                     onChange={handleChange}
                   />
                 </div>
-              </div>
-              {/* Port + Encryption */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Port
@@ -961,8 +974,21 @@ const Smtp = () => {
                     <option value="">None</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Received Email
+                  </label>
+                  <input
+                    type="email"
+                    name="received_email"
+                    required
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    placeholder="inbox@example.com"
+                    value={form.received_email}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-
               {/* Accounts Section */}
               <div className="mt-6">
                 <h4 className="text-md font-semibold text-gray-800 mb-3">
@@ -1075,13 +1101,13 @@ const Smtp = () => {
                     )}
                   </div>
                 ))}
-                <button
+                {/* <button
                   type="button"
                   className="mt-2 text-indigo-600 text-xs"
                   onClick={addAccount}
                 >
                   + Add Another Account
-                </button>
+                </button> */}
               </div>
 
               <div className="flex items-center">
