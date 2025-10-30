@@ -74,8 +74,9 @@ if (isset($_GET['message']) && isset($_GET['message_type'])) {
 $result = $conn->query("SELECT * FROM campaign_master ORDER BY campaign_id DESC");
 $campaigns = [];
 while ($row = $result->fetch_assoc()) {
-    // Create a preview of the mail body (first 30 words)
-    $words = preg_split('/\s+/', $row['mail_body']);
+    // Create a preview of the mail body (first 30 words) from plain-text
+    $textOnly = trim(strip_tags($row['mail_body']));
+    $words = preg_split('/\s+/', $textOnly);
     $preview = implode(' ', array_slice($words, 0, 30));
     if (count($words) > 30) {
         $preview .= '...';

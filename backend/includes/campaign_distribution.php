@@ -26,10 +26,13 @@ try {
             exit;
         }
         $cid = intval($_GET['campaign_id']);
-        $stmt = $conn->prepare("SELECT cd.smtp_id, cd.percentage, ss.name, ss.daily_limit, ss.hourly_limit
-                                FROM campaign_distribution cd
-                                JOIN smtp_servers ss ON cd.smtp_id = ss.id
-                                WHERE cd.campaign_id = ?");
+    // smtp_servers table doesn't store per-account limits. Aggregate limits from smtp_accounts.
+    $stmt = $conn->prepare("SELECT cd.smtp_id, cd.percentage, ss.name,
+                COALESCE((SELECT SUM(daily_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS daily_limit,
+                COALESCE((SELECT SUM(hourly_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS hourly_limit
+                FROM campaign_distribution cd
+                JOIN smtp_servers ss ON cd.smtp_id = ss.id
+                WHERE cd.campaign_id = ?");
         $stmt->bind_param("i", $cid);
         $stmt->execute();
         $res = $stmt->get_result();

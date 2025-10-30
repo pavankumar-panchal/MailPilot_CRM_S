@@ -61,7 +61,10 @@ try {
             $response['data'] = getEmailCounts($conn, $campaign_id);
         } elseif ($action === 'get_distribution') {
             $campaign_id = (int)$input['campaign_id'];
-            $stmt = $conn->prepare("SELECT cd.smtp_id, cd.percentage, ss.name, ss.daily_limit, ss.hourly_limit
+            // Aggregate limits from smtp_accounts since smtp_servers doesn't have daily/hourly limits
+            $stmt = $conn->prepare("SELECT cd.smtp_id, cd.percentage, ss.name,
+                                    COALESCE((SELECT SUM(daily_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS daily_limit,
+                                    COALESCE((SELECT SUM(hourly_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS hourly_limit
                                     FROM campaign_distribution cd
                                     JOIN smtp_servers ss ON cd.smtp_id = ss.id
                                     WHERE cd.campaign_id = ?");
@@ -183,12 +186,13 @@ function getCampaignsWithStats()
         $sent = min($campaign['sent_emails'], $total);
         $campaign['progress'] = round(($sent / $total) * 100);
 
+        // Aggregate per-server limits from smtp_accounts because smtp_servers doesn't have daily/hourly columns
         $dist_stmt = $conn->prepare("SELECT 
                                     cd.smtp_id, 
                                     cd.percentage, 
                                     ss.name,
-                                    ss.daily_limit,
-                                    ss.hourly_limit
+                                    COALESCE((SELECT SUM(daily_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS daily_limit,
+                                    COALESCE((SELECT SUM(hourly_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS hourly_limit
                                 FROM campaign_distribution cd
                                 JOIN smtp_servers ss ON cd.smtp_id = ss.id
                                 WHERE cd.campaign_id = ?");
@@ -209,9 +213,13 @@ function getCampaignsWithStats()
 function getSMTPServers()
 {
     global $conn;
-    $query = "SELECT id, name, host, email, daily_limit, hourly_limit FROM smtp_servers WHERE is_active = 1";
-    $result = $conn->query($query);
-    return $result->fetch_all(MYSQLI_ASSOC);
+        // Aggregate per-server limits from smtp_accounts
+        $query = "SELECT ss.id, ss.name, ss.host, ss.received_email as email,
+                                COALESCE((SELECT SUM(daily_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS daily_limit,
+                                COALESCE((SELECT SUM(hourly_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS hourly_limit
+                            FROM smtp_servers ss WHERE ss.is_active = 1";
+        $result = $conn->query($query);
+        return $result->fetch_all(MYSQLI_ASSOC);
 }
 
 function calculateOptimalDistribution($total_emails, $smtp_servers)

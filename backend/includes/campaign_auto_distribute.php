@@ -12,7 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 function getSMTPServers($conn) {
-    $result = $conn->query("SELECT id, daily_limit, hourly_limit FROM smtp_servers WHERE is_active = 1");
+    // smtp_accounts stores per-account limits; aggregate per-server limits from smtp_accounts
+    $result = $conn->query("SELECT ss.id, ss.name,
+        COALESCE((SELECT SUM(daily_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS daily_limit,
+        COALESCE((SELECT SUM(hourly_limit) FROM smtp_accounts sa WHERE sa.smtp_server_id = ss.id AND sa.is_active = 1),0) AS hourly_limit
+        FROM smtp_servers ss WHERE ss.is_active = 1");
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 

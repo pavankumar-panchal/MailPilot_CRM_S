@@ -70,7 +70,7 @@ const Campaigns = () => {
     total: 0,
   });
 
-  const API_URL = "http://localhost/Verify_email/backend/routes/api.php/api/master/campaigns";
+  const API_URL = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/master/campaigns";
 
   // Fetch campaigns
   const fetchCampaigns = async () => {

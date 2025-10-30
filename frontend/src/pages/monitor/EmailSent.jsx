@@ -28,7 +28,7 @@ const EmailSent = () => {
     // Only show loading on first load
     if (isFirstLoad.current) setLoading(true);
     try {
-      const res = await fetch("http://localhost/Verify_email/backend/routes/api.php/api/monitor/campaigns");
+  const res = await fetch("http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/monitor/campaigns");
       const data = await res.json();
       setCampaigns(Array.isArray(data) ? data : []);
       setPagination((prev) => ({

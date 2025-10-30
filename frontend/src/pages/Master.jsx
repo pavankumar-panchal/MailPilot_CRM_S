@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_PUBLIC_URL = "http://localhost/Verify_email/backend/routes/api.php";
+// Use the full API endpoint for campaigns_master to avoid path-info issues
+// Point to this workspace's backend path (lowercase 'verify_emails' and project folder)
+const API_PUBLIC_URL = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/master/campaigns_master";
 
 const Master = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -29,19 +31,31 @@ const Master = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, { action: "list" });
-        setCampaigns(res.data.data.campaigns || []);
+        const res = await axios.post(API_PUBLIC_URL, { action: "list" });
+        // campaigns_master.php returns { success: true, data: { campaigns: [...] } }
+        if (!res?.data) throw new Error("No response data");
+        if (res.data.success === false) throw new Error(res.data.message || "API returned failure");
+
+        const campaigns = (res.data.data && res.data.data.campaigns) || [];
+        setCampaigns(campaigns);
         setPagination((prev) => ({
           ...prev,
-          total: (res.data.data.campaigns || []).length,
+          total: campaigns.length,
         }));
         setLoading(false);
       } catch (error) {
-        setMessage({ type: "error", text: "Failed to load data" });
+        // Log the error for easier debugging in browser console
+        console.error("Master.fetchData error:", error?.response || error?.message || error);
+        setMessage({ type: "error", text: `Failed to load data: ${error?.response?.data?.message || error?.message || 'Unknown error'}` });
         setLoading(false);
       }
     };
     fetchData();
+    // Poll for updates so progress/status updates in UI while sending
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Pagination logic
@@ -64,15 +78,17 @@ const Master = () => {
   // Fetch email counts
   const fetchEmailCounts = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
+      const res = await axios.post(API_PUBLIC_URL, {
         action: "email_counts",
         campaign_id: campaignId
       });
+      if (res?.data?.success === false) throw new Error(res.data.message || 'Failed to get counts');
       setEmailCounts((prev) => ({
         ...prev,
-        [campaignId]: res.data.data,
+        [campaignId]: res.data.data || res.data,
       }));
-    } catch (error) {
+    } catch (err) {
+      console.error('fetchEmailCounts error:', err);
       setMessage({ type: "error", text: "Failed to fetch email counts" });
     }
   };
@@ -80,17 +96,15 @@ const Master = () => {
   // Start campaign
   const startCampaign = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
+      const res = await axios.post(API_PUBLIC_URL, {
         action: "start_campaign",
         campaign_id: campaignId
       });
+      if (res?.data?.success === false) throw new Error(res.data.message || 'Failed to start campaign');
+      setMessage({ type: "success", text: res.data.message || 'Campaign started' });
 
-      setMessage({ type: "success", text: res.data.message });
-
-      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "list",
-      });
-      setCampaigns(listRes.data.data.campaigns || []);
+      const listRes = await axios.post(API_PUBLIC_URL, { action: 'list' });
+      setCampaigns(listRes.data.data?.campaigns || []);
     } catch (error) {
       setMessage({
         type: "error",
@@ -102,17 +116,15 @@ const Master = () => {
   // Pause campaign
   const pauseCampaign = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
+      const res = await axios.post(API_PUBLIC_URL, {
         action: "pause_campaign",
         campaign_id: campaignId,
       });
+      if (res?.data?.success === false) throw new Error(res.data.message || 'Failed to pause campaign');
+      setMessage({ type: "success", text: res.data.message || 'Campaign paused' });
 
-      setMessage({ type: "success", text: res.data.message });
-
-      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "list",
-      });
-      setCampaigns(listRes.data.data.campaigns || []);
+      const listRes = await axios.post(API_PUBLIC_URL, { action: 'list' });
+      setCampaigns(listRes.data.data?.campaigns || []);
     } catch (error) {
       setMessage({
         type: "error",
@@ -124,17 +136,15 @@ const Master = () => {
   // Retry failed emails
   const retryFailedEmails = async (campaignId) => {
     try {
-      const res = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
+      const res = await axios.post(API_PUBLIC_URL, {
         action: "retry_failed",
         campaign_id: campaignId,
       });
+      if (res?.data?.success === false) throw new Error(res.data.message || 'Failed to retry');
+      setMessage({ type: "success", text: res.data.message || 'Retry started' });
 
-      setMessage({ type: "success", text: res.data.message });
-
-      const listRes = await axios.post(`${API_PUBLIC_URL}/api/master/campaigns_master`, {
-        action: "list",
-      });
-      setCampaigns(listRes.data.data.campaigns || []);
+      const listRes = await axios.post(API_PUBLIC_URL, { action: 'list' });
+      setCampaigns(listRes.data.data?.campaigns || []);
     } catch (error) {
       setMessage({
         type: "error",
@@ -145,16 +155,18 @@ const Master = () => {
 
   // Status badge component
   const StatusBadge = ({ status }) => {
-    const statusClass = (status || "").toLowerCase();
-    const statusText = status || "Not started";
+    const statusClass = (status || "pending").toLowerCase();
+    const statusColors = {
+      'pending': 'bg-yellow-500',
+      'running': 'bg-blue-500',
+      'paused': 'bg-gray-500',
+      'completed': 'bg-green-500',
+      'failed': 'bg-red-500'
+    };
+    const statusText = status || "Pending";
 
     return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${statusClass === 'running' ? 'bg-blue-500 text-white' :
-        statusClass === 'paused' ? 'bg-gray-500 text-white' :
-          statusClass === 'completed' ? 'bg-green-500 text-white' :
-            statusClass === 'failed' ? 'bg-red-500 text-white' :
-              'bg-yellow-500 text-white'
-        }`}>
+      <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${statusColors[statusClass] || 'bg-yellow-500'}`}>
         {statusText}
       </span>
     );
@@ -267,13 +279,14 @@ const Master = () => {
                           <i className="fas fa-paper-plane mr-1"></i> Send
                         </button>
                       )}
-                      {campaign.failed_emails > 0 &&
+                      {/* Show retry button if there are failed emails that haven't exceeded retry limit */}
+                      {campaign.retryable_count > 0 &&
                         campaign.campaign_status !== "completed" && (
                           <button
                             onClick={() => retryFailedEmails(campaign.campaign_id)}
                             className="px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium"
                           >
-                            <i className="fas fa-redo mr-1"></i> Retry Failed
+                            <i className="fas fa-redo mr-1"></i> Retry ({campaign.retryable_count})
                           </button>
                         )}
                     </div>

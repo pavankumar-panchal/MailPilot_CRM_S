@@ -11,9 +11,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 date_default_timezone_set('Asia/Kolkata');
 
-// Get campaign ID from command line
 
-// $campaign_id=2;
 $campaign_id = isset($argv[1]) ? intval($argv[1]) : die("No campaign ID specified");
 $GLOBALS['campaign_id'] = $campaign_id;
 
@@ -151,6 +149,17 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
         logMessage("Campaign not found", 'ERROR');
         return 0;
     }
+        
+        // Normalize mail_body: convert escaped sequences ("\\r\\n") to real
+        // newlines and decode any HTML entities so the sent email preserves the
+        // original structure the admin entered. This handles cases where the
+        // DB contains literal backslash-escaped sequences or encoded entities.
+        if (isset($campaign['mail_body'])) {
+            $normalized = stripcslashes($campaign['mail_body']);
+            // Decode HTML entities (if stored as &lt; or similar)
+            $normalized = html_entity_decode($normalized, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $campaign['mail_body'] = $normalized;
+        }
 
     // Get all active SMTP accounts and their server details
     $smtp_accounts = $db->query("
@@ -326,8 +335,11 @@ function sendEmail($smtp, $to_email, $subject, $body)
         $mail->setFrom($smtp['email']);
         $mail->addAddress($to_email);
         $mail->Subject = $subject;
+
+        // Send the body as plain text, exactly as it is (including HTML tags if present)
+        // This will make email clients show the raw HTML code instead of rendering it
+        $mail->isHTML(false);
         $mail->Body = $body;
-        $mail->isHTML(true);
 
         // Always set Reply-To to received_email from smtp_servers
         if (!empty($smtp['received_email'])) {

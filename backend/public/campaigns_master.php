@@ -74,6 +74,7 @@ function getCampaignsWithStats()
                 cm.campaign_id, 
                 cm.description, 
                 cm.mail_subject,
+                cm.attachment_path,
                 COALESCE((SELECT COUNT(*) FROM emails WHERE domain_status = 1 AND domain_processed = 1), 0) AS valid_emails,
                 cs.status as campaign_status,
                 COALESCE(cs.total_emails, 0) as total_emails,
@@ -81,7 +82,14 @@ function getCampaignsWithStats()
                 COALESCE(cs.sent_emails, 0) as sent_emails,
                 COALESCE(cs.failed_emails, 0) as failed_emails,
                 cs.start_time,
-                cs.end_time
+                cs.end_time,
+                (
+                    SELECT COUNT(*) 
+                    FROM mail_blaster mb 
+                    WHERE mb.campaign_id = cm.campaign_id 
+                    AND mb.status = 'pending'
+                    AND mb.attempt_count < 3
+                ) as retryable_count
               FROM campaign_master cm
               LEFT JOIN campaign_status cs ON cm.campaign_id = cs.campaign_id
               ORDER BY cm.campaign_id DESC";
@@ -157,39 +165,55 @@ function startCampaign($conn, $campaign_id)
 
 function getEmailCounts($conn, $campaign_id)
 {
-    $result = $conn->query("
-            SELECT 
+    // Compute counts based on emails and mail_blaster for the given campaign
+    $result = $conn->query("SELECT 
                 COUNT(*) as total_valid,
-                SUM(CASE WHEN (mb.status IS NULL OR mb.status = 'failed' AND mb.attempt_count < 3) THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN (mb.status IS NULL OR (mb.status = 'failed' AND mb.attempt_count < 3)) THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END) as sent,
                 SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 3 THEN 1 ELSE 0 END) as failed
             FROM emails e
             LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
-            WHERE e.domain_status = 1
-        ");
+            WHERE e.domain_status = 1");
+
     return $result->fetch_assoc();
 }
 
 function startEmailBlasterProcess($campaign_id)
 {
-    $lock_file = "/tmp/email_blaster_{$campaign_id}.lock";
-    if (file_exists($lock_file)) {
-        $pid = file_get_contents($lock_file);
-        // Check if process is running
-        if (function_exists('posix_kill') && posix_kill((int) $pid, 0)) {
-            // Process is running, do not start another
-            return;
-        } else {
-            // Stale lock file, remove it
-            unlink($lock_file);
+    // Use a pid file inside the project's tmp directory so it's easy to find and consistent
+    $pid_file = __DIR__ . "/../tmp/email_blaster_{$campaign_id}.pid";
+
+    // If pid file exists, check whether process is still running
+    if (file_exists($pid_file)) {
+        $pid = trim(file_get_contents($pid_file));
+        if (is_numeric($pid)) {
+            // posix_kill may not be available on some systems; check /proc as fallback
+            $isRunning = false;
+            if (function_exists('posix_kill')) {
+                $isRunning = @posix_kill((int)$pid, 0);
+            } else {
+                $isRunning = file_exists("/proc/" . (int)$pid);
+            }
+
+            if ($isRunning) {
+                // Process is running, do not start another
+                return;
+            }
         }
+        // Stale pid file - remove it
+        @unlink($pid_file);
     }
-    $php_path = '/opt/lampp/bin/php';
-    $script_path = '/opt/lampp/htdocs/Verify_email/backend/public/email_blaster.php';
-    $command = "nohup $php_path $script_path $campaign_id > /dev/null 2>&1 & echo $!";
+
+    // Prefer the current PHP binary; fallback to 'php' in PATH
+    $php_path = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
+    // Script path relative to this file
+    $script_path = __DIR__ . '/email_blaster.php';
+
+    // Start the email blaster in background and capture pid
+    $command = "nohup " . escapeshellcmd($php_path) . " " . escapeshellarg($script_path) . " " . intval($campaign_id) . " > /dev/null 2>&1 & echo $!";
     $pid = shell_exec($command);
     if ($pid) {
-        file_put_contents($lock_file, trim($pid));
+        file_put_contents($pid_file, trim($pid));
     }
 }
 
@@ -229,7 +253,25 @@ function pauseCampaign($conn, $campaign_id)
 
 function stopEmailBlasterProcess($campaign_id)
 {
-    exec("pkill -f 'email_blaster.php $campaign_id'");
+    // Try graceful stop: read pid file and kill the process, then remove pid file
+    $pid_file = __DIR__ . "/../tmp/email_blaster_{$campaign_id}.pid";
+    if (file_exists($pid_file)) {
+        $pid = (int)trim(file_get_contents($pid_file));
+        if ($pid > 0) {
+            // Send SIGTERM
+            @posix_kill($pid, SIGTERM);
+            // Wait briefly for process to exit
+            usleep(200000);
+            // If still running, send SIGKILL
+            if (function_exists('posix_kill') && @posix_kill($pid, 0)) {
+                @posix_kill($pid, SIGKILL);
+            }
+        }
+        @unlink($pid_file);
+    } else {
+        // Fallback to pkill by pattern if pid file missing
+        exec("pkill -f 'email_blaster.php $campaign_id'");
+    }
 }
 
 function retryFailedEmails($conn, $campaign_id)

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 // Set your API base here (change to your production URL as needed)
-const API_BASE = "http://localhost/Verify_email/backend/routes/api.php/api/master/smtps";
+const API_BASE = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/master/smtps";
 // For production, use:
 // const API_BASE = "https://payrollsoft.in/Verify_email/backend/routes/api.php/api/master/smtps";
 
@@ -442,6 +442,11 @@ const Smtp = () => {
                               {server.host}:{server.port} (
                               {server.encryption?.toUpperCase() || "None"})
                             </div>
+                            {server.received_email && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Reply-To: <span className="font-medium text-gray-700">{server.received_email}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -504,6 +509,7 @@ const Smtp = () => {
                             <h4 className="text-base font-semibold text-indigo-700 mb-2 flex items-center">
                               <i className="fas fa-users mr-2"></i> Email Accounts
                             </h4>
+                            {/* Reply-To shown above in server row; no duplicate here */}
                             <div className="space-y-2">
                               {server.accounts?.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -527,7 +533,7 @@ const Smtp = () => {
                                           )}
                                         </div>
                                         <div className="text-xs text-gray-500 mt-1">
-                                          Hourly:{" "}
+                                            Hourly:{" "}
                                           <span className="font-medium">
                                             {account.hourly_limit}
                                           </span>{" "}
@@ -535,6 +541,7 @@ const Smtp = () => {
                                           <span className="font-medium">
                                             {account.daily_limit}
                                           </span>
+                                          {/* Reply-To is displayed once in the server row above */}
                                         </div>
                                       </div>
                                       <button

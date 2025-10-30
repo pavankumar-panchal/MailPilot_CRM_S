@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 // API endpoint for workers
-const API_BASE = "http://localhost/Verify_email/backend/routes/api.php/api/workers";
+const API_BASE = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/workers";
 
 const emptyWorker = {
   workername: "",

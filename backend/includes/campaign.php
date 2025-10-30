@@ -34,8 +34,12 @@ try {
             if ($row) {
                 // Use attachment_path only
                 $row['has_attachment'] = !empty($row['attachment_path']);
-                // When rendering mail_body in HTML
-                $row['mail_body'] = nl2br(htmlspecialchars($row['mail_body']));
+                // Normalize any escaped sequences (e.g. "\r\n") that may have
+                // been stored as literal backslash sequences so the client gets
+                // real newlines. Use stripcslashes() which converts C-like
+                // escape sequences into their character equivalents. If the
+                // stored content already contains real newlines this is a no-op.
+                $row['mail_body'] = isset($row['mail_body']) ? stripcslashes($row['mail_body']) : $row['mail_body'];
                 echo json_encode($row);
             } else {
                 http_response_code(404);
@@ -47,8 +51,10 @@ try {
             $campaigns = [];
             while ($row = $result->fetch_assoc()) {
                 // Add preview (first 30 words)
-                $words = preg_split('/\s+/', $row['mail_body']);
-                $preview = implode(' ', array_slice($words, 0, 30));
+                    // Add preview (first 30 words) from plain-text version (strip HTML tags)
+                    $textOnly = trim(strip_tags($row['mail_body']));
+                    $words = preg_split('/\s+/', $textOnly);
+                    $preview = implode(' ', array_slice($words, 0, 30));
                 if (count($words) > 30) $preview .= '...';
                 $row['mail_body_preview'] = $preview;
                 // Optionally, don't send the full attachment in list view
@@ -56,8 +62,11 @@ try {
                     $row['has_attachment'] = !empty($row['attachment']);
                     unset($row['attachment']);
                 }
-                // When rendering mail_body in HTML
-                $row['mail_body'] = nl2br(htmlspecialchars($row['mail_body']));
+                // Normalize escaped sequences in mail_body for consistent
+                // client-side editing (turn "\r\n" into real newlines).
+                $row['mail_body'] = isset($row['mail_body']) ? stripcslashes($row['mail_body']) : $row['mail_body'];
+                // Return stored mail_body as-is (now normalized). For preview,
+                // strip tags to create a plain-text snippet.
                 $campaigns[] = $row;
             }
             echo json_encode($campaigns);

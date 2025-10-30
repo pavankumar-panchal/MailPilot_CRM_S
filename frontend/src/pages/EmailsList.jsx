@@ -16,7 +16,7 @@ const EmailsList = ({ listId, onClose }) => {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost/Verify_email/backend/routes/api.php/api/results?csv_list_id=${listId}&limit=1000000`
+  `http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/results?csv_list_id=${listId}&limit=1000000`
       );
       const data = await res.json();
       setListEmails(Array.isArray(data.data) ? data.data : []);
