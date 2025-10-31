@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+import "../quill.css";
 
 const emptyCampaign = {
   description: "",
@@ -6,6 +9,66 @@ const emptyCampaign = {
   mail_body: "",
   attachment: null,
 };
+
+// Quill configuration (toolbar + formats)
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ color: [] }, { background: [] }],
+    ['link'],
+    ['clean']
+  ]
+};
+
+const quillFormats = [
+  'header', 'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet', 'link', 'color', 'background'
+];
+
+// Direct Quill editor wrapper compatible with React 19
+function QuillEditor({ value, onChange, modules = quillModules, formats = quillFormats, placeholder }) {
+  const containerRef = useRef(null);
+  const quillRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (!quillRef.current) {
+      quillRef.current = new Quill(containerRef.current, {
+        theme: 'snow',
+        modules,
+        formats,
+        placeholder: placeholder || ''
+      });
+
+      quillRef.current.on('text-change', () => {
+        const html = quillRef.current.root.innerHTML;
+        onChange && onChange(html === '<p><br></p>' ? '' : html);
+      });
+    }
+
+    return () => {
+      // optional cleanup: clear container
+      // if (containerRef.current) containerRef.current.innerHTML = '';
+      // keep instance as Quill doesn't expose a destroy API we rely on garbage collection
+    };
+  }, [modules, formats, onChange, placeholder]);
+
+  // Sync external value into editor
+  useEffect(() => {
+    const q = quillRef.current;
+    if (!q) return;
+    const current = q.root.innerHTML;
+    if ((value || '') !== current) {
+      q.clipboard.dangerouslyPasteHTML(value || '');
+    }
+  }, [value]);
+
+  return <div className="quill" style={{ background: 'white' }}>
+    <div ref={containerRef} />
+  </div>;
+}
 
 // Glassmorphism Status Message Popup
 const StatusMessage = ({ message, onClose }) =>
@@ -593,191 +656,247 @@ const Campaigns = () => {
 
       {/* Add Campaign Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-gr bg-black/30 backdrop-blur-md backdrop-saturate-150 border border-white/20 shadow-xl overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                <i className="fas fa-plus-circle mr-2 text-blue-600"></i>
-                Add New Campaign
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form className="space-y-4" onSubmit={handleAdd} encType="multipart/form-data">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Campaign description"
-                  value={form.description}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Subject
-                </label>
-                <input
-                  type="text"
-                  name="mail_subject"
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Your email subject"
-                  value={form.mail_subject}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Body
-                </label>
-                <textarea
-                  name="mail_body"
-                  rows={8}
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-sm"
-                  placeholder="Compose your email content here..."
-                  value={form.mail_body}
-                  onChange={handleChange}
-                ></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black-700 mb-1">
-                  Attachment
-                </label>
-                <input
-                  type="file"
-                  name="attachment"
-                  className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  onChange={handleChange}
-                  // Example: accept only PDF, images, and docs. Adjust as needed.
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                  id="attachment-input"
-                />
-                <div className="text-xs text-gray-500 mt-1">
-                  {attachmentFile
-                    ? `Selected: ${attachmentFile.name}`
-                    : "No file chosen"}
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="min-h-screen px-4 text-center">
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-11/12 md:w-3/4 lg:w-2/3 max-w-5xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-gray-200 rounded-t-xl">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <i className="fas fa-plus-circle text-blue-600"></i>
+                    Add New Campaign
+                  </h3>
+                  <button
+                    onClick={() => setModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-500 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    aria-label="Close"
+                  >
+                    <i className="fas fa-times text-lg"></i>
+                  </button>
                 </div>
               </div>
-              <div className="flex justify-end pt-4 space-x-3">
+            <form onSubmit={handleAdd} encType="multipart/form-data" className="px-6 py-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      name="description"
+                      required
+                      className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                      placeholder="Enter campaign description"
+                      value={form.description}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Email Subject
+                    </label>
+                    <input
+                      type="text"
+                      name="mail_subject"
+                      required
+                      className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                      placeholder="Enter email subject line"
+                      value={form.mail_subject}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Email Body
+                    </label>
+                    <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
+                      <QuillEditor
+                        value={form.mail_body}
+                        onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                        modules={quillModules}
+                        formats={quillFormats}
+                        placeholder="Compose your email content here..."
+                      />
+                    </div>
+                  </div>
+                                      <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Attachment
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <label className="flex-1">
+                        <span className="sr-only">Choose file</span>
+                        <input
+                          type="file"
+                          name="attachment"
+                          onChange={handleChange}
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                          id="attachment-input"
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none"
+                        />
+                      </label>
+                      {attachmentFile && (
+                        <button
+                          type="button"
+                          onClick={() => setAttachmentFile(null)}
+                          className="p-2 text-gray-400 hover:text-gray-500"
+                          title="Remove attachment"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      )}
+                    </div>
+                    {attachmentFile && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <i className="fas fa-paperclip mr-2"></i>
+                        {attachmentFile.name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 border-t border-gray-200 pt-6 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors inline-flex items-center"
                 >
-                  <i className="fas fa-save mr-2"></i> Save Campaign
+                  <i className="fas fa-save mr-2"></i>
+                  Save Campaign
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Campaign Modal */}
       {editModalOpen && (
-        <div className="fixed inset-0  bg-black/30 backdrop-blur-md backdrop-saturate-150 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                <i className="fas fa-edit mr-2 text-blue-600"></i>
-                Edit Campaign
-              </h3>
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form className="space-y-4" onSubmit={handleUpdate} encType="multipart/form-data">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={form.description}
-                  onChange={handleChange}
-                />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-11/12 md:w-3/4 lg:w-2/3 max-w-5xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-gray-200 rounded-t-xl">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <i className="fas fa-edit text-blue-600"></i>
+                    Edit Campaign
+                  </h3>
+                  <button
+                    onClick={() => setEditModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-500 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    aria-label="Close"
+                  >
+                    <i className="fas fa-times text-lg"></i>
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Subject
-                </label>
-                <input
-                  type="text"
-                  name="mail_subject"
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={form.mail_subject}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Body
-                </label>
-                <textarea
-                  name="mail_body"
-                  rows={8}
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-sm"
-                  value={form.mail_body}
-                  onChange={handleChange}
-                ></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Attachment
-                </label>
-                <input
-                  type="file"
-                  name="attachment"
-                  className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  onChange={handleChange}
-                  accept="*"
-                />
-                {attachmentFile && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Selected: {attachmentFile.name}
+              
+              <form onSubmit={handleUpdate} encType="multipart/form-data" className="px-6 py-4">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        name="description"
+                        required
+                        className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                        value={form.description}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Email Subject
+                      </label>
+                      <input
+                        type="text"
+                        name="mail_subject"
+                        required
+                        className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                        value={form.mail_subject}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Email Body
+                      </label>
+                      <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
+                        <QuillEditor
+                          value={form.mail_body}
+                          onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                          modules={quillModules}
+                          formats={quillFormats}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Attachment
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <label className="flex-1">
+                          <span className="sr-only">Choose file</span>
+                          <input
+                            type="file"
+                            name="attachment"
+                            onChange={handleChange}
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                            id="edit-attachment-input"
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none"
+                          />
+                        </label>
+                        {attachmentFile && (
+                          <button
+                            type="button"
+                            onClick={() => setAttachmentFile(null)}
+                            className="p-2 text-gray-400 hover:text-gray-500"
+                            title="Remove attachment"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        )}
+                      </div>
+                      {attachmentFile && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <i className="fas fa-paperclip mr-2"></i>
+                          {attachmentFile.name}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="flex justify-end pt-4 space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <i className="fas fa-save mr-2"></i> Update
-                </button>
-              </div>
-            </form>
+                </div>
+                <div className="mt-6 border-t border-gray-200 pt-6 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors inline-flex items-center"
+                  >
+                    <i className="fas fa-save mr-2"></i>
+                    Update Campaign
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
