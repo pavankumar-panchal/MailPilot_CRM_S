@@ -6,6 +6,29 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
 
+// Ensure campaign_master has a send_as_html column (boolean flag).
+// If missing, add it with a safe default of 0. This migration runs on-demand
+// to keep backwards-compatibility with existing databases.
+// We perform a safe information_schema check and run ALTER TABLE if needed.
+try {
+    $dbNameRes = $conn->query("SELECT DATABASE() as db");
+    $dbName = $dbNameRes ? $dbNameRes->fetch_assoc()['db'] : '';
+    if ($dbName) {
+        $colCheckSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $conn->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_master' AND COLUMN_NAME = 'send_as_html'";
+        $colCheck = $conn->query($colCheckSql);
+        if ($colCheck) {
+            $hasCol = (int)$colCheck->fetch_assoc()['cnt'] > 0;
+            if (!$hasCol) {
+                // Try to add the column; ignore error if it fails.
+                @$conn->query("ALTER TABLE campaign_master ADD COLUMN send_as_html TINYINT(1) NOT NULL DEFAULT 0");
+            }
+        }
+    }
+} catch (Exception $e) {
+    // If anything fails here, continue without throwing -- this keeps API
+    // compatible on environments where the DB user cannot ALTER TABLE.
+}
+
 // Handle preflight (CORS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -57,11 +80,8 @@ try {
                     $preview = implode(' ', array_slice($words, 0, 30));
                 if (count($words) > 30) $preview .= '...';
                 $row['mail_body_preview'] = $preview;
-                // Optionally, don't send the full attachment in list view
-                if (isset($row['attachment'])) {
-                    $row['has_attachment'] = !empty($row['attachment']);
-                    unset($row['attachment']);
-                }
+                // Add attachment indicator for list view
+                $row['has_attachment'] = !empty($row['attachment_path']);
                 // Normalize escaped sequences in mail_body for consistent
                 // client-side editing (turn "\r\n" into real newlines).
                 $row['mail_body'] = isset($row['mail_body']) ? stripcslashes($row['mail_body']) : $row['mail_body'];
@@ -82,17 +102,56 @@ try {
             $description = $conn->real_escape_string($_POST['description'] ?? '');
             $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
+            // Optional send mode flag (0 = send as literal text, 1 = send as rendered HTML)
+            $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
             $attachment_path = null;
+            $images_paths = [];
 
-            if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = __DIR__ . '/../../storage/';
+            // Handle attachment upload
+            if (isset($_FILES['attachment'])) {
+                if ($_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+                    $uploadDir = __DIR__ . '/../storage/attachments/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
+                    $targetPath = $uploadDir . $filename;
+                    if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+                        $attachment_path = 'storage/attachments/' . $filename;
+                        chmod($targetPath, 0644); // Set proper permissions
+                    } else {
+                        error_log("Failed to move uploaded file to: " . $targetPath);
+                    }
+                } else {
+                    error_log("File upload error: " . $_FILES['attachment']['error']);
+                }
+            }
+
+            // Handle multiple images upload (old method - keeping for backward compatibility)
+            if (isset($_FILES['images']) && is_array($_FILES['images']['name'])) {
+                $uploadDir = __DIR__ . '/../storage/images/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
-                $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
-                $targetPath = $uploadDir . $filename;
-                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
-                    $attachment_path = 'storage/' . $filename;
+                
+                $fileCount = count($_FILES['images']['name']);
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
+                        $filename = uniqid() . '_' . basename($_FILES['images']['name'][$i]);
+                        $targetPath = $uploadDir . $filename;
+                        if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $targetPath)) {
+                            $images_paths[] = 'storage/images/' . $filename;
+                            chmod($targetPath, 0644);
+                        }
+                    }
+                }
+            }
+
+            // Handle images uploaded via Quill editor (sent as JSON array)
+            if (isset($_POST['images_json'])) {
+                $quillImages = json_decode($_POST['images_json'], true);
+                if (is_array($quillImages) && !empty($quillImages)) {
+                    $images_paths = array_merge($images_paths, $quillImages);
                 }
             }
 
@@ -102,16 +161,41 @@ try {
                 exit;
             }
 
+            // Store images as JSON (null if empty array)
+            $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
+            
+            // Build dynamic UPDATE query
+            $updateFields = ['description=?', 'mail_subject=?', 'mail_body=?', 'send_as_html=?'];
+            $params = [$description, $mail_subject, $mail_body, $send_as_html];
+            $types = 'sssi';
+            
+            // ALWAYS update attachment_path if a new file was uploaded
             if ($attachment_path !== null) {
-                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, attachment_path=? WHERE campaign_id=?");
-                $stmt->bind_param("ssssi", $description, $mail_subject, $mail_body, $attachment_path, $id);
-            } else {
-                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=? WHERE campaign_id=?");
-                $stmt->bind_param("sssi", $description, $mail_subject, $mail_body, $id);
+                $updateFields[] = 'attachment_path=?';
+                $params[] = $attachment_path;
+                $types .= 's';
             }
+            
+            // ALWAYS update images_paths (even if null/empty to support clearing or keeping existing)
+            $updateFields[] = 'images_paths=?';
+            $params[] = $images_json;
+            $types .= 's';
+            
+            $params[] = $id;
+            $types .= 'i';
+            
+            $sql = "UPDATE campaign_master SET " . implode(', ', $updateFields) . " WHERE campaign_id=?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param($types, ...$params);
 
             if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!']);
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Campaign updated successfully!',
+                    'attachment_updated' => ($attachment_path !== null),
+                    'images_updated' => true,
+                    'images_count' => count($images_paths)
+                ]);
             } else {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
@@ -123,17 +207,55 @@ try {
         $description = $conn->real_escape_string($_POST['description'] ?? '');
         $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
+        $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
         $attachment_path = null;
+        $images_paths = [];
 
-        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../storage/';
+        // Handle attachment upload
+        if (isset($_FILES['attachment'])) {
+            if ($_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = __DIR__ . '/../storage/attachments/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
+                $targetPath = $uploadDir . $filename;
+                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+                    $attachment_path = 'storage/attachments/' . $filename;
+                    chmod($targetPath, 0644); // Set proper permissions
+                } else {
+                    error_log("Failed to move uploaded file to: " . $targetPath);
+                }
+            } else {
+                error_log("File upload error: " . $_FILES['attachment']['error']);
+            }
+        }
+
+        // Handle multiple images upload (old method - keeping for backward compatibility)
+        if (isset($_FILES['images']) && is_array($_FILES['images']['name'])) {
+            $uploadDir = __DIR__ . '/../storage/images/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }
-            $filename = uniqid() . '_' . basename($_FILES['attachment']['name']);
-            $targetPath = $uploadDir . $filename;
-            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
-                $attachment_path = 'storage/' . $filename;
+            
+            $fileCount = count($_FILES['images']['name']);
+            for ($i = 0; $i < $fileCount; $i++) {
+                if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
+                    $filename = uniqid() . '_' . basename($_FILES['images']['name'][$i]);
+                    $targetPath = $uploadDir . $filename;
+                    if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $targetPath)) {
+                        $images_paths[] = 'storage/images/' . $filename;
+                        chmod($targetPath, 0644);
+                    }
+                }
+            }
+        }
+
+        // Handle images uploaded via Quill editor (sent as JSON array)
+        if (isset($_POST['images_json'])) {
+            $quillImages = json_decode($_POST['images_json'], true);
+            if (is_array($quillImages) && !empty($quillImages)) {
+                $images_paths = array_merge($images_paths, $quillImages);
             }
         }
 
@@ -143,16 +265,23 @@ try {
             exit;
         }
 
-        if ($attachment_path !== null) {
-            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $description, $mail_subject, $mail_body, $attachment_path);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $description, $mail_subject, $mail_body);
-        }
+        // Store images as JSON (null if empty array)
+        $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
+        
+        $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssi", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html);
 
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Campaign added successfully!']);
+            $campaignId = $stmt->insert_id;
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Campaign added successfully!',
+                'campaign_id' => $campaignId,
+                'attachment_saved' => !empty($attachment_path),
+                'attachment_path' => $attachment_path,
+                'images_saved' => !empty($images_json),
+                'images_count' => count($images_paths)
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error adding campaign: ' . $conn->error]);

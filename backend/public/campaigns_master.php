@@ -258,13 +258,13 @@ function stopEmailBlasterProcess($campaign_id)
     if (file_exists($pid_file)) {
         $pid = (int)trim(file_get_contents($pid_file));
         if ($pid > 0) {
-            // Send SIGTERM
-            @posix_kill($pid, SIGTERM);
+            // Send SIGTERM (15)
+            @posix_kill($pid, 15);
             // Wait briefly for process to exit
             usleep(200000);
-            // If still running, send SIGKILL
+            // If still running, send SIGKILL (9)
             if (function_exists('posix_kill') && @posix_kill($pid, 0)) {
-                @posix_kill($pid, SIGKILL);
+                @posix_kill($pid, 9);
             }
         }
         @unlink($pid_file);

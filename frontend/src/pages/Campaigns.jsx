@@ -8,6 +8,8 @@ const emptyCampaign = {
   mail_subject: "",
   mail_body: "",
   attachment: null,
+  existing_attachment: null, // Track existing attachment path
+  images: [], // Track uploaded image paths
 };
 
 // Quill configuration (toolbar + formats)
@@ -17,18 +19,18 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     [{ color: [] }, { background: [] }],
-    ['link'],
+    ['link', 'image'],
     ['clean']
   ]
 };
 
 const quillFormats = [
   'header', 'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet', 'link', 'color', 'background'
+  'list', 'bullet', 'link', 'color', 'background', 'image'
 ];
 
 // Direct Quill editor wrapper compatible with React 19
-function QuillEditor({ value, onChange, modules = quillModules, formats = quillFormats, placeholder }) {
+function QuillEditor({ value, onChange, modules = quillModules, formats = quillFormats, placeholder, onImageUpload, uploadImageUrl }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
 
@@ -42,6 +44,64 @@ function QuillEditor({ value, onChange, modules = quillModules, formats = quillF
         placeholder: placeholder || ''
       });
 
+      // Custom image handler
+      const toolbar = quillRef.current.getModule('toolbar');
+      toolbar.addHandler('image', () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (file) {
+            // Show loading state
+            const range = quillRef.current.getSelection(true);
+            quillRef.current.insertText(range.index, 'Uploading image...');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+              const response = await fetch(uploadImageUrl || 'http://localhost/verify_emails/MailPilot_CRM/backend/includes/upload_image.php', {
+                method: 'POST',
+                body: formData
+              });
+
+              let result;
+              try {
+                result = await response.json();
+              } catch {
+                const text = await response.text();
+                console.error('Server response:', text);
+                throw new Error('Invalid JSON response from server: ' + text.substring(0, 100));
+              }
+              
+              // Remove loading text
+              quillRef.current.deleteText(range.index, 'Uploading image...'.length);
+              
+              if (result.success) {
+                // Insert image at cursor position
+                quillRef.current.insertEmbed(range.index, 'image', result.url);
+                quillRef.current.setSelection(range.index + 1);
+                
+                // Notify parent component about the uploaded image path
+                if (onImageUpload) {
+                  onImageUpload(result.path);
+                }
+              } else {
+                alert('Image upload failed: ' + result.message);
+                console.error('Upload failed:', result);
+              }
+            } catch (error) {
+              quillRef.current.deleteText(range.index, 'Uploading image...'.length);
+              alert('Image upload failed: ' + error.message);
+              console.error('Upload error:', error);
+            }
+          }
+        };
+      });
+
       quillRef.current.on('text-change', () => {
         const html = quillRef.current.root.innerHTML;
         onChange && onChange(html === '<p><br></p>' ? '' : html);
@@ -53,7 +113,7 @@ function QuillEditor({ value, onChange, modules = quillModules, formats = quillF
       // if (containerRef.current) containerRef.current.innerHTML = '';
       // keep instance as Quill doesn't expose a destroy API we rely on garbage collection
     };
-  }, [modules, formats, onChange, placeholder]);
+  }, [modules, formats, onChange, placeholder, onImageUpload, uploadImageUrl]);
 
   // Sync external value into editor
   useEffect(() => {
@@ -123,6 +183,7 @@ const Campaigns = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form, setForm] = useState(emptyCampaign);
   const [attachmentFile, setAttachmentFile] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]); // Track images uploaded via Quill
   const [editId, setEditId] = useState(null);
   const [message, setMessage] = useState(null);
 
@@ -133,10 +194,13 @@ const Campaigns = () => {
     total: 0,
   });
 
-  const API_URL = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/master/campaigns";
+  // Configuration - Update these for production
+  const BASE_URL = "http://localhost/verify_emails/MailPilot_CRM";
+  const API_URL = `${BASE_URL}/backend/routes/api.php/api/master/campaigns`;
+  const UPLOAD_IMAGE_URL = `${BASE_URL}/backend/includes/upload_image.php`;
 
   // Fetch campaigns
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(API_URL);
@@ -163,11 +227,11 @@ const Campaigns = () => {
       }));
     }
     setLoading(false);
-  };
+  }, [API_URL]);
 
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
 
   // Handle form input
   const handleChange = (e) => {
@@ -182,6 +246,11 @@ const Campaigns = () => {
     }
   };
 
+  // Callback when image is uploaded via Quill
+  const handleImageUpload = (imagePath) => {
+    setUploadedImages(prev => [...prev, imagePath]);
+  };
+
   // Add campaign
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -189,9 +258,14 @@ const Campaigns = () => {
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
     formData.append("mail_body", form.mail_body);
+    formData.append("send_as_html", "1"); // Always send as HTML for rich content
+    
     if (attachmentFile) {
       formData.append("attachment", attachmentFile);
     }
+
+    // ALWAYS send uploaded images as JSON array (even if empty)
+    formData.append("images_json", JSON.stringify(uploadedImages));
 
     try {
       const res = await fetch(API_URL, {
@@ -204,6 +278,7 @@ const Campaigns = () => {
         setModalOpen(false);
         setForm(emptyCampaign);
         setAttachmentFile(null);
+        setUploadedImages([]); // Clear uploaded images
         fetchCampaigns();
       } else {
         setMessage({
@@ -216,7 +291,7 @@ const Campaigns = () => {
     }
   };
 
-  // Edit campaign (no change needed for attachment)
+  // Edit campaign
   const handleEdit = (campaign) => {
     setEditId(campaign.campaign_id);
     setForm({
@@ -224,8 +299,11 @@ const Campaigns = () => {
       mail_subject: campaign.mail_subject,
       mail_body: campaign.mail_body,
       attachment: null,
+      existing_attachment: campaign.attachment_path || null, // Track existing attachment
+      images: campaign.images_paths ? JSON.parse(campaign.images_paths) : [],
     });
     setAttachmentFile(null);
+    setUploadedImages([]); // Reset for edit mode
     setEditModalOpen(true);
   };
 
@@ -236,9 +314,16 @@ const Campaigns = () => {
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
     formData.append("mail_body", form.mail_body);
+    formData.append("send_as_html", "1"); // Always send as HTML for rich content
+    
     if (attachmentFile) {
       formData.append("attachment", attachmentFile);
     }
+
+    // ALWAYS send uploaded images as JSON array (combine existing + newly uploaded)
+    const allImages = [...(form.images || []), ...uploadedImages];
+    formData.append("images_json", JSON.stringify(allImages));
+    
     // Tell backend this is an update
     formData.append("_method", "PUT");
 
@@ -253,6 +338,7 @@ const Campaigns = () => {
         setEditModalOpen(false);
         setForm(emptyCampaign);
         setAttachmentFile(null);
+        setUploadedImages([]); // Clear uploaded images
         fetchCampaigns();
       } else {
         setMessage({
@@ -306,9 +392,11 @@ const Campaigns = () => {
         mail_subject: data.mail_subject,
         mail_body: data.mail_body,
         attachment: null,
+        images: [], // Don't copy images, user will re-upload if needed
       });
       setEditId(null); // <-- Clear editId so handleAdd will be used
       setAttachmentFile(null); // <-- Clear any previous file
+      setUploadedImages([]); // Clear uploaded images
       setModalOpen(true);
     } catch {
       setMessage({ type: "error", text: "Failed to load campaign for reuse." });
@@ -323,10 +411,22 @@ const Campaigns = () => {
     }
   }, [message]);
 
-  // Preview first 30 words
+  // Preview first 30 words (strip HTML tags for clean display)
   const preview = (body) => {
-    const words = body.split(/\s+/);
-    return words.slice(0, 30).join(" ") + (words.length > 30 ? "..." : "");
+    if (!body) return "";
+    
+    // Create a temporary div to parse HTML and extract text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = body;
+    
+    // Get text content (strips all HTML tags)
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    // Split into words and take first 30
+    const words = textContent.trim().split(/\s+/).filter(word => word.length > 0);
+    const preview = words.slice(0, 30).join(" ");
+    
+    return preview + (words.length > 30 ? "..." : "");
   };
 
   // Pagination logic
@@ -403,10 +503,23 @@ const Campaigns = () => {
               </div>
             </div>
             <div className="mt-2">
-              <div className="font-semibold text-gray-900">Subject:</div>
-              <div className="text-gray-700 text-sm break-words mb-1">{c.mail_subject}</div>
-              <div className="font-semibold text-gray-900">Email Preview:</div>
-              <div className="text-gray-500 text-sm break-words">{preview(c.mail_body)}</div>
+              <div className="font-semibold text-gray-900 text-xs uppercase tracking-wide mb-1">Subject:</div>
+              <div className="text-gray-700 text-sm break-words mb-3">{c.mail_subject}</div>
+              <div className="font-semibold text-gray-900 text-xs uppercase tracking-wide mb-1">Email Preview:</div>
+              <div className="text-gray-600 text-sm leading-relaxed" style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>{preview(c.mail_body)}</div>
+              {c.attachment_path && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i className="fas fa-paperclip mr-1"></i>
+                    Has Attachment
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -475,11 +588,24 @@ const Campaigns = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div
-                        className="text-sm text-gray-500 truncate max-w-xs"
+                        className="text-sm text-gray-600 max-w-xs line-clamp-2"
                         title={preview(c.mail_body)}
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
                       >
                         {preview(c.mail_body)}
                       </div>
+                      {c.attachment_path && (
+                        <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          <i className="fas fa-paperclip mr-1"></i>
+                          Attachment
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
@@ -715,15 +841,17 @@ const Campaigns = () => {
                       <QuillEditor
                         value={form.mail_body}
                         onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                        onImageUpload={handleImageUpload}
+                        uploadImageUrl={UPLOAD_IMAGE_URL}
                         modules={quillModules}
                         formats={quillFormats}
                         placeholder="Compose your email content here..."
                       />
                     </div>
                   </div>
-                                      <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
-                      Attachment
+                      Attachment (Optional)
                     </label>
                     <div className="flex items-center space-x-2">
                       <label className="flex-1">
@@ -832,12 +960,14 @@ const Campaigns = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Email Body
+                        Email Body (Use image button in toolbar to add images)
                       </label>
                       <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
                         <QuillEditor
                           value={form.mail_body}
                           onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                          onImageUpload={handleImageUpload}
+                          uploadImageUrl={UPLOAD_IMAGE_URL}
                           modules={quillModules}
                           formats={quillFormats}
                         />
@@ -845,7 +975,7 @@ const Campaigns = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Attachment
+                        Attachment (Optional)
                       </label>
                       <div className="flex items-center space-x-2">
                         <label className="flex-1">
@@ -874,6 +1004,29 @@ const Campaigns = () => {
                         <div className="mt-2 text-sm text-gray-600">
                           <i className="fas fa-paperclip mr-2"></i>
                           {attachmentFile.name}
+                        </div>
+                      )}
+                      {!attachmentFile && form.existing_attachment && (
+                        <div className="mt-2 text-sm text-gray-600 border-t pt-2">
+                          <p className="font-medium text-gray-700 mb-1">Existing attachment:</p>
+                          <div className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+                            <div className="flex items-center">
+                              <i className="fas fa-file mr-2 text-blue-600"></i>
+                              <span className="text-xs">{form.existing_attachment.split('/').pop()}</span>
+                            </div>
+                            <a
+                              href={`${BASE_URL}/backend/${form.existing_attachment}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-700 text-xs"
+                            >
+                              <i className="fas fa-download"></i> Download
+                            </a>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            <i className="fas fa-info-circle mr-1"></i>
+                            Upload a new file to replace this attachment
+                          </p>
                         </div>
                       )}
                     </div>

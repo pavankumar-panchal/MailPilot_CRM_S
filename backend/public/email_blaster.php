@@ -93,7 +93,7 @@ while (true) {
         $result = $conn->query("SELECT COUNT(*) AS total FROM emails e 
         LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
         WHERE e.domain_status = 1
-        AND (mb.id IS NULL OR (mb.status IN ('failed', 'pending') AND mb.attempt_count < 3))
+        AND (mb.id IS NULL OR mb.status IN ('failed', 'pending'))
         AND NOT EXISTS (
             SELECT 1 FROM mail_blaster mb2 
             WHERE mb2.to_mail = e.raw_emailid 
@@ -138,27 +138,42 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
     $processed_count = 0;
     $max_retries = 3;
 
-    // Get campaign details
-    $campaign = $db->query("
-        SELECT mail_subject, mail_body 
-        FROM campaign_master 
-        WHERE campaign_id = $campaign_id
-    ")->fetch_assoc();
+    // Get campaign details including attachments and images
+    $dbNameRes = $db->query("SELECT DATABASE() as db");
+    $dbName = $dbNameRes ? $dbNameRes->fetch_assoc()['db'] : '';
+    $columns = [];
+    
+    if ($dbName) {
+        $colCheck = $db->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $db->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_master'");
+        while ($col = $colCheck->fetch_assoc()) {
+            $columns[] = $col['COLUMN_NAME'];
+        }
+    }
+
+    $select = "SELECT mail_subject, mail_body";
+    if (in_array('send_as_html', $columns)) $select .= ", send_as_html";
+    if (in_array('attachment_path', $columns)) $select .= ", attachment_path";
+    if (in_array('images_paths', $columns)) $select .= ", images_paths";
+    if (in_array('reply_to', $columns)) $select .= ", reply_to";
+    $select .= " FROM campaign_master WHERE campaign_id = $campaign_id";
+    
+    $campaign = $db->query($select)->fetch_assoc();
 
     if (!$campaign) {
         logMessage("Campaign not found", 'ERROR');
         return 0;
     }
         
-        // Normalize mail_body: convert escaped sequences ("\\r\\n") to real
-        // newlines and decode any HTML entities so the sent email preserves the
-        // original structure the admin entered. This handles cases where the
-        // DB contains literal backslash-escaped sequences or encoded entities.
+        // Normalize mail_body: convert escaped sequences ("\\r\\n") to real newlines
         if (isset($campaign['mail_body'])) {
             $normalized = stripcslashes($campaign['mail_body']);
-            // Decode HTML entities (if stored as &lt; or similar)
-            $normalized = html_entity_decode($normalized, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            // If sending as HTML, decode HTML entities
+            if (!empty($campaign['send_as_html'])) {
+                $normalized = html_entity_decode($normalized, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
             $campaign['mail_body'] = $normalized;
+        } else {
+            $campaign['mail_body'] = '';
         }
 
     // Get all active SMTP accounts and their server details
@@ -190,7 +205,7 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
         FROM emails e
         LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
         WHERE e.domain_status = 1
-          AND (mb.id IS NULL OR (mb.status IN ('failed', 'pending') AND mb.attempt_count < $max_retries))
+              AND (mb.id IS NULL OR mb.status IN ('failed', 'pending'))
           AND NOT EXISTS (
               SELECT 1 FROM mail_blaster mb2 
               WHERE mb2.to_mail = e.raw_emailid 
@@ -215,51 +230,110 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
         ];
     }
 
-    // Round-robin through SMTPs for each email
     $smtp_count = count($smtp_accounts);
-    $smtp_index = 0;
 
     foreach ($emails as $email) {
         $to = $email['raw_emailid'];
         $emailId = (int)$email['id'];
 
-        // Find next available SMTP within limits
+        // Get next SMTP from rotation atomically (with row locking)
+        // This ensures each email gets a unique SMTP across all campaigns
         $smtp_found = false;
-        $start_index = $smtp_index;
-        do {
-            $smtp = $smtp_accounts[$smtp_index];
-            $sid = $smtp['smtp_account_id'];
-            if ($smtp_usage[$sid]['daily'] < $smtp['daily_limit'] && $smtp_usage[$sid]['hourly'] < $smtp['hourly_limit']) {
-                $smtp_found = true;
-                break;
-            }
-            $smtp_index = ($smtp_index + 1) % $smtp_count;
-        } while ($smtp_index !== $start_index);
-
-        if (!$smtp_found) {
-            logMessage("All SMTP accounts at limit. Waiting 60s before retrying...", 'WARNING');
-            sleep(60);
-            // Refresh usage
-            foreach ($smtp_accounts as $smtp) {
+        $all_smtp_checked = 0;
+        
+        // Keep trying until we find an available SMTP (no retry limit)
+        while (!$smtp_found) {
+            // Start transaction with row lock
+            $db->begin_transaction();
+            
+            try {
+                // Lock the rotation row - prevents race conditions
+                $rotation = $db->query("SELECT last_smtp_index, total_smtp_count FROM smtp_rotation WHERE id = 1 FOR UPDATE")->fetch_assoc();
+                
+                // Ensure rotation row exists and is in sync
+                if (!$rotation) {
+                    // Create the rotation row if it doesn't exist
+                    $db->query("INSERT INTO smtp_rotation (id, last_smtp_index, total_smtp_count) VALUES (1, -1, $smtp_count) ON DUPLICATE KEY UPDATE total_smtp_count = $smtp_count");
+                    $smtp_index = 0;
+                    $db->query("UPDATE smtp_rotation SET last_smtp_index = 0, total_smtp_count = $smtp_count WHERE id = 1");
+                    $all_smtp_checked = 0; // Reset counter
+                } elseif ($rotation['total_smtp_count'] != $smtp_count) {
+                    // SMTP count changed, realign rotation index
+                    $smtp_index = 0;
+                    $db->query("UPDATE smtp_rotation SET last_smtp_index = 0, total_smtp_count = $smtp_count WHERE id = 1");
+                    $all_smtp_checked = 0; // Reset counter
+                } else {
+                    // Get next SMTP in sequence
+                    $smtp_index = ($rotation['last_smtp_index'] + 1) % $smtp_count;
+                }
+                
+                $smtp = $smtp_accounts[$smtp_index];
                 $sid = $smtp['smtp_account_id'];
-                $smtp_usage[$sid]['daily'] = getSmtpAccountSent($db, $sid, 'daily');
-                $smtp_usage[$sid]['hourly'] = getSmtpAccountSent($db, $sid, 'hourly');
+                
+                // Check if this SMTP is within limits
+                if ($smtp_usage[$sid]['daily'] < $smtp['daily_limit'] && 
+                    $smtp_usage[$sid]['hourly'] < $smtp['hourly_limit']) {
+                    
+                    // This SMTP is available! Update rotation and use it
+                    $db->query("UPDATE smtp_rotation SET last_smtp_index = $smtp_index, last_smtp_id = $sid WHERE id = 1");
+                    $db->commit();
+                    $smtp_found = true;
+                    $all_smtp_checked = 0; // Reset counter
+                    
+                    logMessage("[ROTATION] Email to $to → SMTP[$smtp_index] {$smtp['smtp_email']} (ID: $sid)", 'INFO');
+                } else {
+                    // This SMTP is at limit, update rotation to skip it and try next
+                    $db->query("UPDATE smtp_rotation SET last_smtp_index = $smtp_index WHERE id = 1");
+                    $db->commit();
+                    $all_smtp_checked++;
+                    
+                    logMessage("[ROTATION] SMTP[$smtp_index] {$smtp['smtp_email']} at limit, trying next...", 'WARNING');
+                    
+                    // If we've checked all SMTPs and none are available, wait and refresh
+                    if ($all_smtp_checked >= $smtp_count) {
+                        logMessage("[WAIT] All $smtp_count SMTPs at limit. Waiting 60s to refresh limits...", 'WARNING');
+                        $db->commit(); // Make sure transaction is closed
+                        sleep(60);
+                        
+                        // Refresh usage counters
+                        foreach ($smtp_accounts as $smtp) {
+                            $sid = $smtp['smtp_account_id'];
+                            $smtp_usage[$sid]['daily'] = getSmtpAccountSent($db, $sid, 'daily');
+                            $smtp_usage[$sid]['hourly'] = getSmtpAccountSent($db, $sid, 'hourly');
+                        }
+                        $all_smtp_checked = 0; // Reset counter after refresh
+                        logMessage("[REFRESH] SMTP usage limits refreshed. Retrying...", 'INFO');
+                    }
+                }
+                
+            } catch (Exception $e) {
+                $db->rollback();
+                logMessage("[ROTATION] Lock error: " . $e->getMessage(), 'ERROR');
+                usleep(100000); // Wait 0.1s before retry
             }
-            continue;
         }
 
         // Log which SMTP and recipient is being used
         logMessage("[SEND_ATTEMPT] To: $to | SMTP: {$smtp['smtp_email']} (ID: {$smtp['smtp_account_id']})", 'INFO');
 
         try {
-            sendEmail([
-                'host' => $smtp['host'],
-                'port' => $smtp['port'],
-                'email' => $smtp['smtp_email'],
-                'password' => $smtp['smtp_password'],
-                'encryption' => $smtp['encryption'],
-                'received_email' => $smtp['received_email'] // <-- Pass this!
-            ], $to, $campaign['mail_subject'], $campaign['mail_body']);
+            // send as HTML if campaign has send_as_html set and it's truthy
+            $isHtml = !empty($campaign['send_as_html']);
+            sendEmail(
+                [
+                    'host' => $smtp['host'],
+                    'port' => $smtp['port'],
+                    'email' => $smtp['smtp_email'],
+                    'password' => $smtp['smtp_password'],
+                    'encryption' => $smtp['encryption'],
+                    'received_email' => $smtp['received_email']
+                ], 
+                $to, 
+                $campaign['mail_subject'], 
+                $campaign['mail_body'], 
+                $isHtml,
+                $campaign // Pass full campaign data for attachments/images/reply_to
+            );
 
             recordDelivery($db, $smtp['smtp_account_id'], $emailId, $campaign_id, $to, 'success');
 
@@ -288,7 +362,20 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
             ");
         }
 
+        // Move to next SMTP for the next email in this batch
         $smtp_index = ($smtp_index + 1) % $smtp_count;
+        
+        // Update rotation state atomically for next campaign/batch
+        // Use a quick transaction to prevent race conditions
+        $db->begin_transaction();
+        try {
+            $next_smtp_id = $smtp_accounts[$smtp_index]['smtp_account_id'];
+            $db->query("UPDATE smtp_rotation SET last_smtp_index = $smtp_index, last_smtp_id = $next_smtp_id WHERE id = 1");
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+        }
+        
         usleep(300000); // 0.3 seconds throttle
     }
 
@@ -313,7 +400,7 @@ function getSmtpAccountSent($conn, $smtp_account_id, $type = 'daily')
     return (int)($row['cnt'] ?? 0);
 }
 
-function sendEmail($smtp, $to_email, $subject, $body)
+function sendEmail($smtp, $to_email, $subject, $body, $isHtml = false, $campaign = [])
 {
     $mail = new PHPMailer(true);
 
@@ -325,32 +412,129 @@ function sendEmail($smtp, $to_email, $subject, $body)
         $mail->Username = $smtp['email'];
         $mail->Password = $smtp['password'];
         $mail->Timeout = 30;
+        
+        // Disable SMTP debug output in production
+        $mail->SMTPDebug = 0;
 
         if ($smtp['encryption'] === 'ssl') {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         } elseif ($smtp['encryption'] === 'tls') {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         }
+        
+        // SMTPOptions for better compatibility
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
 
         $mail->setFrom($smtp['email']);
         $mail->addAddress($to_email);
         $mail->Subject = $subject;
 
-        // Send the body as plain text, exactly as it is (including HTML tags if present)
-        // This will make email clients show the raw HTML code instead of rendering it
-        $mail->isHTML(false);
-        $mail->Body = $body;
+        // Ensure proper charset
+        $mail->CharSet = 'UTF-8';
 
-        // Always set Reply-To to received_email from smtp_servers
-        if (!empty($smtp['received_email'])) {
+        if ($isHtml) {
+            // in the recipient's HTML view.
+            $mail->isHTML(true);
+            $mail->Body = $body;
+           
+            // not decode entities to avoid changing the textual content.
+            $mail->AltBody = trim(strip_tags($body));
+        } else {
+            // Send as literal plain text so recipients see HTML tags as text and
+            // whitespace is preserved.
+            $mail->isHTML(false);
+            $mail->Body = $body;
+            $mail->AltBody = $body;
+        }
+
+        // Set Reply-To from campaign or fallback to received_email from smtp_servers
+        if (!empty($campaign['reply_to'])) {
+            $mail->clearReplyTos();
+            $mail->addReplyTo($campaign['reply_to']);
+        } elseif (!empty($smtp['received_email'])) {
             $mail->clearReplyTos();
             $mail->addReplyTo($smtp['received_email']);
         }
 
+        // Add attachment if present
+        if (!empty($campaign['attachment_path'])) {
+            $attachmentPath = __DIR__ . '/../' . $campaign['attachment_path'];
+            if (file_exists($attachmentPath)) {
+                try {
+                    $mail->addAttachment($attachmentPath);
+                    logMessage("Attachment added: " . basename($attachmentPath), 'INFO');
+                } catch (Exception $e) {
+                    logMessage("Failed to add attachment: " . $e->getMessage(), 'ERROR');
+                }
+            } else {
+                logMessage("Attachment file not found at: " . $attachmentPath, 'ERROR');
+                logMessage("Campaign attachment_path: " . $campaign['attachment_path'], 'ERROR');
+            }
+        }
+
+        // Add embedded images if present
+        if (!empty($campaign['images_paths'])) {
+            $images = is_string($campaign['images_paths']) 
+                ? json_decode($campaign['images_paths'], true) 
+                : $campaign['images_paths'];
+            
+            if (is_array($images)) {
+                foreach ($images as $index => $imagePath) {
+                    $fullPath = __DIR__ . '/../' . $imagePath;
+                    if (file_exists($fullPath)) {
+                        // Generate unique CID for each image
+                        $cid = 'image_' . $index . '_' . uniqid();
+                        $mail->addEmbeddedImage($fullPath, $cid);
+                        
+                        // Replace image references in HTML body if HTML mode is enabled
+                        if ($isHtml) {
+                            $filename = basename($imagePath);
+                            
+                            // Build multiple URL patterns that might appear in the HTML
+                            $patterns = [
+                                // Full URL with http
+                                'http://[^"\']+/' . preg_quote($imagePath, '/'),
+                                // Full URL with https
+                                'https://[^"\']+/' . preg_quote($imagePath, '/'),
+                                // Relative path from backend
+                                preg_quote('/verify_emails/MailPilot_CRM/backend/' . $imagePath, '/'),
+                                // Just the storage path
+                                preg_quote($imagePath, '/'),
+                                // Just the filename
+                                preg_quote($filename, '/')
+                            ];
+                            
+                            // Try each pattern to replace image URLs with CID
+                            foreach ($patterns as $pattern) {
+                                $body = preg_replace(
+                                    '/(<img[^>]+src=["\'])' . $pattern . '(["\'][^>]*>)/i',
+                                    '${1}cid:' . $cid . '${2}',
+                                    $body
+                                );
+                            }
+                            
+                            $mail->Body = $body;
+                        }
+                    }
+                }
+            }
+        }
+
+        logMessage("Attempting to send email...", 'INFO');
+        
         if (!$mail->send()) {
             throw new Exception($mail->ErrorInfo);
         }
+        
+        logMessage("Email sent successfully via PHPMailer", 'INFO');
     } catch (Exception $e) {
+        logMessage("PHPMailer exception: " . $e->getMessage(), 'ERROR');
         throw new Exception("SMTP error: " . $e->getMessage());
     }
 }
