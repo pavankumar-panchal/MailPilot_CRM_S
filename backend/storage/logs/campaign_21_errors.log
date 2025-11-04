@@ -1,2 +1,0 @@
-[2025-11-03 15:32:32] [ERROR] PHPMailer exception: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[2025-11-03 15:32:32] [ERROR] [SEND_FAILED] To: panchalpavan7090@gmail.com | SMTP: alexander@relyonsoft.info (ID: 164) | Error: SMTP error: SMTP Error: Could not connect to SMTP host. Failed to connect to server

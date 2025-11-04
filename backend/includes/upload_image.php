@@ -4,8 +4,23 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-// Load configuration
-require_once __DIR__ . '/../config/config.php';
+// Load database connection
+require_once __DIR__ . '/../config/db.php';
+
+// Define constants for image upload
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+// Auto-detect BASE_URL
+if ($host === 'localhost' || strpos($host, '127.0.0.1') !== false) {
+    $BASE_URL = $protocol . '://' . $host . '/verify_emails/MailPilot_CRM';
+} else {
+    $BASE_URL = $protocol . '://' . $host;
+}
+
+// Upload limits
+$MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
+$ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 // Handle preflight (CORS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -41,19 +56,17 @@ try {
     $file = $_FILES['image'];
     
     // Validate file type (images only)
-    $allowedTypes = ALLOWED_IMAGE_TYPES;
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
     
-    if (!in_array($mimeType, $allowedTypes)) {
+    if (!in_array($mimeType, $ALLOWED_IMAGE_TYPES)) {
         throw new Exception('Invalid file type. Only images are allowed.');
     }
     
     // Validate file size
-    $maxSize = MAX_UPLOAD_SIZE;
-    if ($file['size'] > $maxSize) {
-        throw new Exception('File too large. Maximum size is ' . ($maxSize / 1024 / 1024) . 'MB.');
+    if ($file['size'] > $MAX_UPLOAD_SIZE) {
+        throw new Exception('File too large. Maximum size is ' . ($MAX_UPLOAD_SIZE / 1024 / 1024) . 'MB.');
     }
     
     // Create upload directory if it doesn't exist
@@ -86,8 +99,8 @@ try {
     // Set file permissions
     chmod($targetPath, 0644);
     
-    // Build the full URL using BASE_URL from config
-    $imageUrl = BASE_URL . '/backend/storage/images/' . $filename;
+    // Build the full URL
+    $imageUrl = $BASE_URL . '/backend/storage/images/' . $filename;
     
     echo json_encode([
         'success' => true,
