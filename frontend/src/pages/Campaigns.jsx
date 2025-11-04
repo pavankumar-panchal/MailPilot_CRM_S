@@ -251,13 +251,26 @@ const Campaigns = () => {
     setUploadedImages(prev => [...prev, imagePath]);
   };
 
+  // Helper function to replace localhost URLs with relative paths in HTML body
+  const replaceLocalhostWithRelativePaths = (htmlBody) => {
+    // Replace all localhost image URLs with relative paths
+    // Match: http://localhost/verify_emails/MailPilot_CRM/backend/storage/images/filename.jpg
+    // Replace with: storage/images/filename.jpg
+    const regex = /http:\/\/localhost\/verify_emails\/MailPilot_CRM\/backend\/(storage\/images\/[^"'\s>]+)/gi;
+    return htmlBody.replace(regex, '$1');
+  };
+
   // Add campaign
   const handleAdd = async (e) => {
     e.preventDefault();
+    
+    // Replace localhost URLs with relative paths before sending
+    const processedBody = replaceLocalhostWithRelativePaths(form.mail_body);
+    
     const formData = new FormData();
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
-    formData.append("mail_body", form.mail_body);
+    formData.append("mail_body", processedBody);
     formData.append("send_as_html", "1"); // Always send as HTML for rich content
     
     if (attachmentFile) {
@@ -310,10 +323,14 @@ const Campaigns = () => {
   // Update campaign
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    // Replace localhost URLs with relative paths before sending
+    const processedBody = replaceLocalhostWithRelativePaths(form.mail_body);
+    
     const formData = new FormData();
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
-    formData.append("mail_body", form.mail_body);
+    formData.append("mail_body", processedBody);
     formData.append("send_as_html", "1"); // Always send as HTML for rich content
     
     if (attachmentFile) {

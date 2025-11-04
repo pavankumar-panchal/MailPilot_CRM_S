@@ -478,19 +478,11 @@ function sendEmail($smtp, $to_email, $subject, $body, $isHtml = false, $campaign
             throw new Exception("Message body is empty. Cannot send email to $to_email");
         }
 
+        // Set HTML mode first (but don't set body yet - will be set after image processing)
         if ($isHtml) {
-            // in the recipient's HTML view.
             $mail->isHTML(true);
-            $mail->Body = $body;
-           
-            // not decode entities to avoid changing the textual content.
-            $mail->AltBody = trim(strip_tags($body));
         } else {
-            // Send as literal plain text so recipients see HTML tags as text and
-            // whitespace is preserved.
             $mail->isHTML(false);
-            $mail->Body = $body;
-            $mail->AltBody = $body;
         }
 
         // Set Reply-To from campaign or fallback to received_email from smtp_servers
@@ -579,12 +571,21 @@ function sendEmail($smtp, $to_email, $subject, $body, $isHtml = false, $campaign
                     }
                 }
                 
-                // Update mail body after processing all images (once)
-                if ($isHtml) {
-                    $mail->Body = $body;
-                    logMessage("[IMAGE_EMBED] Updated mail body with CID references", 'INFO');
-                }
+                // Body will be set after the loop
+                logMessage("[IMAGE_EMBED] Completed processing all images, CID references updated in body", 'INFO');
             }
+        }
+
+        // NOW set the body and alt body AFTER all image processing is complete
+        // This ensures CID references are included for ALL email types
+        if ($isHtml) {
+            $mail->Body = $body;
+            $mail->AltBody = trim(strip_tags($body)); // Plain text version for non-HTML clients
+            logMessage("[BODY_SET] HTML body set with " . strlen($body) . " characters", 'INFO');
+        } else {
+            $mail->Body = $body;
+            $mail->AltBody = $body;
+            logMessage("[BODY_SET] Plain text body set with " . strlen($body) . " characters", 'INFO');
         }
 
         // Final validation before sending

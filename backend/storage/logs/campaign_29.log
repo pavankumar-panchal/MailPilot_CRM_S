@@ -1,0 +1,52 @@
+[2025-11-04 12:38:54] [INFO] [ROTATION] Email to panchalpavan7090@gmail.com → SMTP[36] richa@relyonmail.online (ID: 65)
+[2025-11-04 12:38:54] [INFO] [SEND_ATTEMPT] To: panchalpavan7090@gmail.com | SMTP: richa@relyonmail.online (ID: 65)
+[2025-11-04 12:38:54] [INFO] Attachment added: 6909a65fc15a6_information.txt
+[2025-11-04 12:38:54] [INFO] [IMAGE_EMBED] Processing 2 embedded images
+[2025-11-04 12:38:54] [INFO] [IMAGE_EMBED] Added image 0: 6909a63ee3b91_1762240062.jpg as CID: image_0_6909a6860be11
+[2025-11-04 12:38:54] [WARNING] [IMAGE_REPLACE] WARNING: No matches found for image: 6909a63ee3b91_1762240062.jpg
+[2025-11-04 12:38:54] [INFO] [IMAGE_EMBED] Added image 1: 6909a6512426c_1762240081.jpg as CID: image_1_6909a6860bede
+[2025-11-04 12:38:54] [INFO] [IMAGE_REPLACE] Replaced 1 occurrence(s) using full path pattern
+[2025-11-04 12:38:54] [INFO] [IMAGE_EMBED] Completed processing all images, CID references updated in body
+[2025-11-04 12:38:54] [INFO] [BODY_SET] HTML body set with 376 characters
+[2025-11-04 12:38:54] [INFO] Attempting to send email...
+[2025-11-04 12:39:06] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 12:39:06] [SUCCESS] [SEND_SUCCESS] To: panchalpavan7090@gmail.com | SMTP: richa@relyonmail.online (ID: 65)
+[2025-11-04 12:39:06] [INFO] [ROTATION] Email to pavankumar7090@yahoo.com → SMTP[37] navya@relyonsoft.info (ID: 66)
+[2025-11-04 12:39:06] [INFO] [SEND_ATTEMPT] To: pavankumar7090@yahoo.com | SMTP: navya@relyonsoft.info (ID: 66)
+[2025-11-04 12:39:06] [INFO] Attachment added: 6909a65fc15a6_information.txt
+[2025-11-04 12:39:06] [INFO] [IMAGE_EMBED] Processing 2 embedded images
+[2025-11-04 12:39:06] [INFO] [IMAGE_EMBED] Added image 0: 6909a63ee3b91_1762240062.jpg as CID: image_0_6909a6926ece6
+[2025-11-04 12:39:06] [WARNING] [IMAGE_REPLACE] WARNING: No matches found for image: 6909a63ee3b91_1762240062.jpg
+[2025-11-04 12:39:06] [INFO] [IMAGE_EMBED] Added image 1: 6909a6512426c_1762240081.jpg as CID: image_1_6909a6926ed62
+[2025-11-04 12:39:06] [INFO] [IMAGE_REPLACE] Replaced 1 occurrence(s) using full path pattern
+[2025-11-04 12:39:06] [INFO] [IMAGE_EMBED] Completed processing all images, CID references updated in body
+[2025-11-04 12:39:06] [INFO] [BODY_SET] HTML body set with 376 characters
+[2025-11-04 12:39:06] [INFO] Attempting to send email...
+[2025-11-04 12:39:07] [WARNING] [SKIP_SMTP] Transient SMTP issue on navya@relyonsoft.info (ID: 66): SMTP error: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-11-04 12:39:07] [INFO] [ROTATION] Email to pavankumar7090@yahoo.com → SMTP[38] navya@relyonmail.xyz (ID: 67)
+[2025-11-04 12:39:07] [INFO] [SEND_ATTEMPT] To: pavankumar7090@yahoo.com | SMTP: navya@relyonmail.xyz (ID: 67)
+[2025-11-04 12:39:07] [INFO] Attachment added: 6909a65fc15a6_information.txt
+[2025-11-04 12:39:07] [INFO] [IMAGE_EMBED] Processing 2 embedded images
+[2025-11-04 12:39:07] [INFO] [IMAGE_EMBED] Added image 0: 6909a63ee3b91_1762240062.jpg as CID: image_0_6909a693e0833
+[2025-11-04 12:39:07] [WARNING] [IMAGE_REPLACE] WARNING: No matches found for image: 6909a63ee3b91_1762240062.jpg
+[2025-11-04 12:39:07] [INFO] [IMAGE_EMBED] Added image 1: 6909a6512426c_1762240081.jpg as CID: image_1_6909a693e08ab
+[2025-11-04 12:39:07] [INFO] [IMAGE_REPLACE] Replaced 1 occurrence(s) using full path pattern
+[2025-11-04 12:39:07] [INFO] [IMAGE_EMBED] Completed processing all images, CID references updated in body
+[2025-11-04 12:39:07] [INFO] [BODY_SET] HTML body set with 376 characters
+[2025-11-04 12:39:07] [INFO] Attempting to send email...
+[2025-11-04 12:39:13] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 12:39:13] [SUCCESS] [SEND_SUCCESS] To: pavankumar7090@yahoo.com | SMTP: navya@relyonmail.xyz (ID: 67)
+[2025-11-04 12:39:13] [INFO] [ROTATION] Email to pavankumar.c@relyonsoft.com → SMTP[39] navya@payrollsoft.in (ID: 68)
+[2025-11-04 12:39:13] [INFO] [SEND_ATTEMPT] To: pavankumar.c@relyonsoft.com | SMTP: navya@payrollsoft.in (ID: 68)
+[2025-11-04 12:39:13] [INFO] Attachment added: 6909a65fc15a6_information.txt
+[2025-11-04 12:39:13] [INFO] [IMAGE_EMBED] Processing 2 embedded images
+[2025-11-04 12:39:13] [INFO] [IMAGE_EMBED] Added image 0: 6909a63ee3b91_1762240062.jpg as CID: image_0_6909a6998659a
+[2025-11-04 12:39:13] [WARNING] [IMAGE_REPLACE] WARNING: No matches found for image: 6909a63ee3b91_1762240062.jpg
+[2025-11-04 12:39:13] [INFO] [IMAGE_EMBED] Added image 1: 6909a6512426c_1762240081.jpg as CID: image_1_6909a69986635
+[2025-11-04 12:39:13] [INFO] [IMAGE_REPLACE] Replaced 1 occurrence(s) using full path pattern
+[2025-11-04 12:39:13] [INFO] [IMAGE_EMBED] Completed processing all images, CID references updated in body
+[2025-11-04 12:39:13] [INFO] [BODY_SET] HTML body set with 376 characters
+[2025-11-04 12:39:13] [INFO] Attempting to send email...
+[2025-11-04 12:39:20] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 12:39:20] [SUCCESS] [SEND_SUCCESS] To: pavankumar.c@relyonsoft.com | SMTP: navya@payrollsoft.in (ID: 68)
+[2025-11-04 12:39:20] [INFO] All valid emails processed. Campaign completed.
