@@ -177,22 +177,17 @@ function processEmailBatch($db, $campaign_id, $total_email_count)
             $campaign['mail_body'] = '';
         }
 
-        // Validate mail body is not empty
-        $trimmedBody = trim($campaign['mail_body']);
-        if (empty($trimmedBody)) {
-            logMessage("[ERROR] Campaign #$campaign_id has empty mail_body after normalization. Original length: " . strlen($campaign['mail_body'] ?? '') . ", Cannot send emails.", 'ERROR');
-            $db->query("UPDATE campaign_status SET status = 'paused', error_message = 'Email body is empty' WHERE campaign_id = $campaign_id");
-            die("ERROR: Campaign mail_body is empty. Please add email content before sending.\n");
-        }
-        
-        // Additional check for HTML body that might only contain whitespace/tags
-        if (!empty($campaign['send_as_html'])) {
-            $textOnly = trim(strip_tags($campaign['mail_body']));
-            if (empty($textOnly)) {
-                logMessage("[ERROR] Campaign #$campaign_id HTML body has no text content. Body length: " . strlen($campaign['mail_body']), 'ERROR');
-                $db->query("UPDATE campaign_status SET status = 'paused', error_message = 'Email body has no text content' WHERE campaign_id = $campaign_id");
-                die("ERROR: Campaign HTML body has no text content. Please add content.\n");
-            }
+
+        // Validate campaign has at least one content: mail_body, images, or attachment
+        $trimmedBody = trim($campaign['mail_body'] ?? '');
+        $hasImages = !empty($campaign['images_paths']) && is_array(json_decode($campaign['images_paths'], true)) && count(json_decode($campaign['images_paths'], true)) > 0;
+        $hasAttachment = !empty($campaign['attachment_path']);
+        $textOnly = !empty($campaign['send_as_html']) ? trim(strip_tags($campaign['mail_body'])) : $trimmedBody;
+
+        if (empty($textOnly) && !$hasImages && !$hasAttachment) {
+            logMessage("[ERROR] Campaign #$campaign_id has no content (body, images, or attachment). Cannot send emails.", 'ERROR');
+            $db->query("UPDATE campaign_status SET status = 'paused', error_message = 'No email content (body, images, or attachment)' WHERE campaign_id = $campaign_id");
+            die("ERROR: Campaign has no content. Please add text, image, or attachment before sending.\n");
         }
 
         // Validate mail subject is not empty

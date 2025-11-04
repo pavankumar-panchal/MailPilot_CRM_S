@@ -307,16 +307,25 @@ const Campaigns = () => {
   // Edit campaign
   const handleEdit = (campaign) => {
     setEditId(campaign.campaign_id);
+    const images = campaign.images_paths ? JSON.parse(campaign.images_paths) : [];
+    let mail_body = campaign.mail_body || '';
+    // Insert images into mail_body if not present
+    images.forEach(imgPath => {
+      const fullUrl = `${BASE_URL}/backend/${imgPath}`;
+      if (mail_body.indexOf(fullUrl) === -1 && mail_body.indexOf(imgPath) === -1) {
+        mail_body += `<p><img src='${fullUrl}' style='max-width:300px;'/></p>`;
+      }
+    });
     setForm({
       description: campaign.description,
       mail_subject: campaign.mail_subject,
-      mail_body: campaign.mail_body,
+      mail_body,
       attachment: null,
-      existing_attachment: campaign.attachment_path || null, // Track existing attachment
-      images: campaign.images_paths ? JSON.parse(campaign.images_paths) : [],
+      existing_attachment: campaign.attachment_path || null,
+      images,
     });
     setAttachmentFile(null);
-    setUploadedImages([]); // Reset for edit mode
+    setUploadedImages([]);
     setEditModalOpen(true);
   };
 
@@ -404,15 +413,24 @@ const Campaigns = () => {
     try {
       const res = await fetch(`${API_URL}?id=${id}`);
       const data = await res.json();
+      const images = data.images_paths ? JSON.parse(data.images_paths) : [];
+      let mail_body = data.mail_body || '';
+      images.forEach(imgPath => {
+        const fullUrl = `${BASE_URL}/backend/${imgPath}`;
+        if (mail_body.indexOf(fullUrl) === -1 && mail_body.indexOf(imgPath) === -1) {
+          mail_body += `<p><img src='${fullUrl}' style='max-width:300px;'/></p>`;
+        }
+      });
       setForm({
         description: data.description,
         mail_subject: data.mail_subject,
-        mail_body: data.mail_body,
+        mail_body,
         attachment: null,
-        images: [], // Don't copy images, user will re-upload if needed
+        existing_attachment: data.attachment_path || null,
+        images,
       });
-      setEditId(null); // <-- Clear editId so handleAdd will be used
-      setAttachmentFile(null); // <-- Clear any previous file
+      setEditId(null); // Clear editId so handleAdd will be used
+      setAttachmentFile(null); // Clear any previous file
       setUploadedImages([]); // Clear uploaded images
       setModalOpen(true);
     } catch {
