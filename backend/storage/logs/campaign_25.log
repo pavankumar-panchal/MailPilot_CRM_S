@@ -1,0 +1,24 @@
+[2025-11-04 11:26:13] [INFO] [ROTATION] Email to panchalpavan7090@gmail.com → SMTP[11] chethan@payrollsoft.in (ID: 40)
+[2025-11-04 11:26:13] [INFO] [SEND_ATTEMPT] To: panchalpavan7090@gmail.com | SMTP: chethan@payrollsoft.in (ID: 40)
+[2025-11-04 11:26:13] [INFO] Attachment added: 690995735d6ed_information.txt
+[2025-11-04 11:26:13] [INFO] Attempting to send email...
+[2025-11-04 11:26:20] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 11:26:20] [SUCCESS] [SEND_SUCCESS] To: panchalpavan7090@gmail.com | SMTP: chethan@payrollsoft.in (ID: 40)
+[2025-11-04 11:26:20] [INFO] [ROTATION] Email to pavankumar7090@yahoo.com → SMTP[12] chethan@relyonmails1.com (ID: 41)
+[2025-11-04 11:26:20] [INFO] [SEND_ATTEMPT] To: pavankumar7090@yahoo.com | SMTP: chethan@relyonmails1.com (ID: 41)
+[2025-11-04 11:26:20] [INFO] Attachment added: 690995735d6ed_information.txt
+[2025-11-04 11:26:20] [INFO] Attempting to send email...
+[2025-11-04 11:26:24] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 11:26:24] [SUCCESS] [SEND_SUCCESS] To: pavankumar7090@yahoo.com | SMTP: chethan@relyonmails1.com (ID: 41)
+[2025-11-04 11:26:24] [INFO] [ROTATION] Email to pavankumar.c@relyonsoft.com → SMTP[13] chethan@relyonmails3.com (ID: 42)
+[2025-11-04 11:26:24] [INFO] [SEND_ATTEMPT] To: pavankumar.c@relyonsoft.com | SMTP: chethan@relyonmails3.com (ID: 42)
+[2025-11-04 11:26:24] [INFO] Attachment added: 690995735d6ed_information.txt
+[2025-11-04 11:26:24] [INFO] Attempting to send email...
+[2025-11-04 11:26:39] [WARNING] [SKIP_SMTP] Transient SMTP issue on chethan@relyonmails3.com (ID: 42): SMTP error: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-11-04 11:26:39] [INFO] [ROTATION] Email to pavankumar.c@relyonsoft.com → SMTP[14] chethan@relyonmails2.com (ID: 43)
+[2025-11-04 11:26:39] [INFO] [SEND_ATTEMPT] To: pavankumar.c@relyonsoft.com | SMTP: chethan@relyonmails2.com (ID: 43)
+[2025-11-04 11:26:39] [INFO] Attachment added: 690995735d6ed_information.txt
+[2025-11-04 11:26:39] [INFO] Attempting to send email...
+[2025-11-04 11:26:46] [INFO] Email sent successfully via PHPMailer
+[2025-11-04 11:26:46] [SUCCESS] [SEND_SUCCESS] To: pavankumar.c@relyonsoft.com | SMTP: chethan@relyonmails2.com (ID: 43)
+[2025-11-04 11:26:46] [INFO] All valid emails processed. Campaign completed.

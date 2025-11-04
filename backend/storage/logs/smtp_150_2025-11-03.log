@@ -1,0 +1,5 @@
+2025-11-03 15:15:19 | Campaign: 17 | To: pavankumar.c@relyonsoft.com | Status: failed | Error: SMTP error: Message body empty
+2025-11-03 15:31:22 | Campaign: 17 | To: pavankumar.c@relyonsoft.com | Status: failed | Error: SMTP error: Message body became empty during processing
+2025-11-03 15:58:03 | Campaign: 22 | To: panchalpavan7090@gmail.com | Status: failed | Error: SMTP error: Message body became empty during processing
+2025-11-03 16:04:32 | Campaign: 17 | To: pavankumar.c@relyonsoft.com | Status: failed | Error: SMTP error: Message body became empty during processing
+2025-11-03 16:11:33 | Campaign: 17 | To: panchalpavan7090@gmail.com | Status: failed | Error: SMTP error: Message body became empty during processing

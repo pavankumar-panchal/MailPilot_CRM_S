@@ -1,0 +1,19 @@
+[2025-11-03 15:16:15] [INFO] [ROTATION] Email to panchalpavan7090@gmail.com → SMTP[142] tony@relyonsoft.info (ID: 171)
+[2025-11-03 15:16:15] [INFO] [SEND_ATTEMPT] To: panchalpavan7090@gmail.com | SMTP: tony@relyonsoft.info (ID: 171)
+[2025-11-03 15:16:15] [INFO] Attachment added: 690879e2abd86_information.txt
+[2025-11-03 15:16:15] [INFO] Attempting to send email...
+[2025-11-03 15:16:15] [ERROR] PHPMailer exception: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-11-03 15:16:15] [ERROR] [SEND_FAILED] To: panchalpavan7090@gmail.com | SMTP: tony@relyonsoft.info (ID: 171) | Error: SMTP error: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-11-03 15:16:15] [INFO] [ROTATION] Email to pavankumar.c@relyonsoft.com → SMTP[143] tony@relyonmail.xyz (ID: 172)
+[2025-11-03 15:16:15] [INFO] [SEND_ATTEMPT] To: pavankumar.c@relyonsoft.com | SMTP: tony@relyonmail.xyz (ID: 172)
+[2025-11-03 15:16:15] [INFO] Attachment added: 690879e2abd86_information.txt
+[2025-11-03 15:16:15] [INFO] Attempting to send email...
+[2025-11-03 15:16:21] [INFO] Email sent successfully via PHPMailer
+[2025-11-03 15:16:21] [SUCCESS] [SEND_SUCCESS] To: pavankumar.c@relyonsoft.com | SMTP: tony@relyonmail.xyz (ID: 172)
+[2025-11-03 15:16:22] [INFO] [ROTATION] Email to panchalpavan7090@gmail.com → SMTP[148] tony@relyonmail.online (ID: 177)
+[2025-11-03 15:16:22] [INFO] [SEND_ATTEMPT] To: panchalpavan7090@gmail.com | SMTP: tony@relyonmail.online (ID: 177)
+[2025-11-03 15:16:22] [INFO] Attachment added: 690879e2abd86_information.txt
+[2025-11-03 15:16:22] [INFO] Attempting to send email...
+[2025-11-03 15:16:28] [INFO] Email sent successfully via PHPMailer
+[2025-11-03 15:16:28] [SUCCESS] [SEND_SUCCESS] To: panchalpavan7090@gmail.com | SMTP: tony@relyonmail.online (ID: 177)
+[2025-11-03 15:16:28] [INFO] All valid emails processed. Campaign completed.

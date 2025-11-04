@@ -168,9 +168,9 @@ function getEmailCounts($conn, $campaign_id)
     // Compute counts based on emails and mail_blaster for the given campaign
     $result = $conn->query("SELECT 
                 COUNT(*) as total_valid,
-                SUM(CASE WHEN (mb.status IS NULL OR (mb.status = 'failed' AND mb.attempt_count < 3)) THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN (mb.status IS NULL OR mb.status = 'failed' OR mb.status = 'pending') THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END) as sent,
-                SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 3 THEN 1 ELSE 0 END) as failed
+                SUM(CASE WHEN mb.status = 'failed' THEN 1 ELSE 0 END) as failed
             FROM emails e
             LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
             WHERE e.domain_status = 1");
