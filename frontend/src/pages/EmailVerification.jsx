@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import EmailsList from "./EmailsList";
-import { v4 as uuidv4 } from "uuid";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+import EmailsList from "./EmailsListOptimized";
+import { API_CONFIG } from "../config";
 
 const checkRetryProgress = async () => {
   try {
-    const res = await fetch(
-  "http://localhost/verify_emails/MailPilot_CRM/backend/includes/retry_smtp.php?progress=1"
-    );
+    const res = await fetch(`${API_CONFIG.RETRY_SMTP}?progress=1`);
     return await res.json();
   } catch (error) {
     console.error("Error checking retry progress:", error);
@@ -30,13 +29,8 @@ const EmailVerification = () => {
   // UI state
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState({
-    processed: 0,
-    total: 0,
-    percent: 0,
-    stage: "domain",
-  });
   const [showProgress, setShowProgress] = useState(false);
+  const [listsLoading, setListsLoading] = useState(true);
 
   // Lists state
   const [lists, setLists] = useState([]);
@@ -53,25 +47,23 @@ const EmailVerification = () => {
   const progressInterval = useRef(null);
   const searchTimeout = useRef();
 
-  // Retry failed count state
-  const [retryFailedCount, setRetryFailedCount] = useState(0);
+  // Retry failed state - retryingList tracks per-list retry status
   const [retryingList, setRetryingList] = useState({}); // { [listId]: boolean }
 
   // Search input state
   const [searchInput, setSearchInput] = useState("");
 
-  // Fetch lists
-  const fetchLists = async () => {
+  // Fetch lists (wrapped in useCallback to fix dependency warnings)
+  const fetchLists = useCallback(async () => {
     try {
+      setListsLoading(true);
       const params = new URLSearchParams({
         page: listPagination.page,
         limit: listPagination.rowsPerPage,
         search: listPagination.search,
       });
 
-      const res = await fetch(
-  `http://localhost/verify_emails/MailPilot_CRM/backend/includes/get_csv_list.php?${params}`
-      );
+      const res = await fetch(`${API_CONFIG.GET_CSV_LIST}?${params}`);
       const data = await res.json();
 
       setLists(Array.isArray(data.data) ? data.data : []);
@@ -81,47 +73,27 @@ const EmailVerification = () => {
       setLists([]);
       setListPagination((prev) => ({ ...prev, total: 0 }));
       setStatus({ type: "error", message: "Failed to load lists" });
+    } finally {
+      setListsLoading(false);
     }
-  };
+  }, [listPagination.page, listPagination.rowsPerPage, listPagination.search]);
 
-  // Fetch retry failed count
+  // Fetch retry failed count (unused function retained for commented code)
   const fetchRetryFailedCount = async () => {
     try {
-      const res = await fetch(
-  "http://localhost/verify_emails/MailPilot_CRM/backend/includes/get_results.php?retry_failed=1"
-      );
+      const res = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
       const data = await res.json();
-      if (data.status === "success") {
-        setRetryFailedCount(data.total);
-        // setStatus({ type: "success", message: data.message });
-      } else {
-        setRetryFailedCount(0);
-        // setStatus({ type: "error", message: data.message });
-      }
+      // Intentionally empty - for future use when uncommenting retry features
+      console.log("Retry failed count:", data.total);
     } catch (error) {
       console.error("Error fetching retry failed count:", error);
-      setRetryFailedCount(0);
-      // setStatus({ type: "error", message: "Failed to fetch retry failed count" });
     }
   };
 
-  // Fetch retry failed count on mount and whenever lists change
-  useEffect(() => {
-    fetchRetryFailedCount();
-  }, [lists]);
-
-  // Optionally, poll lists and retry count every 5 seconds for live updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLists();
-      fetchRetryFailedCount();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
+  // Fetch lists on mount and when pagination changes
   useEffect(() => {
     fetchLists();
-  }, [listPagination.page, listPagination.rowsPerPage, listPagination.search]);
+  }, [fetchLists]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -163,9 +135,7 @@ const EmailVerification = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(
-  "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/upload",
-        {
+      const res = await fetch(API_CONFIG.API_UPLOAD, {
           method: "POST",
           body: formDataObj,
         }
@@ -195,7 +165,7 @@ const EmailVerification = () => {
 
   const exportEmails = async (type, listId) => {
     try {
-  const url = `http://localhost/verify_emails/MailPilot_CRM/backend/includes/get_results.php?export=${type}&csv_list_id=${listId}`;
+      const url = `${API_CONFIG.GET_RESULTS}?export=${type}&csv_list_id=${listId}`;
       const res = await fetch(url);
       const blob = await res.blob();
 
@@ -208,7 +178,7 @@ const EmailVerification = () => {
       link.remove();
 
       setStatus({ type: "success", message: `Exported ${type} emails list` });
-    } catch (error) {
+    } catch {
       setStatus({ type: "error", message: `Failed to export ${type} emails` });
     }
   };
@@ -220,7 +190,8 @@ const EmailVerification = () => {
       try {
         const res = await fetch("/api/verify/progress");
         const data = await res.json();
-        setProgress(data);
+        // Progress tracking logic disabled - setProgress removed
+        console.log("Progress:", data);
 
         fetchLists();
 
@@ -304,7 +275,7 @@ const EmailVerification = () => {
       }, 2000);
     }
     return () => clearInterval(interval);
-  }, [showProgress]);
+  }, [showProgress, fetchLists]);
 
   // Update handleSearchChange to update local input state immediately
   const handleSearchChange = (e) => {
@@ -325,7 +296,8 @@ const EmailVerification = () => {
     setSearchInput(listPagination.search);
   }, [listPagination.search]);
 
-  const handleRetryFailed = async () => {
+  // Unused retry handler - retained for commented-out JSX
+  const _handleRetryFailed = async () => {
     setLoading(true);
     setStatus(null);
 
@@ -334,9 +306,7 @@ const EmailVerification = () => {
       await fetchRetryFailedCount();
 
       // Start by checking how many need retry
-      const resCount = await fetch(
-  "http://localhost/verify_emails/MailPilot_CRM/backend/includes/get_results.php?retry_failed=1"
-      );
+      const resCount = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
       const countData = await resCount.json();
 
       if (countData.total === 0) {
@@ -346,10 +316,9 @@ const EmailVerification = () => {
       }
 
       // Start the retry process
-      const resStart = await fetch(
-  "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/retry-failed",
-        { method: "POST" }
-      );
+      const resStart = await fetch(API_CONFIG.API_RETRY_FAILED, {
+        method: "POST"
+      });
       const startData = await resStart.json();
 
       if (startData.status !== "success") {
@@ -363,12 +332,13 @@ const EmailVerification = () => {
 
       setShowProgress(true);
       const progressInterval = setInterval(async () => {
-        const progress = await checkRetryProgress();
-        setProgress(progress);
+        const _progress = await checkRetryProgress();
+        // Progress tracking disabled
+        console.log("Retry progress:", _progress);
 
         fetchLists(); // Keep lists updated during retry
 
-        if (progress.stage === "complete" || progress.stage === "error") {
+        if (_progress.stage === "complete" || _progress.stage === "error") {
           clearInterval(progressInterval);
           setTimeout(() => {
             setShowProgress(false);
@@ -390,9 +360,7 @@ const EmailVerification = () => {
 
     try {
       // Fetch failed count for this list
-      const resCount = await fetch(
-  `http://localhost/verify_emails/MailPilot_CRM/backend/includes/get_results.php?retry_failed=1&csv_list_id=${listId}`
-      );
+      const resCount = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1&csv_list_id=${listId}`);
       const countData = await resCount.json();
 
       if (!countData.total || countData.total === 0) {
@@ -402,10 +370,9 @@ const EmailVerification = () => {
       }
 
       // Start retry for this list
-      const resStart = await fetch(
-  `http://localhost/verify_emails/MailPilot_CRM/backend/includes/retry_smtp.php?csv_list_id=${listId}`,
-        { method: "POST" }
-      );
+      const resStart = await fetch(`${API_CONFIG.RETRY_SMTP}?csv_list_id=${listId}`, {
+        method: "POST"
+      });
       const startData = await resStart.json();
 
       if (startData.status !== "success") {
@@ -440,7 +407,8 @@ const EmailVerification = () => {
     }
   };
 
-  const failedCount = lists.filter((list) => list.domain_status === 2).length;
+  // Unused variable for commented JSX
+  const _failedCount = lists.filter((list) => list.domain_status === 2).length;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -762,7 +730,24 @@ const EmailVerification = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {lists.length === 0 ? (
+              {listsLoading ? (
+                // Skeleton loading rows
+                Array.from({ length: listPagination.rowsPerPage }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-12"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
+                    <td className="px-6 py-4"><div className="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-24"></div></td>
+                    <td className="px-6 py-4 flex gap-2">
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                      <div className="h-8 bg-gray-200 rounded w-20"></div>
+                    </td>
+                  </tr>
+                ))
+              ) : lists.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}

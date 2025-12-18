@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+
+import { API_CONFIG } from "../config";
 
 const EmailsList = ({ listId, onClose }) => {
   const [listEmails, setListEmails] = useState([]);
@@ -11,26 +13,24 @@ const EmailsList = ({ listId, onClose }) => {
   });
   const [filter, setFilter] = useState("all"); // 'all', 'valid', 'invalid', 'timeout'
 
-  // Fetch email details for the given listId
-  const fetchListEmails = async () => {
+  // Fetch email details for the given listId (wrapped in useCallback)
+  const fetchListEmails = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-  `http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/results?csv_list_id=${listId}&limit=1000000`
-      );
+      const res = await fetch(`${API_CONFIG.API_RESULTS}?csv_list_id=${listId}&limit=1000000`);
       const data = await res.json();
       setListEmails(Array.isArray(data.data) ? data.data : []);
       setPagination((prev) => ({
         ...prev,
         total: Array.isArray(data.data) ? data.data.length : 0,
       }));
-    } catch (error) {
+    } catch {
       setListEmails([]);
       setStatus({ type: "error", message: "Failed to load list emails" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [listId]);
 
   // Utility function for timeout detection
   const isTimeout = (e) =>
@@ -59,7 +59,7 @@ const EmailsList = ({ listId, onClose }) => {
   // Fetch emails on mount and when listId changes
   useEffect(() => {
     fetchListEmails();
-  }, [listId]);
+  }, [fetchListEmails]);
 
   // Reset pagination when filter or rowsPerPage changes
   useEffect(() => {
@@ -68,7 +68,7 @@ const EmailsList = ({ listId, onClose }) => {
       page: 1,
       total: filteredEmails.length,
     }));
-  }, [filter, pagination.rowsPerPage]);
+  }, [filter, pagination.rowsPerPage, filteredEmails.length]);
 
   // Status message component
   const StatusMessage = ({ status, onClose }) =>

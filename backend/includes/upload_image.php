@@ -12,9 +12,14 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
 // Auto-detect BASE_URL
-if ($host === 'localhost' || strpos($host, '127.0.0.1') !== false) {
+if ($host === 'localhost' || strpos($host, '127.0.0.1') !== false || strpos($host, 'lampp') !== false) {
+    // Local development
     $BASE_URL = $protocol . '://' . $host . '/verify_emails/MailPilot_CRM';
+} elseif ($host === 'payrollsoft.in' || strpos($host, 'payrollsoft.in') !== false) {
+    // Production server: payrollsoft.in
+    $BASE_URL = 'https://payrollsoft.in/emailvalidation';
 } else {
+    // Other servers - automatically uses actual domain
     $BASE_URL = $protocol . '://' . $host;
 }
 

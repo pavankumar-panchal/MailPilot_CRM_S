@@ -3,12 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Email Campaign</title>
-    <link rel="stylesheet" href="/css/all.min.css" />
-
+    <meta name="description" content="MailPilot CRM - Professional email campaign management system with SMTP verification, bulk sending, and real-time monitoring." />
+    <meta name="theme-color" content="#3B82F6" />
+    
+    <!-- Content Security Policy to prevent extension injection in production -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; connect-src 'self' http://localhost:* ws://localhost:*; font-src 'self' data:;" />
+    
+    <!-- Preconnect to API origin for faster backend requests -->
+    <link rel="preconnect" href="http://localhost" crossorigin />
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+    
+    <title>MailPilot CRM - Email Campaign Manager</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body class="bg-gray-100">
+    <!-- Skip to main content for keyboard navigation -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded">
+      Skip to main content
+    </a>
+    
     <div id="root"></div>
+    
+    <!-- Load FontAwesome asynchronously after page load -->
+    <link rel="stylesheet" href="/css/all.min.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="/css/all.min.css" /></noscript>
+    
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Fallback for JavaScript disabled -->
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>MailPilot CRM requires JavaScript to function. Please enable JavaScript in your browser settings.</p>
+      </div>
+    </noscript>
   </body>
 </html>

@@ -1,0 +1,46 @@
+🔧 CRON FIX APPLIED - December 14, 2025
+========================================
+
+PROBLEMS IDENTIFIED FROM LOG:
+------------------------------
+1. ❌ PHP binary was: /opt/plesk/php/8.1/sbin/php-fpm (WRONG - FPM not CLI)
+2. ❌ Script was: email_blast_roundrobin.php (uses old BackgroundProcess.php)
+3. ❌ Script did not exist on server
+
+FIXES APPLIED:
+--------------
+✅ Changed PHP binary detection to use CLI version:
+   - First tries: /opt/plesk/php/8.1/bin/php (Plesk CLI)
+   - Fallback: PHP_BINARY or 'php'
+   
+✅ Changed script to: email_blast_parallel.php
+   - Uses new ProcessManager.php
+   - Has lock directory auto-creation
+   - Properly handles background processes
+
+FILE UPDATED:
+-------------
+- backend/campaign_cron.php (lines 93-103)
+
+WHAT TO UPLOAD:
+---------------
+Upload the updated campaign_cron.php to your server:
+/var/www/vhosts/payrollsoft.in/httpdocs/emailvalidation/backend/campaign_cron.php
+
+NEXT CRON RUN WILL:
+-------------------
+✓ Use correct PHP CLI binary (/opt/plesk/php/8.1/bin/php)
+✓ Launch email_blast_parallel.php (exists on server)
+✓ Create lock directory automatically
+✓ Send emails successfully
+
+TEST AFTER UPLOAD:
+------------------
+Wait for next cron run (every 30 seconds) and check:
+tail -f backend/logs/campaign_cron.log
+
+You should see:
+- PHP binary: /opt/plesk/php/8.1/bin/php
+- Parallel script: .../email_blast_parallel.php
+- Script exists: YES
+- Started parallel blaster (PID: XXXXX)

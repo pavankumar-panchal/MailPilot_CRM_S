@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+import { API_CONFIG } from "../config";
+
 const TopProgressBar = () => {
   const [percent, setPercent] = useState(0);
   const [active, setActive] = useState(false);
@@ -9,9 +11,7 @@ const TopProgressBar = () => {
 
     const fetchProgress = async () => {
       try {
-        const res = await fetch(
-          "http://localhost/verify_emails/MailPilot_CRM/backend/includes/progress.php"
-        );
+        const res = await fetch(API_CONFIG.PROGRESS);
         const data = await res.json();
         if (
           data &&

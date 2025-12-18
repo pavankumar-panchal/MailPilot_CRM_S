@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
-import Quill from 'quill';
-import 'quill/dist/quill.snow.css';
-import "../quill.css";
+import React, { useEffect, useState } from "react";
+
+import RichTextEditor from "../components/RichTextEditor";
+import { API_CONFIG } from "../config";
 
 const emptyCampaign = {
   description: "",
@@ -11,124 +11,6 @@ const emptyCampaign = {
   existing_attachment: null, // Track existing attachment path
   images: [], // Track uploaded image paths
 };
-
-// Quill configuration (toolbar + formats)
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ color: [] }, { background: [] }],
-    ['link', 'image'],
-    ['clean']
-  ]
-};
-
-const quillFormats = [
-  'header', 'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet', 'link', 'color', 'background', 'image'
-];
-
-// Direct Quill editor wrapper compatible with React 19
-function QuillEditor({ value, onChange, modules = quillModules, formats = quillFormats, placeholder, onImageUpload, uploadImageUrl }) {
-  const containerRef = useRef(null);
-  const quillRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    if (!quillRef.current) {
-      quillRef.current = new Quill(containerRef.current, {
-        theme: 'snow',
-        modules,
-        formats,
-        placeholder: placeholder || ''
-      });
-
-      // Custom image handler
-      const toolbar = quillRef.current.getModule('toolbar');
-      toolbar.addHandler('image', () => {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        input.click();
-
-        input.onchange = async () => {
-          const file = input.files[0];
-          if (file) {
-            // Show loading state
-            const range = quillRef.current.getSelection(true);
-            quillRef.current.insertText(range.index, 'Uploading image...');
-            
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-              const response = await fetch(uploadImageUrl || 'http://localhost/verify_emails/MailPilot_CRM/backend/includes/upload_image.php', {
-                method: 'POST',
-                body: formData
-              });
-
-              let result;
-              try {
-                result = await response.json();
-              } catch {
-                const text = await response.text();
-                console.error('Server response:', text);
-                throw new Error('Invalid JSON response from server: ' + text.substring(0, 100));
-              }
-              
-              // Remove loading text
-              quillRef.current.deleteText(range.index, 'Uploading image...'.length);
-              
-              if (result.success) {
-                // Insert image at cursor position
-                quillRef.current.insertEmbed(range.index, 'image', result.url);
-                quillRef.current.setSelection(range.index + 1);
-                
-                // Notify parent component about the uploaded image path
-                if (onImageUpload) {
-                  onImageUpload(result.path);
-                }
-              } else {
-                alert('Image upload failed: ' + result.message);
-                console.error('Upload failed:', result);
-              }
-            } catch (error) {
-              quillRef.current.deleteText(range.index, 'Uploading image...'.length);
-              alert('Image upload failed: ' + error.message);
-              console.error('Upload error:', error);
-            }
-          }
-        };
-      });
-
-      quillRef.current.on('text-change', () => {
-        const html = quillRef.current.root.innerHTML;
-        onChange && onChange(html === '<p><br></p>' ? '' : html);
-      });
-    }
-
-    return () => {
-      // optional cleanup: clear container
-      // if (containerRef.current) containerRef.current.innerHTML = '';
-      // keep instance as Quill doesn't expose a destroy API we rely on garbage collection
-    };
-  }, [modules, formats, onChange, placeholder, onImageUpload, uploadImageUrl]);
-
-  // Sync external value into editor
-  useEffect(() => {
-    const q = quillRef.current;
-    if (!q) return;
-    const current = q.root.innerHTML;
-    if ((value || '') !== current) {
-      q.clipboard.dangerouslyPasteHTML(value || '');
-    }
-  }, [value]);
-
-  return <div className="quill" style={{ background: 'white' }}>
-    <div ref={containerRef} />
-  </div>;
-}
 
 // Glassmorphism Status Message Popup
 const StatusMessage = ({ message, onClose }) =>
@@ -183,9 +65,10 @@ const Campaigns = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form, setForm] = useState(emptyCampaign);
   const [attachmentFile, setAttachmentFile] = useState(null);
-  const [uploadedImages, setUploadedImages] = useState([]); // Track images uploaded via Quill
+  const [_uploadedImages, setUploadedImages] = useState([]); // Track images uploaded via Quill (unused directly)
   const [editId, setEditId] = useState(null);
   const [message, setMessage] = useState(null);
+  // Status tracking removed; only Master page shows run state
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -194,40 +77,37 @@ const Campaigns = () => {
     total: 0,
   });
 
-  // Configuration - Update these for production
-  const BASE_URL = "http://localhost/verify_emails/MailPilot_CRM";
-  const API_URL = `${BASE_URL}/backend/routes/api.php/api/master/campaigns`;
-  const UPLOAD_IMAGE_URL = `${BASE_URL}/backend/includes/upload_image.php`;
+  // Use centralized configuration
+  const BASE_URL = API_CONFIG.BASE_URL;
+  const API_URL_CRUD = API_CONFIG.API_CAMPAIGNS; // For create, read, update, delete, and listing with previews
+  const _API_URL_OPERATIONS = API_CONFIG.API_MASTER_CAMPAIGNS; // For start, pause, list status (not used on this page)
+  const UPLOAD_IMAGE_URL = API_CONFIG.UPLOAD_IMAGE;
 
-  // Fetch campaigns
+  // Fetch campaigns list (from CRUD endpoint to include mail_body and mail_body_preview)
   const fetchCampaigns = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL_CRUD, { method: 'GET' });
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setCampaigns(data);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.length,
-        }));
-      } else {
-        setCampaigns([]);
-        setPagination((prev) => ({
-          ...prev,
-          total: 0,
-        }));
-      }
-    } catch {
+      // This endpoint returns an array of campaigns directly
+      const campaignsList = Array.isArray(data) ? data : [];
+      setCampaigns(campaignsList);
+      setPagination((prev) => ({
+        ...prev,
+        total: campaignsList.length,
+      }));
+    } catch (error) {
+      console.error('Failed to load campaigns:', error);
       setMessage({ type: "error", text: "Failed to load campaigns." });
       setCampaigns([]);
       setPagination((prev) => ({
         ...prev,
         total: 0,
       }));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [API_URL]);
+  }, [API_URL_CRUD]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -248,16 +128,94 @@ const Campaigns = () => {
 
   // Callback when image is uploaded via Quill
   const handleImageUpload = (imagePath) => {
-    setUploadedImages(prev => [...prev, imagePath]);
+    // Normalize path: strip any localhost or BASE_URL prefix to get clean relative path
+    const normalizedPath = normalizeImagePath(imagePath);
+    setUploadedImages(prev => [...prev, normalizedPath]);
+  };
+
+  // Normalize image path to standard relative format: storage/images/filename.jpg
+  const normalizeImagePath = (path) => {
+    if (!path) return path;
+    
+    // Remove any protocol and domain
+    let normalized = path.replace(/^https?:\/\/[^/]+/i, '');
+    
+    // Remove common prefixes
+    normalized = normalized.replace(/^\/verify_emails\/MailPilot_CRM\/backend\//i, '');
+    normalized = normalized.replace(/^\/backend\//i, '');
+    normalized = normalized.replace(/^backend\//i, '');
+    
+    // Ensure it starts with storage/ if it contains storage/
+    if (normalized.includes('storage/') && !normalized.startsWith('storage/')) {
+      normalized = normalized.substring(normalized.indexOf('storage/'));
+    }
+    
+    // Clean up any leading slashes
+    normalized = normalized.replace(/^\/+/, '');
+    
+    return normalized;
   };
 
   // Helper function to replace localhost URLs with relative paths in HTML body
   const replaceLocalhostWithRelativePaths = (htmlBody) => {
-    // Replace all localhost image URLs with relative paths
-    // Match: http://localhost/verify_emails/MailPilot_CRM/backend/storage/images/filename.jpg
-    // Replace with: storage/images/filename.jpg
-    const regex = /http:\/\/localhost\/verify_emails\/MailPilot_CRM\/backend\/(storage\/images\/[^"'\s>]+)/gi;
-    return htmlBody.replace(regex, '$1');
+    if (!htmlBody) return htmlBody;
+    
+    // Replace all absolute URLs pointing to our backend storage with relative paths
+    let processed = htmlBody;
+    
+    // Pattern 1: Full localhost URLs
+    processed = processed.replace(
+      /http:\/\/localhost\/verify_emails\/MailPilot_CRM\/backend\/(storage\/[^"'\s>]+)/gi,
+      '$1'
+    );
+    
+    // Pattern 2: Protocol-relative or absolute paths
+    processed = processed.replace(
+      /\/verify_emails\/MailPilot_CRM\/backend\/(storage\/[^"'\s>]+)/gi,
+      '$1'
+    );
+    
+    // Pattern 3: Just /backend/ prefix
+    processed = processed.replace(
+      /\/backend\/(storage\/[^"'\s>]+)/gi,
+      '$1'
+    );
+    
+    return processed;
+  };
+
+  // CRITICAL: Extract all image paths from HTML content
+  const extractImagesFromHtml = (htmlBody) => {
+    if (!htmlBody) return [];
+    
+    const images = [];
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlBody;
+    
+    // Find all <img> tags
+    const imgTags = tempDiv.querySelectorAll('img');
+    imgTags.forEach(img => {
+      let src = img.getAttribute('src');
+      if (src && src.includes('storage/images/')) {
+        // Normalize the path
+        const normalized = normalizeImagePath(src);
+        if (normalized && !images.includes(normalized)) {
+          images.push(normalized);
+        }
+      }
+    });
+    
+    console.log('Extracted images from HTML:', images);
+    return images;
+  };
+
+  const ensureAbsoluteBackendImagePaths = (htmlBody) => {
+    if (!htmlBody) return htmlBody;
+    
+    return htmlBody.replace(
+      /src=(["'])(storage\/images\/[^"']+)\1/gi,
+      (_, quote, relativePath) => `src=${quote}${BASE_URL}/backend/${relativePath}${quote}`
+    );
   };
 
   // Add campaign
@@ -266,6 +224,10 @@ const Campaigns = () => {
     
     // Replace localhost URLs with relative paths before sending
     const processedBody = replaceLocalhostWithRelativePaths(form.mail_body);
+    
+    // CRITICAL FIX: Extract ALL images from HTML body
+    // This ensures images_paths is populated even if uploadedImages tracking failed
+    const extractedImages = extractImagesFromHtml(processedBody);
     
     const formData = new FormData();
     formData.append("description", form.description);
@@ -277,11 +239,11 @@ const Campaigns = () => {
       formData.append("attachment", attachmentFile);
     }
 
-    // ALWAYS send uploaded images as JSON array (even if empty)
-    formData.append("images_json", JSON.stringify(uploadedImages));
+    // Send extracted images from HTML (most reliable method)
+    formData.append("images_json", JSON.stringify(extractedImages));
 
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(API_URL_CRUD, {
         method: "POST",
         body: formData,
       });
@@ -305,28 +267,44 @@ const Campaigns = () => {
   };
 
   // Edit campaign
-  const handleEdit = (campaign) => {
-    setEditId(campaign.campaign_id);
-    const images = campaign.images_paths ? JSON.parse(campaign.images_paths) : [];
-    let mail_body = campaign.mail_body || '';
-    // Insert images into mail_body if not present
-    images.forEach(imgPath => {
-      const fullUrl = `${BASE_URL}/backend/${imgPath}`;
-      if (mail_body.indexOf(fullUrl) === -1 && mail_body.indexOf(imgPath) === -1) {
-        mail_body += `<p><img src='${fullUrl}' style='max-width:300px;'/></p>`;
+  const handleEdit = async (campaign) => {
+    try {
+      // Fetch full campaign data including complete mail_body
+      const res = await fetch(`${API_URL_CRUD}?id=${campaign.campaign_id}`);
+      const data = await res.json();
+      
+      if (!data || data.error) {
+        setMessage({ type: "error", text: "Failed to load campaign data." });
+        return;
       }
-    });
-    setForm({
-      description: campaign.description,
-      mail_subject: campaign.mail_subject,
-      mail_body,
-      attachment: null,
-      existing_attachment: campaign.attachment_path || null,
-      images,
-    });
-    setAttachmentFile(null);
-    setUploadedImages([]);
-    setEditModalOpen(true);
+      
+      setEditId(campaign.campaign_id);
+      const images = data.images_paths ? JSON.parse(data.images_paths) : [];
+      let mail_body = ensureAbsoluteBackendImagePaths(data.mail_body || '');
+      
+      // Insert images into mail_body if not present
+      images.forEach(imgPath => {
+        const fullUrl = `${BASE_URL}/backend/${imgPath}`;
+        if (mail_body.indexOf(fullUrl) === -1 && mail_body.indexOf(imgPath) === -1) {
+          mail_body += `<p><img src='${fullUrl}' style='max-width:300px;'/></p>`;
+        }
+      });
+      
+      setForm({
+        description: data.description,
+        mail_subject: data.mail_subject,
+        mail_body,
+        attachment: null,
+        existing_attachment: data.attachment_path || null,
+        images,
+      });
+      setAttachmentFile(null);
+      setUploadedImages([]);
+      setEditModalOpen(true);
+    } catch (error) {
+      console.error('Failed to load campaign for edit:', error);
+      setMessage({ type: "error", text: "Failed to load campaign data." });
+    }
   };
 
   // Update campaign
@@ -346,15 +324,15 @@ const Campaigns = () => {
       formData.append("attachment", attachmentFile);
     }
 
-    // ALWAYS send uploaded images as JSON array (combine existing + newly uploaded)
-    const allImages = [...(form.images || []), ...uploadedImages];
-    formData.append("images_json", JSON.stringify(allImages));
+    // CRITICAL FIX: Extract ALL images from HTML body (most reliable)
+    const extractedImages = extractImagesFromHtml(processedBody);
+    formData.append("images_json", JSON.stringify(extractedImages));
     
     // Tell backend this is an update
     formData.append("_method", "PUT");
 
     try {
-      const res = await fetch(`${API_URL}?id=${editId}`, {
+      const res = await fetch(`${API_URL_CRUD}?id=${editId}`, {
         method: "POST", // Still POST for file upload, backend checks _method
         body: formData,
       });
@@ -387,7 +365,7 @@ const Campaigns = () => {
     }));
 
     try {
-      const res = await fetch(`${API_URL}?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL_CRUD}?id=${id}`, { method: "DELETE" });
       const data = await res.json();
 
       if (data.success) {
@@ -408,13 +386,14 @@ const Campaigns = () => {
   };
 
 
+
   // Reuse campaign
   const handleReuse = async (id) => {
     try {
-      const res = await fetch(`${API_URL}?id=${id}`);
+      const res = await fetch(`${API_URL_CRUD}?id=${id}`);
       const data = await res.json();
       const images = data.images_paths ? JSON.parse(data.images_paths) : [];
-      let mail_body = data.mail_body || '';
+      let mail_body = ensureAbsoluteBackendImagePaths(data.mail_body || '');
       images.forEach(imgPath => {
         const fullUrl = `${BASE_URL}/backend/${imgPath}`;
         if (mail_body.indexOf(fullUrl) === -1 && mail_body.indexOf(imgPath) === -1) {
@@ -446,22 +425,26 @@ const Campaigns = () => {
     }
   }, [message]);
 
-  // Preview first 30 words (strip HTML tags for clean display)
-  const preview = (body) => {
+  // Preview first 30 words (prefer server-provided preview when available)
+  const preview = (campaign) => {
+    // Use precomputed preview if available
+    if (campaign?.mail_body_preview) return campaign.mail_body_preview;
+
+    const body = campaign?.mail_body || "";
     if (!body) return "";
-    
+
     // Create a temporary div to parse HTML and extract text
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = body;
-    
+
     // Get text content (strips all HTML tags)
     const textContent = tempDiv.textContent || tempDiv.innerText || "";
-    
+
     // Split into words and take first 30
     const words = textContent.trim().split(/\s+/).filter(word => word.length > 0);
-    const preview = words.slice(0, 30).join(" ");
-    
-    return preview + (words.length > 30 ? "..." : "");
+    const snippet = words.slice(0, 30).join(" ");
+
+    return snippet + (words.length > 30 ? "..." : "");
   };
 
   // Pagination logic
@@ -546,7 +529,7 @@ const Campaigns = () => {
                 WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden'
-              }}>{preview(c.mail_body)}</div>
+              }}>{preview(c)}</div>
               {c.attachment_path && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -585,14 +568,25 @@ const Campaigns = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-4 text-center text-sm text-gray-500"
-                  >
-                    Loading...
-                  </td>
-                </tr>
+                // Skeleton loading rows
+                Array.from({ length: pagination.rowsPerPage }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-8"></div></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-3/4"></div></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
+                      <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end space-x-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : campaigns.length === 0 ? (
                 <tr>
                   <td
@@ -624,7 +618,7 @@ const Campaigns = () => {
                     <td className="px-4 py-3">
                       <div
                         className="text-sm text-gray-600 max-w-xs line-clamp-2"
-                        title={preview(c.mail_body)}
+                        title={preview(c)}
                         style={{
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
@@ -633,7 +627,7 @@ const Campaigns = () => {
                           textOverflow: 'ellipsis'
                         }}
                       >
-                        {preview(c.mail_body)}
+                        {preview(c)}
                       </div>
                       {c.attachment_path && (
                         <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -644,6 +638,7 @@ const Campaigns = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        {/* Send button removed - sending managed in Master page */}
                         <button
                           onClick={() => handleEdit(c)}
                           className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
@@ -873,13 +868,11 @@ const Campaigns = () => {
                       Email Body
                     </label>
                     <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
-                      <QuillEditor
+                      <RichTextEditor
                         value={form.mail_body}
-                        onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                        onChange={(html) => setForm((prev) => ({ ...prev, mail_body: html }))}
                         onImageUpload={handleImageUpload}
                         uploadImageUrl={UPLOAD_IMAGE_URL}
-                        modules={quillModules}
-                        formats={quillFormats}
                         placeholder="Compose your email content here..."
                       />
                     </div>
@@ -998,13 +991,12 @@ const Campaigns = () => {
                         Email Body (Use image button in toolbar to add images)
                       </label>
                       <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
-                        <QuillEditor
+                        <RichTextEditor
                           value={form.mail_body}
-                          onChange={(html) => setForm(prev => ({ ...prev, mail_body: html }))}
+                          onChange={(html) => setForm((prev) => ({ ...prev, mail_body: html }))}
                           onImageUpload={handleImageUpload}
                           uploadImageUrl={UPLOAD_IMAGE_URL}
-                          modules={quillModules}
-                          formats={quillFormats}
+                          placeholder="Update your email content here..."
                         />
                       </div>
                     </div>

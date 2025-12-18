@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://payrollsoft.in");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
@@ -38,6 +38,10 @@ try {
             require __DIR__ . '/../public/campaigns_master.php';
             break;
 
+        case ($request === '/api/master/campaigns/start' && $method === 'POST'):
+            require __DIR__ . '/../includes/start_campaign.php';
+            break;
+
         case ($request === '/api/master/smtps'):
             require __DIR__ . '/../includes/master_smtps.php';
             break;
@@ -47,9 +51,8 @@ try {
             break;
 
         case ($request === '/api/retry-failed' && $method === 'POST'):
-            $cmd = 'php ' . escapeshellarg(__DIR__ . '/../includes/retry_smtp.php') . ' > /dev/null 2>&1 &';
-            exec($cmd);
-            echo json_encode(['status' => 'success', 'message' => 'Retry process started in background.']);
+            // Retry logic can be added later if needed
+            echo json_encode(['status' => 'info', 'message' => 'Retry endpoint available for future use']);
             break;
 
         case ($request === '/api/master/email-counts'):

@@ -94,15 +94,17 @@ try {
         }
     }
 
-    // POST /api/master/campaigns (multipart/form-data for file upload)
+    // POST /api/master/campaigns (create or update)
     if ($method === 'POST') {
-        // Check for update via POST with _method=PUT
-        if (isset($_POST['_method']) && $_POST['_method'] === 'PUT' && isset($_GET['id'])) {
+        $isJson = isset($_SERVER['CONTENT_TYPE']) && stripos($_SERVER['CONTENT_TYPE'], 'application/json') !== false;
+        $hasId = isset($_GET['id']);
+
+        // UPDATE via multipart/form-data (or when _method=PUT is provided)
+        if ($hasId && ((isset($_POST['_method']) && $_POST['_method'] === 'PUT') || !$isJson)) {
             $id = intval($_GET['id']);
             $description = $conn->real_escape_string($_POST['description'] ?? '');
             $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
-            // Optional send mode flag (0 = send as literal text, 1 = send as rendered HTML)
             $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
             $attachment_path = null;
             $images_paths = [];
@@ -118,22 +120,21 @@ try {
                     $targetPath = $uploadDir . $filename;
                     if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
                         $attachment_path = 'storage/attachments/' . $filename;
-                        chmod($targetPath, 0644); // Set proper permissions
+                        chmod($targetPath, 0644);
                     } else {
                         error_log("Failed to move uploaded file to: " . $targetPath);
                     }
-                } else {
+                } else if (isset($_FILES['attachment']['error'])) {
                     error_log("File upload error: " . $_FILES['attachment']['error']);
                 }
             }
 
-            // Handle multiple images upload (old method - keeping for backward compatibility)
+            // Handle multiple images upload (legacy)
             if (isset($_FILES['images']) && is_array($_FILES['images']['name'])) {
                 $uploadDir = __DIR__ . '/../storage/images/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
-                
                 $fileCount = count($_FILES['images']['name']);
                 for ($i = 0; $i < $fileCount; $i++) {
                     if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
@@ -161,41 +162,72 @@ try {
                 exit;
             }
 
-            // Store images as JSON (null if empty array)
             $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
-            
-            // Build dynamic UPDATE query
             $updateFields = ['description=?', 'mail_subject=?', 'mail_body=?', 'send_as_html=?'];
             $params = [$description, $mail_subject, $mail_body, $send_as_html];
             $types = 'sssi';
-            
-            // ALWAYS update attachment_path if a new file was uploaded
+
             if ($attachment_path !== null) {
                 $updateFields[] = 'attachment_path=?';
                 $params[] = $attachment_path;
                 $types .= 's';
             }
-            
-            // ALWAYS update images_paths (even if null/empty to support clearing or keeping existing)
+
             $updateFields[] = 'images_paths=?';
             $params[] = $images_json;
             $types .= 's';
-            
+
             $params[] = $id;
             $types .= 'i';
-            
+
             $sql = "UPDATE campaign_master SET " . implode(', ', $updateFields) . " WHERE campaign_id=?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param($types, ...$params);
-
             if ($stmt->execute()) {
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Campaign updated successfully!',
-                    'attachment_updated' => ($attachment_path !== null),
-                    'images_updated' => true,
-                    'images_count' => count($images_paths)
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!', 'attachment_updated' => ($attachment_path !== null), 'images_updated' => true, 'images_count' => count($images_paths)]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
+            }
+            exit;
+
+        // UPDATE via JSON POST (no files)
+        } elseif ($hasId && $isJson) {
+            $id = intval($_GET['id']);
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+            $description = $conn->real_escape_string($data['description'] ?? '');
+            $mail_subject = $conn->real_escape_string($data['mail_subject'] ?? '');
+            $mail_body = $conn->real_escape_string($data['mail_body'] ?? '');
+            $send_as_html = isset($data['send_as_html']) ? (int)$data['send_as_html'] : 0;
+            $images_paths = [];
+
+            if (isset($data['images_json'])) {
+                $ij = $data['images_json'];
+                $quillImages = [];
+                if (is_string($ij)) {
+                    $decoded = json_decode($ij, true);
+                    if (is_array($decoded)) {
+                        $quillImages = $decoded;
+                    }
+                } elseif (is_array($ij)) {
+                    $quillImages = $ij;
+                }
+                if (!empty($quillImages) && is_array($quillImages)) {
+                    $images_paths = $quillImages;
+                }
+            }
+
+            if (!$description || !$mail_subject || !$mail_body) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'All fields are required.']);
+                exit;
+            }
+
+            $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
+            $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=? WHERE campaign_id=?");
+            $stmt->bind_param('sssssi', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $id);
+            if ($stmt->execute()) {
+                echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!']);
             } else {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
@@ -203,7 +235,7 @@ try {
             exit;
         }
 
-        // Normal insert (no _method=PUT)
+        // CREATE (no id)
         $description = $conn->real_escape_string($_POST['description'] ?? '');
         $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');

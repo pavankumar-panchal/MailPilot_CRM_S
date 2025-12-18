@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/ProcessManager.php';
+
+// Ensure lock directory exists
+$lock_dir = __DIR__ . '/../tmp/cron_locks';
+if (!is_dir($lock_dir)) {
+    mkdir($lock_dir, 0775, true);
+    chmod($lock_dir, 0775);
+}
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
@@ -70,12 +78,18 @@ echo json_encode($response);
 function getCampaignsWithStats()
 {
     global $conn;
+    // Get total valid emails from emails table (all valid verified emails)
+    $valid_emails_total = 0;
+    $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND domain_processed = 1");
+    if ($valid_res) {
+        $valid_emails_total = (int)$valid_res->fetch_assoc()['cnt'];
+    }
+    
     $query = "SELECT 
                 cm.campaign_id, 
                 cm.description, 
                 cm.mail_subject,
                 cm.attachment_path,
-                COALESCE((SELECT COUNT(*) FROM emails WHERE domain_status = 1 AND domain_processed = 1), 0) AS valid_emails,
                 cs.status as campaign_status,
                 COALESCE(cs.total_emails, 0) as total_emails,
                 COALESCE(cs.pending_emails, 0) as pending_emails,
@@ -84,24 +98,47 @@ function getCampaignsWithStats()
                 cs.start_time,
                 cs.end_time,
                 (
-                    SELECT COUNT(*) 
+                    SELECT COUNT(DISTINCT mb.to_mail) 
                     FROM mail_blaster mb 
                     WHERE mb.campaign_id = cm.campaign_id 
-                    AND mb.status = 'pending'
-                    AND mb.attempt_count < 3
-                ) as retryable_count
+                    AND mb.status = 'failed'
+                    AND mb.attempt_count < 5
+                ) as retryable_count,
+                (
+                    SELECT COUNT(DISTINCT mb.to_mail) 
+                    FROM mail_blaster mb 
+                    WHERE mb.campaign_id = cm.campaign_id 
+                    AND mb.status = 'failed'
+                    AND mb.attempt_count >= 5
+                ) as permanently_failed_count
               FROM campaign_master cm
-              LEFT JOIN campaign_status cs ON cm.campaign_id = cs.campaign_id
+              LEFT JOIN (
+                  SELECT cs1.campaign_id, cs1.status, cs1.total_emails, cs1.pending_emails, 
+                         cs1.sent_emails, cs1.failed_emails, cs1.start_time, cs1.end_time
+                  FROM campaign_status cs1
+                  INNER JOIN (
+                      SELECT campaign_id, MAX(id) as max_id
+                      FROM campaign_status
+                      GROUP BY campaign_id
+                  ) cs2 ON cs1.campaign_id = cs2.campaign_id AND cs1.id = cs2.max_id
+              ) cs ON cm.campaign_id = cs.campaign_id
               ORDER BY cm.campaign_id DESC";
     $result = $conn->query($query);
     $campaigns = $result->fetch_all(MYSQLI_ASSOC);
 
     foreach ($campaigns as &$campaign) {
-        $campaign['valid_emails'] = (int)($campaign['valid_emails'] ?? 0);
+        $campaign['valid_emails'] = $valid_emails_total; // Total valid emails in system
         $campaign['total_emails'] = (int)($campaign['total_emails'] ?? 0);
         $campaign['pending_emails'] = (int)($campaign['pending_emails'] ?? 0);
         $campaign['sent_emails'] = (int)($campaign['sent_emails'] ?? 0);
-        $campaign['failed_emails'] = (int)($campaign['failed_emails'] ?? 0);
+        
+        // Override failed_emails with permanently failed count (5+ attempts) from mail_blaster
+        $permanently_failed = (int)($campaign['permanently_failed_count'] ?? 0);
+        $campaign['failed_emails'] = $permanently_failed;
+        
+        // Ensure retryable_count is an integer
+        $campaign['retryable_count'] = (int)($campaign['retryable_count'] ?? 0);
+        
         $total = max($campaign['total_emails'], 1);
         $sent = min($campaign['sent_emails'], $total);
         $campaign['progress'] = round(($sent / $total) * 100);
@@ -129,23 +166,21 @@ function startCampaign($conn, $campaign_id)
                 throw new Exception("Campaign #$campaign_id is already completed");
             }
             $counts = getEmailCounts($conn, $campaign_id);
-            if ($status_check->num_rows > 0) {
-                $conn->query("UPDATE campaign_status SET 
-                        status = 'running',
-                        total_emails = {$counts['total_valid']},
-                        pending_emails = {$counts['pending']},
-                        sent_emails = {$counts['sent']},
-                        failed_emails = {$counts['failed']},
-                        start_time = IFNULL(start_time, NOW()),
-                        end_time = NULL
-                        WHERE campaign_id = $campaign_id");
-            } else {
-                $conn->query("INSERT INTO campaign_status 
-                        (campaign_id, total_emails, pending_emails, sent_emails, failed_emails, status, start_time)
-                        VALUES ($campaign_id, {$counts['total_valid']}, {$counts['pending']}, {$counts['sent']}, {$counts['failed']}, 'running', NOW())");
-            }
+            // Use INSERT...ON DUPLICATE KEY to prevent duplicates and ensure single row per campaign
+            $conn->query("INSERT INTO campaign_status 
+                    (campaign_id, total_emails, pending_emails, sent_emails, failed_emails, status, start_time)
+                    VALUES ($campaign_id, {$counts['total_valid']}, {$counts['pending']}, {$counts['sent']}, {$counts['failed']}, 'running', NOW())
+                    ON DUPLICATE KEY UPDATE
+                    status = 'running',
+                    total_emails = {$counts['total_valid']},
+                    pending_emails = {$counts['pending']},
+                    sent_emails = {$counts['sent']},
+                    failed_emails = {$counts['failed']},
+                    start_time = IFNULL(start_time, NOW()),
+                    end_time = NULL");
             $conn->commit();
             $success = true;
+            // Start process IMMEDIATELY after commit
             startEmailBlasterProcess($campaign_id);
         } catch (mysqli_sql_exception $e) {
             $conn->rollback();
@@ -165,23 +200,32 @@ function startCampaign($conn, $campaign_id)
 
 function getEmailCounts($conn, $campaign_id)
 {
-    // Compute counts based on emails and mail_blaster for the given campaign
+    // Compute counts based on emails table (all valid verified emails) and mail_blaster for the given campaign
+    // Only count permanently failed (attempt_count >= 5)
     $result = $conn->query("SELECT 
                 COUNT(*) as total_valid,
-                SUM(CASE WHEN (mb.status IS NULL OR mb.status = 'failed' OR mb.status = 'pending') THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN (mb.status IS NULL OR mb.status = 'pending' OR (mb.status = 'failed' AND mb.attempt_count < 5)) THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END) as sent,
-                SUM(CASE WHEN mb.status = 'failed' THEN 1 ELSE 0 END) as failed
+                SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END) as failed
             FROM emails e
             LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
-            WHERE e.domain_status = 1");
+            WHERE e.domain_status = 1 AND e.validation_status = 'valid'");
 
     return $result->fetch_assoc();
 }
 
 function startEmailBlasterProcess($campaign_id)
 {
-    // Use a pid file inside the project's tmp directory so it's easy to find and consistent
-    $pid_file = __DIR__ . "/../tmp/email_blaster_{$campaign_id}.pid";
+    global $conn;
+    
+    // Ensure tmp directory exists
+    $tmp_dir = __DIR__ . "/../tmp";
+    if (!is_dir($tmp_dir)) {
+        @mkdir($tmp_dir, 0777, true);
+    }
+    
+    // Use a pid file inside the project's tmp directory
+    $pid_file = $tmp_dir . "/email_blaster_{$campaign_id}.pid";
 
     // If pid file exists, check whether process is still running
     if (file_exists($pid_file)) {
@@ -204,16 +248,44 @@ function startEmailBlasterProcess($campaign_id)
         @unlink($pid_file);
     }
 
-    // Prefer the current PHP binary; fallback to 'php' in PATH
-    $php_path = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
-    // Script path relative to this file
-    $script_path = __DIR__ . '/email_blaster.php';
+    // Use parallel email blast (7 workers - 1 per server)
+    $script_path = __DIR__ . '/../includes/email_blast_parallel.php';
+    // $log_file = __DIR__ . '/../logs/campaign_' . $campaign_id . '.log'; // Commented - log file disabled
 
-    // Start the email blaster in background and capture pid
-    $command = "nohup " . escapeshellcmd($php_path) . " " . escapeshellarg($script_path) . " " . intval($campaign_id) . " > /dev/null 2>&1 & echo $!";
-    $pid = shell_exec($command);
-    if ($pid) {
-        file_put_contents($pid_file, trim($pid));
+    // Detect PHP CLI binary (avoid php-fpm!) using php -i Server API check
+    $php_candidates = [
+        '/opt/plesk/php/8.1/bin/php',
+        '/usr/bin/php8.1',
+        '/usr/local/bin/php',
+        '/usr/bin/php'
+    ];
+    $php_path = null;
+    foreach ($php_candidates as $candidate) {
+        if (file_exists($candidate) && is_executable($candidate)) {
+            $info = shell_exec(escapeshellarg($candidate) . ' -i 2>&1');
+            if ($info && stripos($info, 'Server API => Command Line Interface') !== false) {
+                $php_path = $candidate;
+                break;
+            }
+        }
+    }
+    if (!$php_path) {
+        $env_php = trim(shell_exec('command -v php 2>/dev/null')) ?: 'php';
+        $info = shell_exec(escapeshellarg($env_php) . ' -i 2>&1');
+        $php_path = ($info && stripos($info, 'Server API => Command Line Interface') !== false)
+            ? $env_php
+            : '/opt/plesk/php/8.1/bin/php';
+    }
+    
+    // Close DB and send response immediately
+    ProcessManager::closeConnections($conn);
+    
+    // Start background process
+    $pid = ProcessManager::execute($php_path, $script_path, [$campaign_id], null); // Log file disabled
+    
+    if ($pid > 0) {
+        file_put_contents($pid_file, $pid); // Keep PID file only
+        // error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid\n", 3, __DIR__ . '/../logs/campaign_starts.log'); // Commented - log disabled
     }
 }
 
@@ -276,6 +348,7 @@ function stopEmailBlasterProcess($campaign_id)
 
 function retryFailedEmails($conn, $campaign_id)
 {
+    // Only retry emails that haven't exceeded 5 attempts
     $result = $conn->query("
             SELECT COUNT(*) as failed_count 
             FROM mail_blaster 
@@ -284,25 +357,28 @@ function retryFailedEmails($conn, $campaign_id)
             AND attempt_count < 5
         ");
     $failed_count = $result->fetch_assoc()['failed_count'];
+    
     if ($failed_count > 0) {
+        // Reset failed emails back to pending for retry (don't increment attempt_count here, worker will do it)
         $conn->query("
                 UPDATE mail_blaster 
                 SET status = 'pending',     
-                    error_message = NULL,
-                    attempt_count = attempt_count + 1
+                    error_message = NULL
                 WHERE campaign_id = $campaign_id 
                 AND status = 'failed'
+                AND attempt_count < 5
             ");
+        
+        // Update campaign status
         $conn->query("
                 UPDATE campaign_status 
-                SET pending_emails = pending_emails + $failed_count,
-                    failed_emails = GREATEST(0, failed_emails - $failed_count),
-                    status = 'running'
+                SET status = 'running'
                 WHERE campaign_id = $campaign_id
             ");
+        
         startEmailBlasterProcess($campaign_id);
-        return "Retrying $failed_count failed emails for campaign #$campaign_id";
+        return "Retrying $failed_count failed emails for campaign #$campaign_id (max 5 attempts per email)";
     } else {
-        return "Retry campaign limit reached for campaign #$campaign_id";
+        return "No emails available for retry. All failed emails have reached maximum attempts (5).";
     }
 }

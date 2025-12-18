@@ -1,45 +1,34 @@
 <?php
-$mysqli = new mysqli("127.0.0.1", "root", "", "CRM");
-if ($mysqli->connect_error) exit(1);
+    $conn = new mysqli("127.0.0.1", "root", "", "CRM");
+    if ($conn->connect_error) exit(1);
 
-$start_id = $argv[1] ?? 0;
-$end_id = $argv[2] ?? 0;
+    $start_id = $argv[1] ?? 0;
+    $end_id = $argv[2] ?? 0;
 
-$query = "SELECT id, sp_domain FROM emails WHERE id BETWEEN $start_id AND $end_id AND domain_verified = 0";
-$result = $mysqli->query($query);
+    $query = "SELECT id, sp_domain FROM emails WHERE id BETWEEN $start_id AND $end_id AND domain_verified = 0";
+    $result = $conn->query($query);
 
-while ($row = $result->fetch_assoc()) {
-    $id = $row['id'];
-    $domain = $row['sp_domain'];
-    $ip = null;
+    while ($row = $result->fetch_assoc()) {
+        $domain = $row["sp_domain"];
+        $ip = false;
 
-    // Try MX
-    $dns_records = dns_get_record($domain, DNS_MX);
-    if (!empty($dns_records)) {
-        usort($dns_records, fn($a, $b) => $a['pri'] <=> $b['pri']);
-        $target = $dns_records[0]['target'] ?? '';
-        if ($target) {
-            $resolved = gethostbyname($target);
-            if (filter_var($resolved, FILTER_VALIDATE_IP)) {
-                $ip = $resolved;
-            }
+        if (getmxrr($domain, $mxhosts)) {
+            $mxIp = gethostbyname($mxhosts[0]);
+            if (filter_var($mxIp, FILTER_VALIDATE_IP)) $ip = $mxIp;
         }
-    }
 
-    // Fallback to A record
-    if (!$ip) {
-        $aRecord = gethostbyname($domain);
-        if (filter_var($aRecord, FILTER_VALIDATE_IP)) {
-            $ip = $aRecord;
+        if (!$ip) {
+            $aRecord = gethostbyname($domain);
+            if (filter_var($aRecord, FILTER_VALIDATE_IP)) $ip = $aRecord;
         }
+
+        $status = $ip ? 1 : 0;
+        $response = $ip ? $ip : "Invalid domain";
+
+        $update = $conn->prepare("UPDATE emails SET domain_verified = 1, domain_status = ?, validation_response = ? WHERE id = ?");
+        $update->bind_param("isi", $status, $response, $row["id"]);
+        $update->execute();
+        $update->close();
     }
-
-    $status = $ip ? 1 : 0;
-    $response = $ip ?: "Invalid domain";
-
-    $stmt = $mysqli->prepare("UPDATE emails SET domain_verified = 1, domain_status = ?, validation_response = ? WHERE id = ?");
-    $stmt->bind_param("isi", $status, $response, $id);
-    $stmt->execute();
-    $stmt->close();
-}
-$mysqli->close();
+    $conn->close();
+    ?>

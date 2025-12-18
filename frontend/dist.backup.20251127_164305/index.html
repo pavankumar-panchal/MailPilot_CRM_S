@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MailPilot CRM - Professional email campaign management system with SMTP verification, bulk sending, and real-time monitoring." />
+    <meta name="theme-color" content="#3B82F6" />
+    
+    <!-- Content Security Policy to prevent extension injection in production -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; connect-src 'self' http://localhost:* ws://localhost:*; font-src 'self' data:;" />
+    
+    <!-- Preconnect to API origin for faster backend requests -->
+    <link rel="preconnect" href="http://localhost" crossorigin />
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="data:text/jsx;base64,aW1wb3J0IHsgY3JlYXRlUm9vdCB9IGZyb20gInJlYWN0LWRvbS9jbGllbnQiOwppbXBvcnQgeyBCcm93c2VyUm91dGVyLCBSb3V0ZXMsIFJvdXRlIH0gZnJvbSAicmVhY3Qtcm91dGVyLWRvbSI7CmltcG9ydCB7IFN1c3BlbnNlLCBsYXp5LCBTdHJpY3RNb2RlIH0gZnJvbSAicmVhY3QiOwppbXBvcnQgTmF2YmFyIGZyb20gIi4vY29tcG9uZW50cy9OYXZiYXIuanN4IjsKaW1wb3J0IFBhZ2VMb2FkZXIgZnJvbSAiLi9jb21wb25lbnRzL1BhZ2VMb2FkZXIuanN4IjsKaW1wb3J0ICIuL2luZGV4LmNzcyI7CmltcG9ydCBUb3BQcm9ncmVzc0JhciBmcm9tICIuL2NvbXBvbmVudHMvVG9wUHJvZ3Jlc3NCYXIuanN4IjsKCi8vIExhenkgbG9hZCBwYWdlcyBmb3IgYmV0dGVyIHBlcmZvcm1hbmNlIGFuZCByZWR1Y2VkIFRCVApjb25zdCBFbWFpbFZlcmlmaWNhdGlvbiA9IGxhenkoKCkgPT4gaW1wb3J0KCIuL3BhZ2VzL0VtYWlsVmVyaWZpY2F0aW9uLmpzeCIpKTsKY29uc3QgU210cCA9IGxhenkoKCkgPT4gaW1wb3J0KCIuL3BhZ2VzL1NtdHAuanN4IikpOwpjb25zdCBDYW1wYWlnbnMgPSBsYXp5KCgpID0+IGltcG9ydCgiLi9wYWdlcy9DYW1wYWlnbnMuanN4IikpOwpjb25zdCBNYXN0ZXIgPSBsYXp5KCgpID0+IGltcG9ydCgiLi9wYWdlcy9NYXN0ZXIuanN4IikpOwpjb25zdCBFbWFpbFNlbnQgPSBsYXp5KCgpID0+IGltcG9ydCgiLi9wYWdlcy9tb25pdG9yL0VtYWlsU2VudC5qc3giKSk7CmNvbnN0IFJlY2VpdmVkUmVzcG9uc2UgPSBsYXp5KCgpID0+IGltcG9ydCgiLi9wYWdlcy9tb25pdG9yL1JlY2VpdmVkUmVzcG9uc2UuanN4IikpOwpjb25zdCBXb3JrZXJzID0gbGF6eSgoKSA9PiBpbXBvcnQoIi4vcGFnZXMvV29ya2Vycy5qc3giKSk7CgpjcmVhdGVSb290KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJyb290IikpLnJlbmRlcigKICA8U3RyaWN0TW9kZT4KICAgIDxCcm93c2VyUm91dGVyPgogICAgICA8TmF2YmFyIC8+CiAgICAgIDxUb3BQcm9ncmVzc0JhciAvPgogICAgICA8bWFpbiBpZD0ibWFpbi1jb250ZW50IiByb2xlPSJtYWluIiBhcmlhLWxhYmVsPSJNYWluIGFwcGxpY2F0aW9uIGNvbnRlbnQiPgogICAgICAgIDxTdXNwZW5zZSBmYWxsYmFjaz17PFBhZ2VMb2FkZXIgLz59PgogICAgICAgICAgPFJvdXRlcz4KICAgICAgICAgICAgPFJvdXRlIHBhdGg9Ii8iIGVsZW1lbnQ9ezxFbWFpbFZlcmlmaWNhdGlvbiAvPn0gLz4KICAgICAgICAgICAgPFJvdXRlIHBhdGg9Ii9zbXRwIiBlbGVtZW50PXs8U210cCAvPn0gLz4KICAgICAgICAgICAgPFJvdXRlIHBhdGg9Ii9jYW1wYWlnbnMiIGVsZW1lbnQ9ezxDYW1wYWlnbnMgLz59IC8+CiAgICAgICAgICAgIDxSb3V0ZSBwYXRoPSIvbWFzdGVyIiBlbGVtZW50PXs8TWFzdGVyIC8+fSAvPgogICAgICAgICAgICA8Um91dGUgcGF0aD0iL21vbml0b3IvZW1haWwtc2VudCIgZWxlbWVudD17PEVtYWlsU2VudCAvPn0gLz4KICAgICAgICAgICAgPFJvdXRlIHBhdGg9Ii9tb25pdG9yL3JlY2VpdmVkLXJlc3BvbnNlIiBlbGVtZW50PXs8UmVjZWl2ZWRSZXNwb25zZSAvPn0gLz4KICAgICAgICAgICAgPFJvdXRlIHBhdGg9Ii93b3JrZXJzIiBlbGVtZW50PXs8V29ya2VycyAvPn0gLz4KICAgICAgICAgIDwvUm91dGVzPgogICAgICAgIDwvU3VzcGVuc2U+CiAgICAgIDwvbWFpbj4KICAgIDwvQnJvd3NlclJvdXRlcj4KICA8L1N0cmljdE1vZGU+Cik7Cg==" />
+    
+    <title>MailPilot CRM - Email Campaign Manager</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <script type="module" crossorigin src="./assets/index-2wpkHUii.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/editor-t5Pr0pkD.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-core-Bz_OFM-J.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor-ZyZh7GQr.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-dom-oZ-VTmTY.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-router-Cm8bNIlG.js">
+    <link rel="stylesheet" crossorigin href="./assets/editor-D-Ncpkvi.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-D8dsvwQ3.css">
+  </head>
+  <body class="bg-gray-100">
+    <!-- Skip to main content for keyboard navigation -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded">
+      Skip to main content
+    </a>
+    
+    <div id="root"></div>
+    
+    <!-- Load FontAwesome asynchronously after page load -->
+    <link rel="stylesheet" href="./css/all.min.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="./css/all.min.css" /></noscript>
+    
+    
+    <!-- Fallback for JavaScript disabled -->
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>MailPilot CRM requires JavaScript to function. Please enable JavaScript in your browser settings.</p>
+      </div>
+    </noscript>
+  </body>
+</html>

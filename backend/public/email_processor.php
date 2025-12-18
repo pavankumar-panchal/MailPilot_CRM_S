@@ -1,389 +1,295 @@
 <?php
-ini_set('memory_limit', '2048M');
-ini_set('max_execution_time', 900);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, DELETE");
+header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
 
-// Clear any previous output
-if (ob_get_level() > 0) {
-    ob_end_clean();
+// Only allow POST requests
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+    exit;
 }
-ob_start();
-
-// Set error reporting to avoid warnings in output
-error_reporting(0);
-
-if ($conn->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Database connection failed: " . $conn->connect_error]));
-}
-
-// Get the request method
-$method = $_SERVER['REQUEST_METHOD'];
 
 try {
-    switch ($method) {
-        case 'POST':
-            $response = handlePostRequest();
-            break;
-        case 'GET':
-            $response = handleGetRequest();
-            break;
-        case 'DELETE':
-            $response = handleDeleteRequest();
-            break;
-        default:
-            $response = ["status" => "error", "message" => "Method not allowed"];
+    // Validate required fields
+    if (!isset($_FILES['csv_file']) || !isset($_POST['list_name']) || !isset($_POST['file_name'])) {
+        throw new Exception('Missing required fields: csv_file, list_name, or file_name');
     }
 
-    // Ensure no output has been sent before this
-    if (ob_get_length() > 0) {
-        ob_clean();
+    // Validate file upload
+    if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        $errorMessages = [
+            UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE',
+            UPLOAD_ERR_PARTIAL => 'File was partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            UPLOAD_ERR_EXTENSION => 'PHP extension stopped upload',
+        ];
+        $errorMsg = $errorMessages[$_FILES['csv_file']['error']] ?? 'Unknown upload error';
+        throw new Exception($errorMsg);
     }
 
-    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-} catch (Exception $e) {
-    // Clean any output buffer
-    ob_clean();
-    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
-}
+    // Validate file type
+    $fileType = mime_content_type($_FILES['csv_file']['tmp_name']);
+    $allowedTypes = ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
+    if (!in_array($fileType, $allowedTypes)) {
+        throw new Exception('Invalid file type. Only CSV files are allowed.');
+    }
 
-// Close connection and flush buffer
-$conn->close();
-ob_end_flush();
-exit;
+    // Validate file size (5MB max)
+    $maxSize = 5 * 1024 * 1024;
+    if ($_FILES['csv_file']['size'] > $maxSize) {
+        throw new Exception('File size exceeds 5MB limit');
+    }
 
-function getExcludedAccounts()
-{
-    global $conn;
-    $result = $conn->query("SELECT account FROM exclude_accounts");
+    $listName = trim($_POST['list_name']);
+    $fileName = trim($_POST['file_name']);
+
+    if (empty($listName) || empty($fileName)) {
+        throw new Exception('List name and file name cannot be empty');
+    }
+
+    // Read CSV file
+    $csvFile = $_FILES['csv_file']['tmp_name'];
+    $handle = fopen($csvFile, 'r');
+    
+    if (!$handle) {
+        throw new Exception('Failed to open CSV file');
+    }
+
+    // Skip header row
+    $header = fgetcsv($handle);
+    
+    // Load excluded domains and accounts
+    $excludedDomains = [];
     $excludedAccounts = [];
+    
+    $result = $conn->query("SELECT domain FROM exclude_domains");
+    while ($row = $result->fetch_assoc()) {
+        $excludedDomains[] = strtolower(trim($row['domain']));
+    }
+    
+    $result = $conn->query("SELECT account FROM exclude_accounts");
     while ($row = $result->fetch_assoc()) {
         $excludedAccounts[] = strtolower(trim($row['account']));
     }
-    return $excludedAccounts;
-}
-
-function getExcludedDomainsWithIPs()
-{
-    global $conn;
-    $result = $conn->query("SELECT domain, ip_address FROM exclude_domains");
-    $excludedDomains = [];
+    
+    // Get only active workers for distribution
+    $result = $conn->query("SELECT id FROM workers WHERE is_active = 1 ORDER BY id");
+    $workerIds = [];
     while ($row = $result->fetch_assoc()) {
-        $domain = strtolower(trim($row['domain']));
-        $ip = trim($row['ip_address']);
-        if (!empty($domain)) {
-            $excludedDomains[$domain] = $ip;
-        }
+        $workerIds[] = (int)$row['id'];
     }
-    return $excludedDomains;
-}
-
-function isValidAccountName($account)
-{
-    // 1. Basic pattern match
-    if (!preg_match('/^[a-z0-9](?!.*[._-]{2})[a-z0-9._-]*[a-z0-9]$/i', $account)) {
-        return false;
+    $workerCount = count($workerIds);
+    
+    if ($workerCount === 0) {
+        throw new Exception('No active workers available. Please activate at least one worker first.');
     }
+    
+    // Parse emails
+    $emails = [];
+    $validCount = 0;
+    $invalidCount = 0;
+    $duplicateCount = 0;
+    $lineNumber = 1;
+    $emailIndex = 0; // For worker distribution
+    $seen = [];
 
-    // 2. Length check
-    if (strlen($account) < 1 || strlen($account) > 64) {
-        return false;
-    }
-
-    // 3. Not all digits
-    if (preg_match('/^[0-9]+$/', $account)) {
-        return false;
-    }
-
-    return true;
-}
-
-function normalizeGmail($email)
-{
-    $parts = explode('@', strtolower(trim($email)));
-    if (count($parts) !== 2 || $parts[1] !== 'gmail.com') {
-        return $email;
-    }
-
-    $account = $parts[0];
-    // Remove dots and anything after +
-    $account = str_replace('.', '', $account);
-    $account = explode('+', $account)[0];
-
-    return $account . '@gmail.com';
-}
-
-function handlePostRequest()
-{
-    global $conn;
-
-    if (!isset($_FILES['csv_file'])) {
-        return ["status" => "error", "message" => "No file uploaded"];
-    }
-
-    $file = $_FILES['csv_file']['tmp_name'];
-    if (!file_exists($file)) {
-        return ["status" => "error", "message" => "File upload failed"];
-    }
-
-    // Load all excluded data once
-    $excludedAccounts = getExcludedAccounts();
-    $excludedDomains = getExcludedDomainsWithIPs();
-
-    $batchSize = 5000; // Increased batch size
-    $skipped_count = 0;
-    $inserted_count = 0;
-    $excluded_count = 0;
-    $invalid_account_count = 0;
-    $uniqueEmails = [];
-
-    $listName = $_POST['list_name'];
-    $fileName = $_POST['file_name'];
-
-    // Insert a new csv_list row
-    $insertListStmt = $conn->prepare("INSERT INTO csv_list (list_name, file_name) VALUES (?, ?)");
-    $insertListStmt->bind_param("ss", $listName, $fileName);
-    $insertListStmt->execute();
-    $campaignListId = $conn->insert_id;
-
-    // Prepare statements
-    $checkStmt = $conn->prepare("SELECT id FROM emails WHERE raw_emailid = ? LIMIT 1");
-
-    // Disable autocommit for bulk insert
-    $conn->autocommit(FALSE);
-
-    // Get all existing emails in one query (for small-medium datasets)
-    $existingEmails = [];
-    $result = $conn->query("SELECT raw_emailid FROM emails");
-    while ($row = $result->fetch_assoc()) {
-        $existingEmails[strtolower($row['raw_emailid'])] = true;
-    }
-
-    // Prepare bulk insert statement
-    $bulkInsertValues = [];
-    $bulkInsertParams = [];
-    $bulkInsertQuery = "INSERT INTO emails (raw_emailid, sp_account, sp_domain, domain_verified, domain_status, validation_response, domain_processed, csv_list_id) VALUES ";
-
-    if (($handle = fopen($file, "r")) === false) {
-        return ["status" => "error", "message" => "Failed to read CSV file"];
-    }
-
-    // Read and process the file in chunks
-    while (($data = fgetcsv($handle, 1000, ",")) !== false) {
-        if (empty($data[0])) {
+    while (($data = fgetcsv($handle)) !== false) {
+        $lineNumber++;
+        
+        if (empty($data) || !isset($data[0])) {
             continue;
         }
 
-        if (stripos(trim($data[0]), 'email') === 0) {
+        $email = trim($data[0]);
+        
+        // Skip empty lines
+        if (empty($email)) {
             continue;
         }
 
-        $email = normalizeGmail(trim($data[0]));
-        $email = preg_replace('/[^\x20-\x7E]/', '', $email);
-        $emailKey = strtolower($email);
-
-        // Skip duplicates
-        if (isset($uniqueEmails[$emailKey]) || isset($existingEmails[$emailKey])) {
-            $skipped_count++;
-            continue;
-        }
-        $uniqueEmails[$emailKey] = true;
-
-        $emailParts = explode("@", $email);
-        if (count($emailParts) != 2) {
-            $bulkInsertValues[] = "(" . implode(",", array_fill(0, 8, "?")) . ")";
-            $bulkInsertParams[] = $email;
-            $bulkInsertParams[] = '';
-            $bulkInsertParams[] = '';
-            $bulkInsertParams[] = 1; // domain_verified
-            $bulkInsertParams[] = 0; // domain_status
-            $bulkInsertParams[] = "Invalid email format";
-            $bulkInsertParams[] = 0; // domain_processed
-            $bulkInsertParams[] = $campaignListId;
-            $invalid_account_count++;
+        // Basic email validation
+        $email = strtolower($email);
+        $email = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $email); // Remove non-printable characters
+        
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $invalidCount++;
             continue;
         }
 
-        [$sp_account, $sp_domain] = $emailParts;
-        $domain_verified = 0;
-        $domain_status = 0;
-        $validation_response = "Not Verified Yet";
-
-        // Validate account name
-        if (!isValidAccountName($sp_account)) {
-            $bulkInsertValues[] = "(" . implode(",", array_fill(0, 8, "?")) . ")";
-            $bulkInsertParams[] = $email;
-            $bulkInsertParams[] = $sp_account;
-            $bulkInsertParams[] = $sp_domain;
-            $bulkInsertParams[] = 1; // domain_verified
-            $bulkInsertParams[] = 0; // domain_status
-            $bulkInsertParams[] = "Invalid account name";
-            $bulkInsertParams[] = 0; // domain_processed
-            $bulkInsertParams[] = $campaignListId;
-            $invalid_account_count++;
+        // Extract domain
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            $invalidCount++;
             continue;
         }
 
-        // Exclusion check
-        if (in_array(strtolower($sp_account), $excludedAccounts)) {
-            $domain_verified = 1;
-            $domain_status = 1;
-            $validation_response = "Excluded: Account";
-            $excluded_count++;
-        } elseif (array_key_exists(strtolower($sp_domain), $excludedDomains)) {
-            $domain_verified = 1;
-            $domain_status = 1;
-            $validation_response = $excludedDomains[strtolower($sp_domain)];
-            $excluded_count++;
+        $account = $parts[0];
+        $domain = $parts[1];
+
+        // Check if domain is excluded
+        if (in_array($domain, $excludedDomains)) {
+            $invalidCount++;
+            continue;
+        }
+        
+        // Check if account is excluded
+        if (in_array($account, $excludedAccounts)) {
+            $invalidCount++;
+            continue;
         }
 
-        $bulkInsertValues[] = "(" . implode(",", array_fill(0, 8, "?")) . ")";
-        $bulkInsertParams[] = $email;
-        $bulkInsertParams[] = $sp_account;
-        $bulkInsertParams[] = $sp_domain;
-        $bulkInsertParams[] = $domain_verified;
-        $bulkInsertParams[] = $domain_status;
-        $bulkInsertParams[] = $validation_response;
-        $bulkInsertParams[] = 0; // domain_processed
-        $bulkInsertParams[] = $campaignListId;
-        $inserted_count++;
-
-        // Execute batch when reached batch size
-        if (count($bulkInsertValues) >= $batchSize) {
-            $query = $bulkInsertQuery . implode(",", $bulkInsertValues);
-            $stmt = $conn->prepare($query);
-
-            // Dynamically bind parameters
-            $types = str_repeat("ssssisii", count($bulkInsertValues));
-            $stmt->bind_param($types, ...$bulkInsertParams);
-
-            $stmt->execute();
-            $stmt->close();
-
-            // Reset for next batch
-            $bulkInsertValues = [];
-            $bulkInsertParams = [];
+        // De-duplicate within the uploaded file (case-insensitive)
+        if (isset($seen[$email])) {
+            $duplicateCount++;
+            continue;
         }
+        $seen[$email] = true;
+
+        // Assign worker ID using round-robin distribution
+        $workerId = $workerIds[$emailIndex % $workerCount];
+        $emailIndex++;
+
+        $emails[] = [
+            'raw_emailid' => $email,
+            'sp_account' => $account,
+            'sp_domain' => $domain,
+            'worker_id' => $workerId,
+        ];
     }
 
-    // Insert remaining records
-    if (!empty($bulkInsertValues)) {
-        $query = $bulkInsertQuery . implode(",", $bulkInsertValues);
-        $stmt = $conn->prepare($query);
-
-        $types = str_repeat("ssssisii", count($bulkInsertValues));
-        $stmt->bind_param($types, ...$bulkInsertParams);
-
-        $stmt->execute();
-        $stmt->close();
-    }
-
-    // Commit transaction
-    $conn->commit();
-    $conn->autocommit(TRUE);
     fclose($handle);
 
-    // Update csv_list with totals using direct counts rather than subqueries
-    $total = $inserted_count + $invalid_account_count + $excluded_count;
-    $valid = $excluded_count; // Excluded are considered valid in this context
-    $invalid = $invalid_account_count;
+    if (empty($emails)) {
+        throw new Exception('No valid emails found in CSV file');
+    }
 
-    $updateListStmt = $conn->prepare("UPDATE csv_list SET 
-                                    total_emails = ?,
-                                    valid_count = ?,
-                                    invalid_count = ?
-                                    WHERE id = ?");
-    $updateListStmt->bind_param("iiii", $total, $valid, $invalid, $campaignListId);
-    $updateListStmt->execute();
+    // Filter out emails that already exist in DB to avoid duplicates across uploads
+    $existingSet = [];
+    $chunkSize = 1000;
+    $allRaw = array_column($emails, 'raw_emailid');
+    $emailChunks = array_chunk($allRaw, $chunkSize);
 
-    // Assign emails to workers in equal batches
-    $workers = getWorkers($conn);
-    $workerCount = count($workers);
-
-    if ($workerCount > 0) {
-        $result = $conn->query("SELECT id FROM emails WHERE csv_list_id = $campaignListId AND worker_id IS NULL");
-        $emails = [];
-        while ($row = $result->fetch_assoc()) {
-            $emails[] = $row['id'];
+    foreach ($emailChunks as $chunk) {
+        $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+        $types = str_repeat('s', count($chunk));
+        $stmt = $conn->prepare("SELECT raw_emailid FROM emails WHERE raw_emailid IN ($placeholders)");
+        if ($stmt) {
+            $stmt->bind_param($types, ...$chunk);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($r = $res->fetch_assoc()) { $existingSet[strtolower($r['raw_emailid'])] = true; }
+            $stmt->close();
         }
+    }
 
-        $totalEmails = count($emails);
-        $batchSize = ceil($totalEmails / $workerCount);
+    $filtered = [];
+    foreach ($emails as $row) {
+        $e = strtolower($row['raw_emailid']);
+        if (isset($existingSet[$e])) { $duplicateCount++; continue; }
+        $filtered[] = $row;
+    }
 
-        $emailIndex = 0;
-        foreach ($workers as $worker) {
-            $assignedEmails = array_slice($emails, $emailIndex, $batchSize);
-            if (count($assignedEmails) > 0) {
-                $ids = implode(',', $assignedEmails);
-                $conn->query("UPDATE emails SET worker_id = {$worker['id']} WHERE id IN ($ids)");
+    $emails = $filtered;
+    $validCount = count($emails);
+
+    if ($validCount === 0) {
+        throw new Exception('All emails are duplicates or invalid; nothing to insert.');
+    }
+
+    // Begin transaction
+    $conn->begin_transaction();
+
+    try {
+        // Insert into csv_list table
+        $stmt = $conn->prepare("
+            INSERT INTO csv_list (list_name, file_name, total_emails, valid_count, invalid_count, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+        ");
+        
+    $totalEmails = $validCount + $invalidCount + $duplicateCount;
+        $stmt->bind_param('ssiii', $listName, $fileName, $totalEmails, $validCount, $invalidCount);
+        $stmt->execute();
+        $csvListId = $conn->insert_id;
+        $stmt->close();
+
+        // Prepare bulk insert for emails
+        $batchSize = 1000;
+        $batches = array_chunk($emails, $batchSize);
+
+        foreach ($batches as $batch) {
+            $values = [];
+            $params = [];
+            
+            foreach ($batch as $email) {
+                $values[] = "(?, ?, ?, 0, 0, NULL, 0, ?, 'pending', ?)";
+                $params[] = $email['raw_emailid'];
+                $params[] = $email['sp_account'];
+                $params[] = $email['sp_domain'];
+                $params[] = $csvListId;
+                $params[] = $email['worker_id'];
             }
-            $emailIndex += $batchSize;
+
+            $sql = "INSERT INTO emails 
+                (raw_emailid, sp_account, sp_domain, domain_verified, domain_status, validation_response, domain_processed, csv_list_id, validation_status, worker_id)
+                VALUES " . implode(', ', $values);
+
+            $stmt = $conn->prepare($sql);
+            
+            // Create type string (sssi = 3 strings + 1 int for csv_list_id + 1 int for worker_id)
+            $types = str_repeat('sssii', count($batch));
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $stmt->close();
         }
+
+        // Update csv_list status to running
+        $stmt = $conn->prepare("UPDATE csv_list SET status = 'running' WHERE id = ?");
+        $stmt->bind_param('i', $csvListId);
+        $stmt->execute();
+        $stmt->close();
+
+        // Commit transaction
+        $conn->commit();
+
+        // Start domain verification in background
+        $verifyScript = __DIR__ . '/../includes/verify_domain.php';
+        if (file_exists($verifyScript)) {
+            $cmd = 'php ' . escapeshellarg($verifyScript) . ' > /dev/null 2>&1 &';
+            exec($cmd);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "Successfully uploaded {$validCount} valid emails. Domain verification started.",
+            'data' => [
+                'csv_list_id' => $csvListId,
+                'valid_count' => $validCount,
+                'invalid_count' => $invalidCount,
+                'total_emails' => $totalEmails,
+            ]
+        ]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        throw $e;
     }
 
-    return [
-        "status" => "success",
-        "message" => "CSV processed successfully",
-        "inserted" => $inserted_count,
-        "excluded" => $excluded_count,
-        "invalid_accounts" => $invalid_account_count,
-        "csv_list_id" => $campaignListId,
-        "total_emails" => $total,
-        "valid" => $valid,
-        "invalid" => $invalid
-    ];
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ]);
 }
 
-function handleGetRequest()
-{
-    global $conn;
-
-    $stmt = $conn->prepare("SELECT id, raw_emailid, sp_account, sp_domain, 
-                            COALESCE(domain_verified, 0) AS domain_verified, 
-                            COALESCE(domain_status, 0) AS domain_status, 
-                            COALESCE(validation_response, 'Not Verified Yet') AS validation_response
-                            FROM emails");
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $emails = [];
-    while ($row = $result->fetch_assoc()) {
-        $emails[] = $row;
-    }
-
-    return $emails;
-}
-
-function handleDeleteRequest()
-{
-    global $conn;
-
-    $id = intval($_GET['id'] ?? 0);
-    if ($id <= 0) {
-        return ["status" => "error", "message" => "Invalid ID"];
-    }
-
-    $stmt = $conn->prepare("DELETE FROM emails WHERE id = ?");
-    $stmt->bind_param("i", $id);
-
-    if ($stmt->execute()) {
-        return ["status" => "success", "message" => "Email deleted"];
-    } else {
-        return ["status" => "error", "message" => "Deletion failed"];
-    }
-}
-
-function getWorkers($conn)
-{
-    $result = $conn->query("SELECT id, workername, ip FROM workers");
-    $workers = [];
-    while ($row = $result->fetch_assoc()) {
-        $workers[] = $row;
-    }
-    return $workers;
-}
+$conn->close();

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-// Set your API base here (change to your production URL as needed)
-const API_BASE = "http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/master/smtps";
-// For production, use:
-// const API_BASE = "https://payrollsoft.in/Verify_email/backend/routes/api.php/api/master/smtps";
+import { TableSkeleton } from "../components/SkeletonLoader";
+import { API_CONFIG } from "../config";
+
+// Use centralized config for API endpoints
+const API_BASE = API_CONFIG.API_MASTER_SMTPS;
 
 const emptyServer = {
   name: "",
@@ -17,7 +18,7 @@ const emptyServer = {
       email: "",
       password: "",
       daily_limit: 500,
-      hourly_limit: 100,
+      hourly_limit: 50,
       is_active: true,
     },
   ],
@@ -83,7 +84,16 @@ const Smtp = () => {
     email: "",
     password: "",
     daily_limit: 500,
-    hourly_limit: 100,
+    hourly_limit: 50,
+    is_active: true,
+  });
+  const [editAccountModalOpen, setEditAccountModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editAccountForm, setEditAccountForm] = useState({
+    email: "",
+    password: "",
+    daily_limit: 500,
+    hourly_limit: 50,
     is_active: true,
   });
 
@@ -100,7 +110,7 @@ const Smtp = () => {
       } else {
         setServers([]);
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to load SMTP servers." });
       setServers([]);
     }
@@ -161,7 +171,7 @@ const Smtp = () => {
           message: data.message || "Failed to add server.",
         });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to add server." });
     }
   };
@@ -212,7 +222,7 @@ const Smtp = () => {
           message: data.message || "Failed to update server.",
         });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to update server." });
     }
   };
@@ -236,7 +246,7 @@ const Smtp = () => {
           message: data.message || "Failed to delete server.",
         });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to delete server." });
     }
   };
@@ -263,7 +273,7 @@ const Smtp = () => {
           email: "",
           password: "",
           daily_limit: 500,
-          hourly_limit: 100,
+          hourly_limit: 50,
           is_active: true,
         });
         fetchServers();
@@ -273,7 +283,7 @@ const Smtp = () => {
           message: data.message || "Failed to add email account.",
         });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to add email account." });
     }
   };
@@ -297,9 +307,74 @@ const Smtp = () => {
           message: data.message || "Failed to delete email account.",
         });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "Failed to delete email account." });
     }
+  };
+
+  // Open edit account modal
+  const handleEditAccount = (serverId, account) => {
+    setEditingAccount({ serverId, accountId: account.id });
+    setEditAccountForm({
+      email: account.email,
+      password: "", // Don't prefill password for security
+      daily_limit: account.daily_limit,
+      hourly_limit: account.hourly_limit,
+      is_active: account.is_active,
+    });
+    setEditAccountModalOpen(true);
+  };
+
+  // Update existing account
+  const handleUpdateAccount = async () => {
+    if (!editingAccount || !editAccountForm.email) {
+      setStatus({ type: "error", message: "Email is required." });
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/${editingAccount.serverId}/accounts/${editingAccount.accountId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editAccountForm),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setStatus({
+          type: "success",
+          message: "Email account updated successfully!",
+        });
+        setEditAccountModalOpen(false);
+        setEditingAccount(null);
+        setEditAccountForm({
+          email: "",
+          password: "",
+          daily_limit: 500,
+          hourly_limit: 50,
+          is_active: true,
+        });
+        fetchServers();
+      } else {
+        setStatus({
+          type: "error",
+          message: data.message || "Failed to update email account.",
+        });
+      }
+    } catch {
+      setStatus({ type: "error", message: "Failed to update email account." });
+    }
+  };
+
+  // Handle edit account form changes
+  const handleEditAccountFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditAccountForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   // Toggle server expansion
@@ -334,7 +409,7 @@ const Smtp = () => {
           email: "",
           password: "",
           daily_limit: 500,
-          hourly_limit: 100,
+          hourly_limit: 50,
           is_active: true,
         },
       ],
@@ -415,13 +490,7 @@ const Smtp = () => {
             </thead>
             <tbody className="bg-white/60 divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    </div>
-                  </td>
-                </tr>
+                <TableSkeleton rows={5} columns={5} />
               ) : servers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
@@ -544,15 +613,26 @@ const Smtp = () => {
                                           {/* Reply-To is displayed once in the server row above */}
                                         </div>
                                       </div>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteAccount(server.id, account.id)
-                                        }
-                                        className="mt-2 md:mt-0 text-red-500 hover:text-red-700 text-sm flex items-center"
-                                        title="Delete account"
-                                      >
-                                        <i className="fas fa-trash-alt mr-1"></i> Delete
-                                      </button>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() =>
+                                            handleEditAccount(server.id, account)
+                                          }
+                                          className="mt-2 md:mt-0 text-indigo-600 hover:text-indigo-800 text-sm flex items-center"
+                                          title="Edit account"
+                                        >
+                                          <i className="fas fa-edit mr-1"></i> Edit
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteAccount(server.id, account.id)
+                                          }
+                                          className="mt-2 md:mt-0 text-red-500 hover:text-red-700 text-sm flex items-center"
+                                          title="Delete account"
+                                        >
+                                          <i className="fas fa-trash-alt mr-1"></i> Delete
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -1149,6 +1229,119 @@ const Smtp = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Account Modal */}
+      {editAccountModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-md">
+          <div className="relative w-full max-w-lg mx-auto bg-white rounded-lg shadow-lg">
+            <div className="bg-white border-b flex justify-between items-center px-5 py-3 rounded-t-lg">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <i className="fas fa-edit mr-2 text-indigo-600"></i>
+                Edit Email Account
+              </h3>
+              <button
+                onClick={() => setEditAccountModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="px-5 py-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editAccountForm.email}
+                    onChange={handleEditAccountFormChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="user@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (leave blank to keep current)
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={editAccountForm.password}
+                    onChange={handleEditAccountFormChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="New password (optional)"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hourly Limit
+                    </label>
+                    <input
+                      type="number"
+                      name="hourly_limit"
+                      value={editAccountForm.hourly_limit}
+                      onChange={handleEditAccountFormChange}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      min="0"
+                      max="1000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Daily Limit
+                    </label>
+                    <input
+                      type="number"
+                      name="daily_limit"
+                      value={editAccountForm.daily_limit}
+                      onChange={handleEditAccountFormChange}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      min="0"
+                      max="10000"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    id="edit_account_is_active"
+                    checked={editAccountForm.is_active}
+                    onChange={handleEditAccountFormChange}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="edit_account_is_active"
+                    className="ml-2 block text-sm text-gray-700"
+                  >
+                    Active
+                  </label>
+                </div>
+              </div>
+              <div className="flex justify-end pt-4 space-x-3 mt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditAccountModalOpen(false)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdateAccount}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <i className="fas fa-save mr-2"></i> Update Account
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

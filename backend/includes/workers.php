@@ -37,8 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO workers (workername, ip) VALUES (?, ?)");
-    $stmt->bind_param("ss", $workername, $ip);
+    // Support optional is_active parameter (defaults to 1 if not provided)
+    $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+    
+    $stmt = $conn->prepare("INSERT INTO workers (workername, ip, is_active) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssi", $workername, $ip, $is_active);
 
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Worker added successfully']);
@@ -59,14 +62,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $workername = isset($data['workername']) ? trim($data['workername']) : '';
     $ip = isset($data['ip']) ? trim($data['ip']) : '';
 
-    if (!$id || $workername === '' || $ip === '') {
+    if (!$id) {
         http_response_code(400);
-        echo json_encode(['error' => 'Missing id, workername or ip']);
+        echo json_encode(['error' => 'Missing id']);
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE workers SET workername = ?, ip = ? WHERE id = ?");
-    $stmt->bind_param("ssi", $workername, $ip, $id);
+    // Support partial updates for status toggle
+    if (isset($data['is_active']) && !isset($data['workername']) && !isset($data['ip'])) {
+        // Status toggle only
+        $is_active = (int)$data['is_active'];
+        $stmt = $conn->prepare("UPDATE workers SET is_active = ? WHERE id = ?");
+        $stmt->bind_param("ii", $is_active, $id);
+        
+        if ($stmt->execute()) {
+            $status_text = $is_active ? 'activated' : 'deactivated';
+            echo json_encode(['success' => true, 'message' => "Worker {$status_text} successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to update worker status']);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    // Full update
+    if ($workername === '' || $ip === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Missing workername or ip']);
+        exit;
+    }
+
+    $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+    $stmt = $conn->prepare("UPDATE workers SET workername = ?, ip = ?, is_active = ? WHERE id = ?");
+    $stmt->bind_param("ssii", $workername, $ip, $is_active, $id);
 
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Worker updated successfully']);
@@ -107,9 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
 // GET workers
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = $conn->query("SELECT id, workername, ip FROM workers ORDER BY id DESC");
+    $result = $conn->query("SELECT id, workername, ip, is_active FROM workers ORDER BY is_active DESC, id DESC");
     $workers = [];
     while ($row = $result->fetch_assoc()) {
+        $row['is_active'] = (int)$row['is_active'];
         $workers[] = $row;
     }
     echo json_encode($workers);

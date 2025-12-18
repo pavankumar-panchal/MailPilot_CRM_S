@@ -1,34 +1,47 @@
 <?php
 
+require_once __DIR__ . '/../config/db.php';
+
+// Production-safe error handling
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', 0); // Don't display errors in output
+ini_set('log_errors', 1); // Log errors instead
+ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
 set_time_limit(0);
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// Database configuration
-$servername = "127.0.0.1";
-$username = "root";
-$password = "";
-$dbname = "CRM";
-$log_dbname = "CRM_logs";
-
-// Create main connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-$conn->set_charset("utf8mb4");
-if ($conn->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Connection failed: " . $conn->connect_error]));
+// Preflight
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(200);
+    echo json_encode(['status' => 'ok']);
+    exit;
 }
 
-// Create log connection
-$log_conn = new mysqli($servername, $username, $password, $log_dbname);
-$log_conn->set_charset("utf8mb4");
-if ($log_conn->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $log_conn->connect_error]));
-}
+// Custom error handler to return JSON
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Server error: ' . $errstr,
+        'file' => basename($errfile),
+        'line' => $errline
+    ]);
+    exit;
+});
+
+// Custom exception handler
+set_exception_handler(function($exception) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Exception: ' . $exception->getMessage()
+    ]);
+    exit;
+});
 
 // Configuration
 define('LOG_FILE', __DIR__ . '/../storage/retry_smtp.log');
@@ -41,34 +54,7 @@ function write_log($msg)
     file_put_contents(LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
 }
 
-function insert_smtp_log($log_conn, $email, $steps, $validation, $validation_response)
-{
-    $stmt = $log_conn->prepare("INSERT INTO email_smtp_checks2 
-        (email, smtp_connection, ehlo, mail_from, rcpt_to, validation, validation_response) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        write_log("Prepare failed for SMTP log: " . $log_conn->error);
-        return false;
-    }
-    $stmt->bind_param(
-        "sssssss",
-        $email,
-        $steps['smtp_connection'],
-        $steps['ehlo'],
-        $steps['mail_from'],
-        $steps['rcpt_to'],
-        $validation,
-        $validation_response
-    );
-    $success = $stmt->execute();
-    if (!$success) {
-        write_log("Execute failed for SMTP log: " . $stmt->error);
-    }
-    $stmt->close();
-    return $success;
-}
-
-function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
+function verifyEmailViaSMTP($email, $domain, $conn, $ehloHost = null, $mailFrom = null)
 {
     $ip = false;
     $mxHost = null;
@@ -98,7 +84,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     }
 
     if (!$ip) {
-        insert_smtp_log($log_conn, $email, $steps, "No valid MX or A record found", "No valid MX or A record found");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -114,7 +99,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     $timeout = 15;
     $smtp = @stream_socket_client("tcp://$ip:$port", $errno, $errstr, $timeout);
     if (!$smtp) {
-        insert_smtp_log($log_conn, $email, $steps, "Connection failed: $errstr", "Connection failed: $errstr");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -129,7 +113,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     $response = fgets($smtp, 4096);
     if ($response === false || substr($response, 0, 3) != "220") {
         fclose($smtp);
-        insert_smtp_log($log_conn, $email, $steps, "SMTP server not ready or no response", "SMTP server not ready or no response");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -139,7 +122,11 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
             "validation_response" => "SMTP server not ready or no response"
         ];
     }
-    fputs($smtp, "EHLO server.relyon.co.in\r\n");
+    // Pick EHLO host and MAIL FROM
+    $ehlo = $ehloHost ?: 'localhost.localdomain';
+    $from = $mailFrom ?: 'no-reply@localhost.localdomain';
+
+    fputs($smtp, "EHLO {$ehlo}\r\n");
     $ehlo_ok = false;
     while ($line = fgets($smtp, 4096)) {
         if (substr($line, 3, 1) == " ") {
@@ -150,7 +137,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     if (!$ehlo_ok) {
         fclose($smtp);
         $steps['ehlo'] = 'No';
-        insert_smtp_log($log_conn, $email, $steps, "EHLO failed", "EHLO failed");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -161,12 +147,11 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
         ];
     }
     $steps['ehlo'] = 'Yes';
-    fputs($smtp, "MAIL FROM:<info@relyon.co.in>\r\n");
+    fputs($smtp, "MAIL FROM:<{$from}>\r\n");
     $mailfrom_resp = fgets($smtp, 4096);
     if ($mailfrom_resp === false) {
         fclose($smtp);
         $steps['mail_from'] = 'No';
-        insert_smtp_log($log_conn, $email, $steps, "MAIL FROM failed", "MAIL FROM failed");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -189,7 +174,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     $validation_response = mb_substr($validation_response, 0, 1000, 'UTF-8');
 
     if ($responseCode == "250" || $responseCode == "251") {
-        insert_smtp_log($log_conn, $email, $steps, $ip, $validation_response);
         return [
             "status" => "valid",
             "result" => 1,
@@ -199,7 +183,6 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
             "validation_response" => $ip
         ];
     } else {
-        insert_smtp_log($log_conn, $email, $steps, $rcpt_resp, $validation_response);
         return [
             "status" => "invalid",
             "result" => 0,
@@ -211,8 +194,58 @@ function verifyEmailViaSMTP($email, $domain, $conn, $log_conn)
     }
 }
 
-// Accept csv_list_id as GET or POST parameter
+// Accept input params
 $csv_list_id = isset($_GET['csv_list_id']) ? intval($_GET['csv_list_id']) : (isset($_POST['csv_list_id']) ? intval($_POST['csv_list_id']) : 0);
+
+// Optional: choose EHLO host / MAIL FROM dynamically
+function getHostFromRequest() {
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost.localdomain';
+    // Remove port if present
+    $host = preg_replace('/:\\d+$/', '', $host);
+    // Ensure we have at least one dot
+    if (strpos($host, '.') === false) {
+        $host = $host . '.localdomain';
+    }
+    return $host;
+}
+
+$param_ehlo = trim($_GET['ehlo_host'] ?? $_POST['ehlo_host'] ?? '');
+$param_mail_from = trim($_GET['mail_from'] ?? $_POST['mail_from'] ?? '');
+$param_server_id = isset($_GET['server_id']) ? intval($_GET['server_id']) : (isset($_POST['server_id']) ? intval($_POST['server_id']) : 0);
+
+// Derive defaults
+$defaultHost = getHostFromRequest();
+$defaultFrom = 'verify@' . $defaultHost;
+
+// If server_id is provided, try to fetch an email to use as MAIL FROM
+$resolvedMailFrom = $param_mail_from;
+if ($param_server_id > 0) {
+    // Prefer an active account email for this server
+    if ($stmt = $conn->prepare("SELECT email FROM smtp_accounts WHERE smtp_server_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1")) {
+        $stmt->bind_param('i', $param_server_id);
+        if ($stmt->execute()) {
+            $stmt->bind_result($accEmail);
+            if ($stmt->fetch() && filter_var($accEmail, FILTER_VALIDATE_EMAIL)) {
+                $resolvedMailFrom = $accEmail;
+            }
+        }
+        $stmt->close();
+    }
+    // Fallback to server received_email if available
+    if (!$resolvedMailFrom && ($stmt2 = $conn->prepare("SELECT received_email FROM smtp_servers WHERE id = ? LIMIT 1"))) {
+        $stmt2->bind_param('i', $param_server_id);
+        if ($stmt2->execute()) {
+            $stmt2->bind_result($recvEmail);
+            if ($stmt2->fetch() && filter_var($recvEmail, FILTER_VALIDATE_EMAIL)) {
+                $resolvedMailFrom = $recvEmail;
+            }
+        }
+        $stmt2->close();
+    }
+}
+
+$ehloHost = $param_ehlo !== '' ? $param_ehlo : $defaultHost;
+$mailFrom = $resolvedMailFrom !== '' ? $resolvedMailFrom : $defaultFrom;
 
 if (!$csv_list_id) {
     echo json_encode([
@@ -222,7 +255,7 @@ if (!$csv_list_id) {
     exit;
 }
 
-function process_emails($conn, $log_conn, $csv_list_id)
+function process_emails($conn, $csv_list_id, $ehloHost, $mailFrom)
 {
     $processed = 0;
     $batch_size = 100; // Process emails in batches of 100
@@ -255,7 +288,7 @@ function process_emails($conn, $log_conn, $csv_list_id)
             $domain = $row["sp_domain"];
             $email_id = $row["id"];
 
-            $verify = verifyEmailViaSMTP($email, $domain, $conn, $log_conn);
+            $verify = verifyEmailViaSMTP($email, $domain, $conn, $ehloHost, $mailFrom);
 
             // Sanitize validation_response
             if (isset($verify['validation_response'])) {
@@ -305,13 +338,13 @@ function updateCsvListCounts($conn, $csv_list_id)
     ");
     $stmt->bind_param("i", $csv_list_id);
     $stmt->execute();
-    $stmt->bind_result($total, $valid, $invalid);
-    $stmt->fetch();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
     $stmt->close();
 
-    $valid = $valid ?? 0;
-    $invalid = $invalid ?? 0;
-    $total = $total ?? 0;
+    $total = (int)($row['total_emails'] ?? 0);
+    $valid = (int)($row['valid_count'] ?? 0);
+    $invalid = (int)($row['invalid_count'] ?? 0);
 
     $updateStmt = $conn->prepare("
         UPDATE csv_list 
@@ -326,13 +359,14 @@ function updateCsvListCounts($conn, $csv_list_id)
 // Main execution
 try {
     $start_time = microtime(true);
-    $processed = process_emails($conn, $log_conn, $csv_list_id);
+    $processed = process_emails($conn, $csv_list_id, $ehloHost, $mailFrom);
     $total_time = microtime(true) - $start_time;
 
     // Update campaign stats for this list
     updateCsvListCounts($conn, $csv_list_id);
 
     // Check if all emails are processed (no more retryable) for this list
+    $remainingOtherStatus = 0;
     $stmt = $conn->prepare("SELECT COUNT(*) FROM emails WHERE domain_status=2 AND csv_list_id=?");
     $stmt->bind_param("i", $csv_list_id);
     $stmt->execute();
@@ -348,6 +382,7 @@ try {
     }
 
     // Get verification stats for this list
+    $total = 0;
     $stmt = $conn->prepare("SELECT COUNT(*) as total FROM emails WHERE csv_list_id=?");
     $stmt->bind_param("i", $csv_list_id);
     $stmt->execute();
@@ -355,6 +390,7 @@ try {
     $stmt->fetch();
     $stmt->close();
 
+    $verified = 0;
     $stmt = $conn->prepare("SELECT COUNT(*) as verified FROM emails WHERE validation_status = 'valid' AND csv_list_id=?");
     $stmt->bind_param("i", $csv_list_id);
     $stmt->execute();
@@ -369,7 +405,9 @@ try {
         "verified_emails" => (int) $verified,
         "time_seconds" => round($total_time, 2),
         "rate_per_second" => $total_time > 0 ? round($processed / $total_time, 2) : 0,
-        "message" => "Retry SMTP processing completed for list $csv_list_id"
+        "message" => "Retry SMTP processing completed for list $csv_list_id",
+        "ehlo_host" => $ehloHost,
+        "mail_from" => $mailFrom
     ]);
 
 } catch (Exception $e) {
@@ -379,5 +417,4 @@ try {
     ]);
 } finally {
     $conn->close();
-    $log_conn->close();
 }

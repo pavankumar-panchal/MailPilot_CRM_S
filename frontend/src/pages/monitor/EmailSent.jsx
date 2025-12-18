@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 
+import { TableSkeleton } from "../../components/SkeletonLoader";
+import { API_CONFIG } from "../../config";
+
 const statusColors = {
   pending: "bg-yellow-500",
   running: "bg-blue-600",
@@ -28,7 +31,7 @@ const EmailSent = () => {
     // Only show loading on first load
     if (isFirstLoad.current) setLoading(true);
     try {
-  const res = await fetch("http://localhost/verify_emails/MailPilot_CRM/backend/routes/api.php/api/monitor/campaigns");
+      const res = await fetch(API_CONFIG.API_MONITOR_CAMPAIGNS);
       const data = await res.json();
       setCampaigns(Array.isArray(data) ? data : []);
       setPagination((prev) => ({
@@ -61,7 +64,7 @@ const EmailSent = () => {
     if (pagination.page > totalPages && totalPages > 0) {
       setPagination((prev) => ({ ...prev, page: 1 }));
     }
-  }, [campaigns, totalPages]);
+  }, [campaigns, totalPages, pagination.page]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -95,11 +98,7 @@ const EmailSent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                    Loading...
-                  </td>
-                </tr>
+                <TableSkeleton rows={5} columns={5} />
               ) : paginatedCampaigns.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">

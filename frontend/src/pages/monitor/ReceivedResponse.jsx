@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost/verify_emails/MailPilot_CRM/backend/app";
+import { API_CONFIG } from "../../config";
+
+const API_BASE = API_CONFIG.APP;
 
 // Component 1: Server List (20% width)
 const ServerList = ({ servers, selectedServer, onSelectServer }) => {

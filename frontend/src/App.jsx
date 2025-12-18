@@ -1,8 +1,9 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+
 import TopProgressBar from "./components/TopProgressBar";
 import Home from "./Home";
-import TableData from "./table_data";
 import Navbar from "./Navbar";
+import TableData from "./table_data";
 
 const App = () => {
   const location = useLocation();
@@ -12,7 +13,6 @@ const App = () => {
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <div className="text-3xl bg-gray-500 font-bold underline">working</div>
       <TopProgressBar />
       <Routes>
         <Route path="/" element={<Home />} />
