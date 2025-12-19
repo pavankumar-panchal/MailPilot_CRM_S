@@ -5,11 +5,19 @@ error_reporting(0);
 date_default_timezone_set('Asia/Kolkata');
 
 $dbConfig = [
+    // 'host' => '127.0.0.1',
+    // 'username' => 'email_id',
+    // 'password' => '55y60jgW*',
+    // 'name' => 'email_id',
+    // 'port' => 3306
+
+
     'host' => '127.0.0.1',
-    'username' => 'email_id',
-    'password' => '55y60jgW*',
-    'name' => 'email_id',
+    'username' => 'root',
+    'password' => '',
+    'name' => 'CRM',
     'port' => 3306
+
 ];
 
 $conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
@@ -25,10 +33,10 @@ if ($conn->connect_error) {
     $error_msg .= "Username: " . $dbConfig['username'] . "\n";
     $error_msg .= "Database: " . $dbConfig['name'] . "\n";
     $error_msg .= str_repeat('-', 80) . "\n";
-    
+
     // Log to file
     @error_log($error_msg, 3, __DIR__ . '/../logs/db_error.log');
-    
+
     // Return JSON error for API calls
     $requestUri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
     if (strpos($requestUri, '/api/') !== false) {
@@ -52,4 +60,3 @@ $conn->query("SET SESSION interactive_timeout = 600");
 
 // Ensure MySQL uses IST for CURDATE()/NOW()/CURTIME()
 $conn->query("SET time_zone = '+05:30'");
-?>

@@ -30,8 +30,8 @@ if ($campaign_id <= 0) {
 }
 
 try {
-    // Validate campaign exists
-    $stmt = $conn->prepare('SELECT campaign_id, mail_subject, mail_body FROM campaign_master WHERE campaign_id = ?');
+    // Validate campaign exists and get csv_list_id
+    $stmt = $conn->prepare('SELECT campaign_id, mail_subject, mail_body, csv_list_id FROM campaign_master WHERE campaign_id = ?');
     $stmt->bind_param('i', $campaign_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -47,6 +47,9 @@ try {
         exit();
     }
 
+    $csv_list_id = $campaign['csv_list_id'];
+    $csvListFilter = $csv_list_id ? " AND csv_list_id = " . (int)$csv_list_id : "";
+
     // Determine total valid emails eligible for sending.
     // Prefer existing `mail_blaster` entries for this campaign (authoritative recipients list).
     $mbRes = $conn->query("SELECT COUNT(*) AS mb_total FROM mail_blaster WHERE campaign_id = " . (int)$campaign_id);
@@ -55,15 +58,16 @@ try {
     if ($mbTotal > 0) {
         $totalEmails = $mbTotal;
     } else {
-        // Fallback to emails table (legacy)
-        $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM emails WHERE domain_status = 1");
+        // Fallback to emails table (filtered by csv_list_id if specified)
+        $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM emails WHERE domain_status = 1" . $csvListFilter);
         $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
         $totalEmails = (int)($totalRow['total_valid'] ?? 0);
     }
 
     if ($totalEmails === 0) {
         http_response_code(400);
-        echo json_encode(['error' => 'No recipients found for this campaign. Please add recipients to mail_blaster first.']);
+        $message = $csv_list_id ? 'No recipients found for this campaign in the selected CSV list.' : 'No recipients found for this campaign. Please add recipients to mail_blaster first.';
+        echo json_encode(['error' => $message]);
         exit();
     }
 

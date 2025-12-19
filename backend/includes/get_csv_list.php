@@ -11,6 +11,10 @@ require_once __DIR__ . '/../config/db.php';
 
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
+
+// Support fetching all records when limit is set to -1 or 'all'
+$fetchAll = (isset($_GET['limit']) && ($_GET['limit'] == -1 || $_GET['limit'] == 'all'));
+
 $offset = ($page - 1) * $limit;
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -33,12 +37,23 @@ $countResult = $stmt->get_result();
 $total = $countResult->fetch_assoc()['total'] ?? 0;
 $stmt->close();
 
-// Get paginated data
-$sql = "SELECT * FROM csv_list $where ORDER BY id DESC LIMIT ? OFFSET ?";
-$bindTypes = ($where !== '') ? str_repeat('s', count($params)) . "ii" : "ii";
-$bindParams = ($where !== '') ? array_merge($params, [$limit, $offset]) : [$limit, $offset];
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($bindTypes, ...$bindParams);
+// Get paginated or all data
+if ($fetchAll) {
+    // Fetch all records without LIMIT
+    $sql = "SELECT * FROM csv_list $where ORDER BY id DESC";
+    $stmt = $conn->prepare($sql);
+    if ($where !== '') {
+        $stmt->bind_param(str_repeat('s', count($params)), ...$params);
+    }
+} else {
+    // Fetch paginated data
+    $sql = "SELECT * FROM csv_list $where ORDER BY id DESC LIMIT ? OFFSET ?";
+    $bindTypes = ($where !== '') ? str_repeat('s', count($params)) . "ii" : "ii";
+    $bindParams = ($where !== '') ? array_merge($params, [$limit, $offset]) : [$limit, $offset];
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($bindTypes, ...$bindParams);
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
 

@@ -1,5 +1,20 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
+// Note: CORS headers and db.php are handled by api.php when routed through it
+// Only set headers if accessed directly (not through api.php router)
+if (!defined('DB_HOST')) {
+    require_once __DIR__ . '/../config/db.php';
+    header('Content-Type: application/json');
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+    
+    // Handle preflight requests
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit();
+    }
+}
+
 require_once __DIR__ . '/../includes/ProcessManager.php';
 
 // Ensure lock directory exists
@@ -9,9 +24,6 @@ if (!is_dir($lock_dir)) {
     chmod($lock_dir, 0775);
 }
 
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type");
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -78,9 +90,9 @@ echo json_encode($response);
 function getCampaignsWithStats()
 {
     global $conn;
-    // Get total valid emails from emails table (all valid verified emails)
+    // Get total valid emails from emails table (only validation_status = 'valid')
     $valid_emails_total = 0;
-    $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND domain_processed = 1");
+    $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND validation_status = 'valid'");
     if ($valid_res) {
         $valid_emails_total = (int)$valid_res->fetch_assoc()['cnt'];
     }
@@ -90,6 +102,8 @@ function getCampaignsWithStats()
                 cm.description, 
                 cm.mail_subject,
                 cm.attachment_path,
+                cm.csv_list_id,
+                cl.list_name as csv_list_name,
                 cs.status as campaign_status,
                 COALESCE(cs.total_emails, 0) as total_emails,
                 COALESCE(cs.pending_emails, 0) as pending_emails,
@@ -112,6 +126,7 @@ function getCampaignsWithStats()
                     AND mb.attempt_count >= 5
                 ) as permanently_failed_count
               FROM campaign_master cm
+              LEFT JOIN csv_list cl ON cm.csv_list_id = cl.id
               LEFT JOIN (
                   SELECT cs1.campaign_id, cs1.status, cs1.total_emails, cs1.pending_emails, 
                          cs1.sent_emails, cs1.failed_emails, cs1.start_time, cs1.end_time
@@ -128,6 +143,21 @@ function getCampaignsWithStats()
 
     foreach ($campaigns as &$campaign) {
         $campaign['valid_emails'] = $valid_emails_total; // Total valid emails in system
+        
+        // Get actual valid email count for this campaign's CSV list
+        if ($campaign['csv_list_id']) {
+            $csvListId = (int)$campaign['csv_list_id'];
+            $csvValidRes = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE csv_list_id = $csvListId AND domain_status = 1 AND validation_status = 'valid'");
+            if ($csvValidRes) {
+                $campaign['csv_list_valid_count'] = (int)$csvValidRes->fetch_assoc()['cnt'];
+            } else {
+                $campaign['csv_list_valid_count'] = 0;
+            }
+        } else {
+            // If no CSV list selected, show total valid emails
+            $campaign['csv_list_valid_count'] = $valid_emails_total;
+        }
+        
         $campaign['total_emails'] = (int)($campaign['total_emails'] ?? 0);
         $campaign['pending_emails'] = (int)($campaign['pending_emails'] ?? 0);
         $campaign['sent_emails'] = (int)($campaign['sent_emails'] ?? 0);
@@ -200,18 +230,50 @@ function startCampaign($conn, $campaign_id)
 
 function getEmailCounts($conn, $campaign_id)
 {
-    // Compute counts based on emails table (all valid verified emails) and mail_blaster for the given campaign
+    // Get csv_list_id for this campaign
+    $csvListResult = $conn->query("SELECT csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    $csvListId = null;
+    if ($csvListResult && $csvListResult->num_rows > 0) {
+        $csvListRow = $csvListResult->fetch_assoc();
+        $csvListId = $csvListRow['csv_list_id'];
+    }
+    
+    // Build WHERE clause based on csv_list_id
+    // Now filter by mail_blaster.csv_list_id since we store it there when sending
+    $csvListFilter = $csvListId ? "AND mb.csv_list_id = $csvListId" : "";
+    
+    // Count total valid emails for this campaign and CSV list from emails table
+    $totalQuery = "SELECT COUNT(*) as total_valid 
+            FROM emails e 
+            WHERE e.domain_status = 1 
+            AND e.validation_status = 'valid'
+            " . ($csvListId ? "AND e.csv_list_id = $csvListId" : "");
+    $totalResult = $conn->query($totalQuery);
+    $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
+    
+    // Count sent and failed from mail_blaster (filtered by csv_list_id stored in mail_blaster)
     // Only count permanently failed (attempt_count >= 5)
-    $result = $conn->query("SELECT 
-                COUNT(*) as total_valid,
-                SUM(CASE WHEN (mb.status IS NULL OR mb.status = 'pending' OR (mb.status = 'failed' AND mb.attempt_count < 5)) THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END) as sent,
-                SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END) as failed
-            FROM emails e
-            LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid AND mb.campaign_id = $campaign_id
-            WHERE e.domain_status = 1 AND e.validation_status = 'valid'");
-
-    return $result->fetch_assoc();
+    $query = "SELECT 
+                COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
+                COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed
+            FROM mail_blaster mb
+            WHERE mb.campaign_id = $campaign_id
+            $csvListFilter";
+    
+    $result = $conn->query($query);
+    $counts = $result->fetch_assoc();
+    
+    // Calculate pending as total_valid - sent - failed
+    $sent = (int)$counts['sent'];
+    $failed = (int)$counts['failed'];
+    $pending = max(0, $totalValid - $sent - $failed);
+    
+    return [
+        'total_valid' => $totalValid,
+        'pending' => $pending,
+        'sent' => $sent,
+        'failed' => $failed
+    ];
 }
 
 function startEmailBlasterProcess($campaign_id)

@@ -1,4 +1,5 @@
 <?php
+error_log("=== campaign.php ENTRY === Method: " . $_SERVER['REQUEST_METHOD'] . ", URI: " . $_SERVER['REQUEST_URI']);
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -194,11 +195,50 @@ try {
         // UPDATE via JSON POST (no files)
         } elseif ($hasId && $isJson) {
             $id = intval($_GET['id']);
-            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+            $input_raw = file_get_contents('php://input');
+            $data = json_decode($input_raw, true) ?? [];
+            
+            // Debug: Log received data
+            error_log("Campaign Update - ID: $id, Raw Input: $input_raw");
+            error_log("Campaign Update - Decoded Data: " . json_encode($data));
+            error_log("Data keys: " . implode(', ', array_keys($data)));
+            
+            // Check if this is a CSV list only update
+            $keys = array_keys($data);
+            $isOnlyCsvListUpdate = (count($keys) === 1 && $keys[0] === 'csv_list_id');
+            
+            error_log("Is Only CSV List Update: " . ($isOnlyCsvListUpdate ? 'YES' : 'NO'));
+            
+            if ($isOnlyCsvListUpdate) {
+                // Only update csv_list_id
+                $csv_list_id = $data['csv_list_id'] !== '' && $data['csv_list_id'] !== null ? (int)$data['csv_list_id'] : null;
+                error_log("Updating csv_list_id to: " . ($csv_list_id === null ? 'NULL' : $csv_list_id));
+                
+                if ($csv_list_id === null) {
+                    $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=NULL WHERE campaign_id=?");
+                    $stmt->bind_param('i', $id);
+                } else {
+                    $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=? WHERE campaign_id=?");
+                    $stmt->bind_param('ii', $csv_list_id, $id);
+                }
+                
+                if ($stmt->execute()) {
+                    error_log("CSV list update SUCCESS for campaign #$id");
+                    echo json_encode(['success' => true, 'message' => 'CSV list updated successfully!']);
+                } else {
+                    error_log("CSV list update FAILED: " . $conn->error);
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
+                }
+                exit;
+            }
+            
+            // Full update with all fields
             $description = $conn->real_escape_string($data['description'] ?? '');
             $mail_subject = $conn->real_escape_string($data['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($data['mail_body'] ?? '');
             $send_as_html = isset($data['send_as_html']) ? (int)$data['send_as_html'] : 0;
+            $csv_list_id = isset($data['csv_list_id']) && $data['csv_list_id'] !== '' ? (int)$data['csv_list_id'] : null;
             $images_paths = [];
 
             if (isset($data['images_json'])) {
@@ -224,8 +264,8 @@ try {
             }
 
             $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
-            $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=? WHERE campaign_id=?");
-            $stmt->bind_param('sssssi', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $id);
+            $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=?, csv_list_id=? WHERE campaign_id=?");
+            $stmt->bind_param('sssssii', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $csv_list_id, $id);
             if ($stmt->execute()) {
                 echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!']);
             } else {
@@ -240,6 +280,7 @@ try {
         $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
         $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
+        $csv_list_id = isset($_POST['csv_list_id']) && $_POST['csv_list_id'] !== '' ? (int)$_POST['csv_list_id'] : null;
         $attachment_path = null;
         $images_paths = [];
 
@@ -300,8 +341,8 @@ try {
         // Store images as JSON (null if empty array)
         $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
         
-        $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssi", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html);
+        $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssis", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id);
 
         if ($stmt->execute()) {
             $campaignId = $stmt->insert_id;

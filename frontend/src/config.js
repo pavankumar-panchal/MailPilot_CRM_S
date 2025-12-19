@@ -3,6 +3,13 @@
 
 const isLocalhost = () => {
   const host = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // If opened as file:// (not served by a web server), default to localhost
+  if (protocol === 'file:') {
+    return true;
+  }
+  
   return host === 'localhost' || host === '127.0.0.1' || host.includes('192.168.');
 };
 
@@ -12,7 +19,7 @@ const isDevServer = () => {
 };
 
 // Base URLs
-const LOCAL_BASE = 'http://localhost/verify_emails/MailPilot_CRM';
+const LOCAL_BASE = 'http://localhost/verify_emails/MailPilot_CRM_S';
 const PRODUCTION_BASE = 'https://payrollsoft.in/emailvalidation';
 
 export const getBaseUrl = () => {

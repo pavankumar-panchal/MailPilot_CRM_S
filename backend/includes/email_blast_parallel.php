@@ -235,12 +235,13 @@ function runParallelEmailBlast($conn, $campaign_id) {
     }
     
     // Step 3: Total emails remaining (informational)
-    $emails_remaining = getEmailsRemainingCount($conn, $campaign_id);
+    $csv_list_id = isset($campaign['csv_list_id']) ? intval($campaign['csv_list_id']) : 0;
+    $emails_remaining = getEmailsRemainingCount($conn, $campaign_id, $csv_list_id);
     if ($emails_remaining == 0) {
         return ["status" => "success", "message" => "No emails to send"];
     }
 
-    logMessage("Total emails remaining: $emails_remaining");
+    logMessage("Total emails remaining: $emails_remaining" . ($csv_list_id > 0 ? " (CSV List ID: $csv_list_id)" : ""));
     logMessage("Total SMTP accounts available: $total_accounts");
 
     // Step 3.5: Report SMTP health status
@@ -504,12 +505,12 @@ function getWorkingSmtpServers($conn) {
  * Get emails that need to be sent
  */
 function getEmailsToSend($conn, $campaign_id) {
-    // Fetch ALL valid verified emails from emails table
+    // Fetch ALL valid emails from emails table (validation_status = 'valid')
     $result = $conn->query("
         SELECT e.id, e.raw_emailid
         FROM emails e
         WHERE e.domain_status = 1
-        AND e.domain_processed = 1
+        AND e.validation_status = 'valid'
         AND NOT EXISTS (
             SELECT 1 FROM mail_blaster mb 
             WHERE mb.to_mail = e.raw_emailid
@@ -700,12 +701,14 @@ function logMessage($message) {
 }
 
 // Helper: remaining emails count
-function getEmailsRemainingCount($conn, $campaign_id) {
+function getEmailsRemainingCount($conn, $campaign_id, $csv_list_id = 0) {
+    $csv_list_filter = $csv_list_id > 0 ? " AND e.csv_list_id = " . intval($csv_list_id) : "";
     $res = $conn->query("
             SELECT COUNT(*) as remaining FROM emails e
             WHERE e.domain_status = 1
             AND e.validation_status = 'valid'
             AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
+            $csv_list_filter
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
                 WHERE mb.to_mail = e.raw_emailid 
@@ -902,14 +905,23 @@ while (true) {
         }
 
         // Check if there are emails remaining to send
+        // Get campaign csv_list_id to filter correctly
+        $campaignData = $conn->query("SELECT csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id")->fetch_assoc();
+        $csv_list_id = isset($campaignData['csv_list_id']) ? intval($campaignData['csv_list_id']) : 0;
+        $csvListFilter = $csv_list_id > 0 ? " AND e.csv_list_id = $csv_list_id" : "";
+        
         $remaining_result = $conn->query("
             SELECT COUNT(*) as remaining FROM emails e
             WHERE e.domain_status = 1
+            AND e.validation_status = 'valid'
+            AND e.raw_emailid IS NOT NULL
+            AND e.raw_emailid <> ''
+            $csvListFilter
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
                 WHERE mb.to_mail = e.raw_emailid 
                 AND mb.campaign_id = $campaign_id
-                AND mb.status = 'success'
+                AND (mb.status = 'success' OR (mb.status = 'failed' AND mb.attempt_count >= 5))
             )
         ");
         
@@ -919,12 +931,12 @@ while (true) {
             $conn->query("UPDATE campaign_status 
                          SET status = 'completed', pending_emails = 0, end_time = NOW() 
                          WHERE campaign_id = $campaign_id");
-            logMessage("All emails processed. Campaign completed. Exiting daemon.");
+            logMessage("All emails processed for campaign #$campaign_id" . ($csv_list_id > 0 ? " (CSV List ID: $csv_list_id)" : "") . ". Campaign completed. Exiting daemon.");
             $conn->close();
             break;
         }
 
-        logMessage("--- Starting parallel blast cycle for $remaining_count emails ---");
+        logMessage("--- Starting parallel blast cycle for $remaining_count emails" . ($csv_list_id > 0 ? " (CSV List ID: $csv_list_id)" : "") . " ---");
         
         // Execute one cycle of parallel email blast
         $result = runParallelEmailBlast($conn, $campaign_id);
