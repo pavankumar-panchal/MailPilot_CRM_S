@@ -80,7 +80,8 @@
         $result = $conn->query("SELECT * FROM campaign_master WHERE campaign_id = $campaign_id");
         if ($result && $result->num_rows > 0) {
             $campaign = $result->fetch_assoc();
-            $campaign['mail_body'] = stripcslashes($campaign['mail_body']);
+            // Don't use stripcslashes - it corrupts HTML
+            // $campaign['mail_body'] = stripcslashes($campaign['mail_body']);
     //         file_put_contents(__DIR__ . '/../logs/email_worker.log', '[' . date('Y-m-d H:i:s') . "] Campaign #$campaign_id loaded from DB\n", FILE_APPEND);
         } else {
     //         file_put_contents(__DIR__ . '/../logs/email_worker.log', '[' . date('Y-m-d H:i:s') . "] ERROR: Campaign #$campaign_id not found in DB\n", FILE_APPEND);
@@ -298,14 +299,48 @@
         $mail->setFrom($account['email']);
         $mail->addAddress($to_email);
         $mail->Subject = $campaign['mail_subject'];
+
+        // Get body first and decode HTML entities if present
+        $body = (string)($campaign['mail_body'] ?? '');
+        if (empty(trim($body))) throw new Exception("Empty body");
+        
+        // Rich text editors (like Quill) save HTML as syntax-highlighted code
+        // wrapped in <p><span style="color:...">tokens</span></p>
+        // We need to: 1) Strip color formatting spans, 2) Decode entities, 3) Extract actual HTML
+        
+        // Remove Quill/rich text editor's syntax highlighting spans
+        // Pattern: <span style="color: rgb(...);"> wrapping each HTML token
+        $body = preg_replace('/<span\s+style=["\']color:\s*rgb\([^)]+\);?["\']>([^<]*)<\/span>/i', '$1', $body);
+        
+        // Also remove any remaining <span> tags without content preservation
+        $body = preg_replace('/<\/?span[^>]*>/i', '', $body);
+        
+        // Remove wrapping <p> tags that Quill adds
+        $body = preg_replace('/^<p>(.*)<\/p>$/is', '$1', trim($body));
+        $body = str_replace(['<p>', '</p>'], ['', ''], $body);
+        
+        // Now decode HTML entities (converts &lt; → <, &gt; → >, &quot; → ", etc.)
+        $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Auto-detect HTML if text contains tags; allow explicit send_as_html to force
+        $detectedHtml = bodyLooksHtml($body);
+        $isHtml = (!empty($campaign['send_as_html'])) || $detectedHtml;
+        $mail->isHTML($isHtml);
+
+        // Then set charset and encoding
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
         $mail->XMailer = ' ';
-        $mail->addCustomHeader('MIME-Version','1.0');
+        
+        // FORCE Content-Type for HTML emails (belt and suspenders approach)
+        if ($isHtml) {
+            $mail->ContentType = 'text/html';
+        }
+        
+        // Add custom headers AFTER isHTML
         $mail->addCustomHeader('X-Priority','3');
         $mail->addCustomHeader('Importance','Normal');
-        $isHtml = !empty($campaign['send_as_html']);
-        $mail->isHTML($isHtml);
+        
         if (!empty($campaign['reply_to'])) { $mail->clearReplyTos(); $mail->addReplyTo($campaign['reply_to']); }
         elseif (!empty($server['received_email'])) { $mail->clearReplyTos(); $mail->addReplyTo($server['received_email']); }
         if (!empty($campaign['attachment_path'])) {
@@ -317,10 +352,34 @@
                 if ($resolved && file_exists($resolved)) { $mail->addAttachment($resolved); }
             }
         }
-        $body = $campaign['mail_body']; if (empty(trim($body))) throw new Exception("Empty body");
+        // Debug logging
+        workerLog("Sending email - send_as_html: {$campaign['send_as_html']}, detectedHtml: " . ($detectedHtml ? 'true' : 'false') . ", isHTML: " . ($isHtml ? 'true' : 'false') . ", ContentType: {$mail->ContentType}");
+        
+        // Process body for HTML emails
         list($processedBody, $embeddedCount) = embed_local_images($mail, $body);
-        if ($embeddedCount > 0 && !$isHtml) { $mail->isHTML(true); }
-        $mail->Body = $processedBody; if ($isHtml || $embeddedCount > 0) $mail->AltBody = strip_tags($processedBody);
+        
+        // If we have embedded images, force HTML mode
+        if ($embeddedCount > 0 && !$isHtml) { 
+            $mail->isHTML(true); 
+            $isHtml = true;
+            workerLog("Forced HTML mode due to embedded images");
+        }
+        
+        // Use PHPMailer's msgHTML to set HTML body and AltBody correctly
+        if ($isHtml) {
+            $mail->msgHTML($processedBody);
+            // Ensure plain-text alternative exists
+            if (empty($mail->AltBody)) { $mail->AltBody = strip_tags($processedBody); }
+            // Force ContentType again after msgHTML (belt and suspenders)
+            $mail->ContentType = 'text/html';
+        } else {
+            // Plain text campaign
+            $mail->isHTML(false);
+            $mail->Body = strip_tags($processedBody);
+        }
+        
+        workerLog("Final ContentType before send: {$mail->ContentType}");
+        
         if (!$mail->send()) throw new Exception($mail->ErrorInfo);
         $srvId = intval($server['server_id'] ?? 0);
         recordDelivery($conn, $account['id'], $srvId, $campaign_id, $to_email, 'success', null, $csv_list_id);
@@ -368,6 +427,19 @@
         
         foreach ($candidates as $c) { if (file_exists($c)) return $c; }
         return null;
+    }
+
+    // Heuristic: returns true if the body appears to contain HTML markup
+    function bodyLooksHtml($s) {
+        if (!is_string($s)) return false;
+        $trimmed = trim($s);
+        if ($trimmed === '') return false;
+        // Quick check: if removing tags changes the string, it's HTML-like
+        if ($trimmed !== strip_tags($trimmed)) return true;
+        // Also consider presence of DOCTYPE or common tags
+        if (stripos($trimmed, '<!DOCTYPE') !== false) return true;
+        if (preg_match('/<\s*(html|head|body|table|div|span|p|a)\b/i', $trimmed)) return true;
+        return false;
     }
 
     function embed_local_images($mail, $html) {
@@ -550,6 +622,9 @@
             return null;
         }
         
+        // Start transaction for atomic claim
+        $conn->query("START TRANSACTION");
+        
         // Pick next eligible email that's NOT already in mail_blaster
         // Use server_id as offset to spread workers across different ranges of the email table
         // This prevents all workers from competing for the same email
@@ -567,7 +642,8 @@
                 AND mb.to_mail = e.raw_emailid
             )
             ORDER BY e.id ASC 
-            LIMIT 1 OFFSET $offset");
+            LIMIT 1 OFFSET $offset
+            FOR UPDATE");
             
         if (!$res || $res->num_rows === 0) {
             // If our offset range is exhausted, try from beginning without offset
@@ -585,10 +661,12 @@
                         AND mb.to_mail = e.raw_emailid
                     )
                     ORDER BY e.id ASC 
-                    LIMIT 1");
+                    LIMIT 1
+                    FOR UPDATE");
             }
             
             if (!$res || $res->num_rows === 0) {
+                $conn->query("COMMIT");
                 if ($depth === 0) { workerLog("claimNextEmail: no unclaimed eligible email found"); }
                 return null;
             }
@@ -599,35 +677,32 @@
         $email_csv_list_id = isset($row['csv_list_id']) ? intval($row['csv_list_id']) : 'NULL';
         workerLog("claimNextEmail: attempting to claim $to (email.id={$row['id']}, csv_list_id=$email_csv_list_id, depth=$depth)");
         
-        $conn->query("INSERT INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) 
-            VALUES ($campaign_id,'$to',$email_csv_list_id,NULL,CURDATE(),CURTIME(),'pending',NULL,0)
-            ON DUPLICATE KEY UPDATE
-                campaign_id = VALUES(campaign_id),
-                to_mail = VALUES(to_mail),
-                csv_list_id = VALUES(csv_list_id),
-                smtpid = VALUES(smtpid),
-                delivery_date = VALUES(delivery_date),
-                delivery_time = VALUES(delivery_time),
-                status = IF(mail_blaster.status='success','success','pending'),
-                error_message = NULL,
-                attempt_count = mail_blaster.attempt_count");
+        // Double-check: does this email already exist in mail_blaster for this campaign?
+        $doubleCheck = $conn->query("SELECT id, status, attempt_count FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '$to' LIMIT 1 FOR UPDATE");
+        if ($doubleCheck && $doubleCheck->num_rows > 0) {
+            // Already claimed by another worker - rollback and try next
+            $existing = $doubleCheck->fetch_assoc();
+            $conn->query("ROLLBACK");
+            workerLog("claimNextEmail: $to already claimed (status={$existing['status']}) - seeking next (depth=$depth)");
+            if ($depth > 50) { 
+                workerLog("claimNextEmail: depth limit reached, giving up"); 
+                return null; 
+            }
+            return claimNextEmail($conn, $campaign_id, $depth + 1);
+        }
+        
+        // Insert to claim this email
+        $insertResult = $conn->query("INSERT INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) 
+            VALUES ($campaign_id,'$to',$email_csv_list_id,NULL,CURDATE(),CURTIME(),'pending',NULL,0)");
                 
-        if ($conn->errno) { 
+        if (!$insertResult || $conn->errno) { 
+            $conn->query("ROLLBACK");
             workerLog("claimNextEmail: DB error while claiming $to: " . $conn->error); 
             return null; 
         }
         
-        // Verify that we successfully claimed it (check if we won the race)
-        $chk = $conn->query("SELECT status, attempt_count, smtpid FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '$to' LIMIT 1");
-        if ($chk && $chk->num_rows > 0) {
-            $mb = $chk->fetch_assoc();
-            if ($mb['status'] === 'success' || intval($mb['attempt_count']) >= 5) {
-                workerLog("claimNextEmail: $to already in status={$mb['status']} attempts={$mb['attempt_count']} — seeking next (depth=$depth)");
-                if ($depth > 50) { workerLog("claimNextEmail: depth limit reached, giving up"); return null; }
-                return claimNextEmail($conn, $campaign_id, $depth + 1);
-            }
-        }
-        
+        // Commit the transaction - we successfully claimed this email
+        $conn->query("COMMIT");
         workerLog("claimNextEmail: ✓ successfully claimed $to");
         return ['id' => $row['id'], 'to_mail' => $row['to_mail'], 'csv_list_id' => $row['csv_list_id']];
     }
@@ -640,21 +715,32 @@
             return null;
         }
         
+        // Use transaction with FOR UPDATE to atomically claim next pending email
+        $conn->query("START TRANSACTION");
+        
         // Fetch next pending/failed email that hasn't exceeded 5 retry attempts
-        // Any worker can retry any failed email (simple round-robin retry)
+        // Use FOR UPDATE to lock the row and prevent other workers from grabbing it
         $query = "SELECT to_mail, attempt_count, smtpid, csv_list_id FROM mail_blaster ";
         $query .= "WHERE campaign_id = $campaign_id ";
         $query .= "AND status IN ('pending', 'failed') ";
         $query .= "AND attempt_count < 5 ";
-        $query .= "ORDER BY attempt_count ASC, delivery_date ASC, id ASC LIMIT 1";
+        $query .= "ORDER BY attempt_count ASC, delivery_date ASC, id ASC LIMIT 1 ";
+        $query .= "FOR UPDATE";
         
         $res = $conn->query($query);
         if ($res && $res->num_rows > 0) {
             $row = $res->fetch_assoc();
+            
+            // Mark it with a temporary update to signal it's being processed
+            $to_escaped = $conn->real_escape_string($row['to_mail']);
+            $conn->query("UPDATE mail_blaster SET delivery_time = CURTIME() WHERE campaign_id = $campaign_id AND to_mail = '$to_escaped'");
+            
+            $conn->query("COMMIT");
             workerLog("fetchNextPending: Found pending email {$row['to_mail']} (attempt #{$row['attempt_count']}, csv_list_id={$row['csv_list_id']})");
             return ['to_mail' => $row['to_mail'], 'attempt_count' => $row['attempt_count'], 'csv_list_id' => $row['csv_list_id']];
         }
         
+        $conn->query("COMMIT");
         workerLog("fetchNextPending: No pending emails found");
         return null;
     }
@@ -671,7 +757,8 @@
         // Only update if campaign still exists
         $existsRes = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = " . intval($campaign_id) . " LIMIT 1");
         if ($existsRes && $existsRes->num_rows > 0) {
-            $conn->query("UPDATE mail_blaster SET smtpid = $account_id, delivery_date = CURDATE(), delivery_time = CURTIME() WHERE campaign_id = $campaign_id AND to_mail = '$to' AND status = 'pending'");
+            // Update pending/failed emails - ensure we don't reassign if already being processed by another worker
+            $conn->query("UPDATE mail_blaster SET smtpid = $account_id, delivery_date = CURDATE(), delivery_time = CURTIME() WHERE campaign_id = $campaign_id AND to_mail = '$to' AND status IN ('pending', 'failed') AND attempt_count < 5");
         }
     }
 
