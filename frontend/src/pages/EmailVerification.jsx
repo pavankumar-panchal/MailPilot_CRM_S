@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 import EmailsList from "./EmailsListOptimized";
-import { API_CONFIG } from "../config";
+import { API_CONFIG, getBaseUrl } from "../config";
+
+const BASE_URL = getBaseUrl();
 
 const checkRetryProgress = async () => {
   try {
@@ -143,10 +145,61 @@ const EmailVerification = () => {
       const data = await res.json();
 
       if (data.status === "success") {
-        setStatus({
-          type: "success",
-          message: data.message || "Upload successful",
-        });
+        // Auto-download rejected emails file if available
+        if (data.data?.rejected_emails && data.data?.rejected_count > 0) {
+          console.log('Rejected emails detected:', data.data.rejected_count);
+          
+          // Generate CSV from rejected emails data
+          setTimeout(() => {
+            const rejectedEmails = data.data.rejected_emails;
+            
+            // Create CSV content
+            const csvRows = [];
+            csvRows.push(['Email', 'Reason', 'Line Number']); // Header
+            
+            rejectedEmails.forEach(item => {
+              csvRows.push([
+                item.email || '',
+                item.reason || '',
+                item.line || 'N/A'
+              ]);
+            });
+            
+            // Convert to CSV string
+            const csvContent = csvRows.map(row => 
+              row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+            
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `rejected_emails_list_${data.data.csv_list_id}_${Date.now()}.csv`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }, 100);
+            
+            console.log('Rejected emails CSV downloaded');
+          }, 500);
+          
+          setStatus({
+            type: "success",
+            message: `${data.message} | ${data.data.rejected_count} rejected emails downloaded.`,
+          });
+        } else {
+          setStatus({
+            type: "success",
+            message: data.message || "Upload successful",
+          });
+        }
+        
         setShowProgress(true);
         startProgressTracking();
         setFormData({ listName: "", fileName: "", csvFile: null });

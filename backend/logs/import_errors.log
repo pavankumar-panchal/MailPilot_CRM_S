@@ -1,0 +1,29 @@
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 40
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 41
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 42
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 43
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Undefined array key "REQUEST_METHOD" in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 45
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'email' in 'field list' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php:64
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php(64): mysqli->query()
+#1 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php(19): include('...')
+#2 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 64
+[22-Dec-2025 14:48:58 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 12
+[22-Dec-2025 14:49:35 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 40
+[22-Dec-2025 14:49:35 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 41
+[22-Dec-2025 14:49:35 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 42
+[22-Dec-2025 14:49:35 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 43
+[22-Dec-2025 14:49:35 Asia/Kolkata] PHP Warning:  Undefined array key "REQUEST_METHOD" in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 45
+[22-Dec-2025 14:49:49 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 40
+[22-Dec-2025 14:49:49 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 41
+[22-Dec-2025 14:49:49 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 42
+[22-Dec-2025 14:49:49 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/reimport_test.php:6) in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 43
+[22-Dec-2025 14:49:49 Asia/Kolkata] PHP Warning:  Undefined array key "REQUEST_METHOD" in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 45
+[22-Dec-2025 14:59:09 Asia/Kolkata] PHP Warning:  Undefined array key "REQUEST_METHOD" in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/import_data.php on line 45
+[22-Dec-2025 15:12:50 Asia/Kolkata] Row 1 array: [6]=6313, [7]=, [8]=3, [9]=mithun@10kinfo.com
+[22-Dec-2025 15:12:50 Asia/Kolkata] Row 2 array: [6]=2953, [7]=, [8]=32, [9]=hemanth.ananth@24-7intouch.com
+[22-Dec-2025 15:12:50 Asia/Kolkata] Row 3 array: [6]=5310, [7]=, [8]=239, [9]=mwmangalore@gmail.com
+[22-Dec-2025 15:13:30 Asia/Kolkata] Row 1 array: [6]=6313, [7]=, [8]=3, [9]=mithun@10kinfo.com
+[22-Dec-2025 15:13:30 Asia/Kolkata] Row 2 array: [6]=2953, [7]=, [8]=32, [9]=hemanth.ananth@24-7intouch.com
+[22-Dec-2025 15:13:30 Asia/Kolkata] Row 3 array: [6]=5310, [7]=, [8]=239, [9]=mwmangalore@gmail.com

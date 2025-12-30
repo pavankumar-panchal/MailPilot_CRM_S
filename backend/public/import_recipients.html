@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Recipients Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .batch-list {
+            margin-top: 20px;
+        }
+        
+        .batch-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .batch-id {
+            font-family: monospace;
+            background: #e0e7ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>📊 Import Recipients Data</h1>
+            <p class="subtitle">Upload Excel file (as CSV) to import recipient data for personalized emails</p>
+            
+            <div class="info-box">
+                <strong>📝 Instructions:</strong>
+                <ul>
+                    <li>Convert your Excel file to CSV format: <strong>File → Save As → CSV</strong></li>
+                    <li>CSV must have an <strong>"email"</strong> column</li>
+                    <li>Supported columns: email, name, company, phone, amount, days, bill_number, bill_date, executive_name, executive_contact</li>
+                    <li>Any additional columns will be stored and available for templates</li>
+                </ul>
+            </div>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Click or drag CSV file here</h3>
+                <p style="color: #666; margin-top: 10px;">Supports CSV files only</p>
+                <input type="file" id="fileInput" accept=".csv">
+            </div>
+            
+            <div class="progress" id="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <button class="btn" id="uploadBtn" style="display: none;">Upload & Import</button>
+            
+            <div class="message" id="message"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Imports</h2>
+            <div class="batch-list" id="batchList">
+                <p style="text-align: center; color: #666;">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const message = document.getElementById('message');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const batchList = document.getElementById('batchList');
+        
+        let selectedFile = null;
+        
+        // API URL
+        const API_URL = '../backend/includes/import_data.php';
+        
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // File selected
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        
+        function handleFile(file) {
+            if (!file) return;
+            
+            if (!file.name.endsWith('.csv')) {
+                showMessage('Please select a CSV file. Convert Excel to CSV first.', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            uploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <h3>${file.name}</h3>
+                <p style="color: #666; margin-top: 10px;">${(file.size / 1024).toFixed(2)} KB</p>
+            `;
+            uploadBtn.style.display = 'block';
+        }
+        
+        // Upload button
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            uploadBtn.disabled = true;
+            progress.style.display = 'block';
+            progressBar.style.width = '30%';
+            message.style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            try {
+                const response = await fetch(API_URL + '?action=import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                progressBar.style.width = '70%';
+                
+                const data = await response.json();
+                
+                progressBar.style.width = '100%';
+                
+                if (data.success) {
+                    showMessage(
+                        `✓ Import completed!<br>
+                        Batch ID: <span class="batch-id">${data.batch_id}</span><br>
+                        Imported: ${data.imported} | Skipped: ${data.skipped}<br>
+                        <small>Use this Batch ID when creating campaigns</small>`,
+                        'success'
+                    );
+                    
+                    // Reset form
+                    setTimeout(() => {
+                        selectedFile = null;
+                        uploadArea.innerHTML = `
+                            <div class="upload-icon">📁</div>
+                            <h3>Click or drag CSV file here</h3>
+                            <p style="color: #666; margin-top: 10px;">Supports CSV files only</p>
+                        `;
+                        uploadBtn.style.display = 'none';
+                        progress.style.display = 'none';
+                        progressBar.style.width = '0%';
+                        
+                        // Reload batch list
+                        loadBatches();
+                    }, 3000);
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                    progress.style.display = 'none';
+                }
+            } catch (error) {
+                showMessage('Upload failed: ' + error.message, 'error');
+                progress.style.display = 'none';
+            }
+            
+            uploadBtn.disabled = false;
+        });
+        
+        function showMessage(text, type) {
+            message.innerHTML = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+        }
+        
+        // Load batch list
+        async function loadBatches() {
+            try {
+                const response = await fetch(API_URL + '?action=list');
+                const data = await response.json();
+                
+                if (data.success && data.batches.length > 0) {
+                    batchList.innerHTML = data.batches.map(batch => `
+                        <div class="batch-item">
+                            <strong>${batch.import_filename}</strong><br>
+                            <small>Batch ID: <span class="batch-id">${batch.import_batch_id}</span></small><br>
+                            <small>Records: ${batch.record_count} | Imported: ${new Date(batch.imported_at).toLocaleString()}</small><br>
+                            <small style="color: #666;">Emails: ${batch.sample_emails}</small>
+                        </div>
+                    `).join('');
+                } else {
+                    batchList.innerHTML = '<p style="text-align: center; color: #666;">No imports yet</p>';
+                }
+            } catch (error) {
+                batchList.innerHTML = '<p style="text-align: center; color: #f44;">Failed to load imports</p>';
+            }
+        }
+        
+        // Load on page load
+        loadBatches();
+    </script>
+</body>
+</html>

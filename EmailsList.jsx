@@ -12,6 +12,7 @@ const EmailsList = ({ listId, onClose }) => {
     total: 0,
   });
   const [filter, setFilter] = useState("all"); // 'all', 'valid', 'invalid', 'timeout'
+  const [counts, setCounts] = useState({ all: 0, valid: 0, invalid: 0, timeout: 0 });
 
   // Fetch email details for the given listId (wrapped in useCallback)
   const fetchListEmails = useCallback(async () => {
@@ -31,6 +32,36 @@ const EmailsList = ({ listId, onClose }) => {
       setLoading(false);
     }
   }, [listId]);
+
+  // Fetch server-side counts independent of pagination
+  const fetchCounts = useCallback(async () => {
+    try {
+      const urlBase = `${API_CONFIG.API_RESULTS}?csv_list_id=${listId}&limit=1`;
+      const [allRes, validRes, invalidRes, timeoutRes] = await Promise.all([
+        fetch(urlBase),
+        fetch(`${urlBase}&filter=valid`),
+        fetch(`${urlBase}&filter=invalid`),
+        fetch(`${urlBase}&filter=timeout`),
+      ]);
+      const [allJson, validJson, invalidJson, timeoutJson] = await Promise.all([
+        allRes.json(), validRes.json(), invalidRes.json(), timeoutRes.json(),
+      ]);
+      setCounts({
+        all: Number(allJson?.total ?? 0),
+        valid: Number(validJson?.total ?? 0),
+        invalid: Number(invalidJson?.total ?? 0),
+        timeout: Number(timeoutJson?.total ?? 0),
+      });
+    } catch (e) {
+      // Fallback to client-side counts if server fails
+      setCounts({
+        all: listEmails.length,
+        valid: listEmails.filter((e) => e.domain_status === 1).length,
+        invalid: listEmails.filter((e) => e.domain_status === 0 && !isTimeout(e)).length,
+        timeout: listEmails.filter(isTimeout).length,
+      });
+    }
+  }, [listId, listEmails]);
 
   // Utility function for timeout detection
   const isTimeout = (e) =>
@@ -59,7 +90,15 @@ const EmailsList = ({ listId, onClose }) => {
   // Fetch emails on mount and when listId changes
   useEffect(() => {
     fetchListEmails();
+    fetchCounts();
   }, [fetchListEmails]);
+
+  // Recompute counts when data changes
+  useEffect(() => {
+    if (listEmails.length) {
+      fetchCounts();
+    }
+  }, [listEmails, fetchCounts]);
 
   // Reset pagination when filter or rowsPerPage changes
   useEffect(() => {
@@ -125,44 +164,37 @@ const EmailsList = ({ listId, onClose }) => {
   }, [status]);
 
   // Export emails to CSV
-  const exportToCSV = (type) => {
-    let dataToExport = [];
+  const exportToCSV = async (type) => {
+    try {
+      // Use backend export API to get ALL data for this list
+      const url = `${API_CONFIG.GET_RESULTS}?export=${type}&csv_list_id=${listId}`;
+      console.log('Export URL:', url);
+      
+      const res = await fetch(url);
+      console.log('Export response status:', res.status);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const blob = await res.blob();
+      console.log('Export blob size:', blob.size);
 
-    if (type === "valid") {
-      dataToExport = listEmails.filter((e) => e.domain_status === 1);
-    } else if (type === "invalid") {
-      dataToExport = listEmails.filter(
-        (e) => e.domain_status === 0 && !isTimeout(e)
-      );
-    } else if (type === "timeout") {
-      dataToExport = listEmails.filter(isTimeout);
-    } else {
-      dataToExport = listEmails;
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${type}_emails_list_${listId}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setStatus({ type: "success", message: `Exported all ${type} emails from this list` });
+    } catch (error) {
+      console.error('Export error:', error);
+      setStatus({ type: "error", message: `Failed to export ${type} emails: ${error.message}` });
     }
-
-    if (dataToExport.length === 0) {
-      setStatus({ type: "error", message: "No emails found for export." });
-      return;
-    }
-
-    // Export only emails in a single column for all types
-    const csvRows = [
-      "EMAILS", // header
-      ...dataToExport.map((row) => `"${row.email.replace(/"/g, '""')}"`),
-    ];
-
-    const csvContent = csvRows.join("\n");
-
-    // Download CSV
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${type}_emails.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  };
 
     setStatus({ type: "success", message: "Exported successfully." });
   };
@@ -191,7 +223,9 @@ const EmailsList = ({ listId, onClose }) => {
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
               Email List Details
             </h3>
-            <p className="text-gray-600">List ID: {listId}</p>
+            <p className="text-gray-600">
+              List ID: {listId} • {listEmails.length} total emails
+            </p>
           </div>
           <button
             className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
@@ -262,11 +296,11 @@ const EmailsList = ({ listId, onClose }) => {
                 Export Invalid
               </button>
               <button
-                onClick={() => exportToCSV("timeout")}
+                onClick={() => exportToCSV("connection_timeout")}
                 className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium text-sm hover:bg-yellow-700 flex items-center gap-2"
               >
                 <i className="fas fa-file-export"></i>
-                Export Timeout
+                Export Connection Timeout
               </button>
             </div>
           </div>
@@ -412,7 +446,7 @@ const EmailsList = ({ listId, onClose }) => {
                   )}
                 </span>{" "}
                 of <span className="font-medium">{filteredEmails.length}</span>{" "}
-                results
+                {filter !== "all" ? `${filter} ` : ""}emails
               </p>
             </div>
             <div className="flex items-center gap-2">

@@ -81,15 +81,29 @@ if ($campaign_id == 0) {
     die("ERROR: Campaign ID required as argument\n");
 }
 
+// Check if campaign is already running in database
+require_once __DIR__ . '/../config/db.php';
+$pidCheckQuery = $conn->query("SELECT process_pid, status FROM campaign_status WHERE campaign_id = $campaign_id LIMIT 1");
+if ($pidCheckQuery && $pidCheckQuery->num_rows > 0) {
+    $pidRow = $pidCheckQuery->fetch_assoc();
+    $existingPid = isset($pidRow['process_pid']) ? (int)$pidRow['process_pid'] : 0;
+    if ($existingPid > 0 && isPidRunning($existingPid) && $existingPid != getmypid()) {
+        die("ERROR: Campaign $campaign_id is already running with PID $existingPid\n");
+    }
+}
+
 // Create PID file for process tracking (CLI daemon)
 $pid_file = $pid_dir . "/email_blaster_{$campaign_id}.pid";
 file_put_contents($pid_file, getmypid());
 
 // Register shutdown function to clean up PID file
-register_shutdown_function(function () use ($pid_file) {
+register_shutdown_function(function () use ($pid_file, $campaign_id) {
     if (file_exists($pid_file)) {
         @unlink($pid_file);
     }
+    // Clear PID from database on shutdown
+    require_once __DIR__ . '/../config/db.php';
+    $conn->query("UPDATE campaign_status SET process_pid = NULL WHERE campaign_id = $campaign_id AND process_pid = " . getmypid());
 });
 
 // Configuration
@@ -99,7 +113,7 @@ define('WORKER_SCRIPT', __DIR__ . '/email_blast_worker.php');
 // define('LOG_FILE', __DIR__ . '/../logs/email_blast_parallel_' . date('Y-m-d') . '.log'); // Commented - log file disabled
 define('RETRY_FAILED_AFTER_CYCLE', true); // Retry failed emails after one complete cycle
 define('MAX_RETRY_ATTEMPTS', 3); // Maximum retry attempts per email
-define('RETRY_DELAY_SECONDS', 5); // Delay between retry cycles
+define('RETRY_DELAY_SECONDS', 2); // Delay between retry cycles - OPTIMIZED for speed
 
 /**
  * Reset daily counters if it's a new day
@@ -505,27 +519,70 @@ function getWorkingSmtpServers($conn) {
  * Get emails that need to be sent
  */
 function getEmailsToSend($conn, $campaign_id) {
-    // Fetch ALL valid emails from emails table (validation_status = 'valid')
-    $result = $conn->query("
-        SELECT e.id, e.raw_emailid
-        FROM emails e
-        WHERE e.domain_status = 1
-        AND e.validation_status = 'valid'
-        AND NOT EXISTS (
-            SELECT 1 FROM mail_blaster mb 
-            WHERE mb.to_mail = e.raw_emailid
-            AND mb.campaign_id = $campaign_id
-            AND mb.status = 'success'
-        )
-        ORDER BY e.id ASC
-    ");
+    // Check campaign source: import_batch_id or csv_list_id
+    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
     
-    $emails = [];
-    while ($row = $result->fetch_assoc()) {
-        $emails[] = $row;
+    if (!$campaignResult || $campaignResult->num_rows === 0) {
+        logMessage("ERROR: Campaign #$campaign_id not found");
+        return [];
     }
     
-    logMessage("Found " . count($emails) . " emails to send for campaign #$campaign_id (all valid verified emails)");
+    $campaignData = $campaignResult->fetch_assoc();
+    $import_batch_id = $campaignData['import_batch_id'];
+    $csv_list_id = intval($campaignData['csv_list_id']);
+    
+    $emails = [];
+    
+    if ($import_batch_id) {
+        // Fetch from imported_recipients table
+        $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $result = $conn->query("
+            SELECT ir.id, ir.Emails as raw_emailid
+            FROM imported_recipients ir
+            WHERE ir.import_batch_id = '$batch_escaped'
+            AND ir.is_active = 1
+            AND ir.Emails IS NOT NULL
+            AND ir.Emails <> ''
+            AND NOT EXISTS (
+                SELECT 1 FROM mail_blaster mb 
+                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
+                AND mb.campaign_id = $campaign_id
+            )
+            ORDER BY ir.id ASC
+        ");
+        
+        while ($row = $result->fetch_assoc()) {
+            $emails[] = $row;
+        }
+        
+        logMessage("Found " . count($emails) . " emails to send for campaign #$campaign_id (from imported Excel data, batch: $import_batch_id)");
+        
+    } else {
+        // Fetch from emails table (CSV)
+        $csvFilter = $csv_list_id > 0 ? "AND e.csv_list_id = $csv_list_id" : "";
+        
+        $result = $conn->query("
+            SELECT e.id, e.raw_emailid
+            FROM emails e
+            WHERE e.domain_status = 1
+            AND e.validation_status = 'valid'
+            $csvFilter
+            AND NOT EXISTS (
+                SELECT 1 FROM mail_blaster mb 
+                WHERE mb.to_mail = e.raw_emailid
+                AND mb.campaign_id = $campaign_id
+            )
+            ORDER BY e.id ASC
+        ");
+        
+        while ($row = $result->fetch_assoc()) {
+            $emails[] = $row;
+        }
+        
+        $source = $csv_list_id > 0 ? "(from CSV list #$csv_list_id)" : "(from all validated emails)";
+        logMessage("Found " . count($emails) . " emails to send for campaign #$campaign_id $source");
+    }
+    
     return $emails;
 }
 
@@ -614,8 +671,8 @@ function retryFailedEmails($conn, $campaign_id, $smtp_servers, $campaign, $retry
     // Launch retry workers
     launchParallelWorkers($conn, $campaign_id, $distribution, $campaign);
     
-    // Wait for retry workers to complete
-    sleep(3);
+    // Wait for retry workers to complete - OPTIMIZED
+    sleep(1);
     
     return count($failed_emails);
 }
@@ -625,6 +682,16 @@ function retryFailedEmails($conn, $campaign_id, $smtp_servers, $campaign, $retry
  */
 function updateFinalCampaignStats($conn, $campaign_id) {
     logMessage("Updating final campaign statistics for campaign #$campaign_id");
+    
+    // Get campaign details to check source
+    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    if (!$campaignResult || $campaignResult->num_rows === 0) {
+        logMessage("Campaign #$campaign_id not found");
+        return null;
+    }
+    $campaignData = $campaignResult->fetch_assoc();
+    $import_batch_id = $campaignData['import_batch_id'];
+    $csv_list_id = intval($campaignData['csv_list_id']);
     
     // Get accurate counts from mail_blaster table
     // Only count permanently failed (attempt_count >= 5)
@@ -641,23 +708,56 @@ function updateFinalCampaignStats($conn, $campaign_id) {
     $failed_emails = intval($stats['failed_count']); // Only permanently failed (5+ attempts)
     $retry_emails = intval($stats['retry_count']); // Pending retries
     
-    // Get total emails for this campaign
-    $total_result = $conn->query("
+    // Get total emails based on campaign source
+    if ($import_batch_id) {
+        // Excel import source
+        $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $total_result = $conn->query("
+            SELECT COUNT(*) as total
+            FROM imported_recipients
+            WHERE import_batch_id = '$batch_escaped'
+            AND is_active = 1
+            AND Emails IS NOT NULL
+            AND Emails <> ''
+        ");
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+        logMessage("Campaign #$campaign_id uses Excel import (batch: $import_batch_id), Total emails: $total_emails");
+    } elseif ($csv_list_id > 0) {
+        // CSV list source
+        $total_result = $conn->query("
+            SELECT COUNT(*) as total
+            FROM emails
+            WHERE csv_list_id = $csv_list_id
+            AND domain_status = 1
+            AND validation_status = 'valid'
+            AND raw_emailid IS NOT NULL
+            AND raw_emailid <> ''
+        ");
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+        logMessage("Campaign #$campaign_id uses CSV list (ID: $csv_list_id), Total valid emails: $total_emails");
+    } else {
+        // All valid emails source
+        $total_result = $conn->query("
             SELECT COUNT(DISTINCT e.raw_emailid) as total
             FROM emails e
             WHERE e.domain_status = 1 AND e.validation_status = 'valid'
             AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
         ");
-    $total_emails = intval($total_result->fetch_assoc()['total']);
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+        logMessage("Campaign #$campaign_id uses all valid emails, Total: $total_emails");
+    }
     
     // Pending = Total - Success - Permanently Failed
     $pending_emails = max(0, $total_emails - $sent_emails - $failed_emails);
     
-    // Determine campaign status
+    // Determine campaign status - mark as completed when all emails are processed
     $campaign_status = 'running';
-    if ($pending_emails == 0) {
+    if ($pending_emails == 0 && $total_emails > 0) {
         $campaign_status = 'completed';
-        logMessage("Campaign #$campaign_id COMPLETED - All emails processed (100%)");
+        logMessage("Campaign #$campaign_id COMPLETED - All $total_emails emails processed (Sent: $sent_emails, Failed: $failed_emails)");
+    } elseif ($total_emails == 0) {
+        $campaign_status = 'completed';
+        logMessage("Campaign #$campaign_id COMPLETED - No emails to send");
     }
     
     // Update campaign_status with accurate numbers
@@ -690,6 +790,9 @@ function updateFinalCampaignStats($conn, $campaign_id) {
  */
 function logMessage($message) {
     // Log file disabled - function kept for compatibility
+    // Temporary: echo to console for debugging
+    $timestamp = date('Y-m-d H:i:s');
+    echo "[$timestamp] $message\n";
     // $logDir = dirname(LOG_FILE);
     // if (!is_dir($logDir)) {
     //     mkdir($logDir, 0777, true);
@@ -702,8 +805,37 @@ function logMessage($message) {
 
 // Helper: remaining emails count
 function getEmailsRemainingCount($conn, $campaign_id, $csv_list_id = 0) {
-    $csv_list_filter = $csv_list_id > 0 ? " AND e.csv_list_id = " . intval($csv_list_id) : "";
-    $res = $conn->query("
+    // Check campaign source: import_batch_id or csv_list_id
+    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    
+    if (!$campaignResult || $campaignResult->num_rows === 0) {
+        return 0;
+    }
+    
+    $campaignData = $campaignResult->fetch_assoc();
+    $import_batch_id = $campaignData['import_batch_id'];
+    $csv_list_id = intval($campaignData['csv_list_id']);
+    
+    if ($import_batch_id) {
+        // Count from imported_recipients
+        $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $res = $conn->query("
+            SELECT COUNT(*) as remaining FROM imported_recipients ir
+            WHERE ir.import_batch_id = '$batch_escaped'
+            AND ir.is_active = 1
+            AND ir.Emails IS NOT NULL 
+            AND ir.Emails <> ''
+            AND NOT EXISTS (
+                SELECT 1 FROM mail_blaster mb 
+                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails 
+                AND mb.campaign_id = $campaign_id
+                AND mb.status = 'success'
+            )
+        ");
+    } else {
+        // Count from emails table
+        $csv_list_filter = $csv_list_id > 0 ? " AND e.csv_list_id = " . intval($csv_list_id) : "";
+        $res = $conn->query("
             SELECT COUNT(*) as remaining FROM emails e
             WHERE e.domain_status = 1
             AND e.validation_status = 'valid'
@@ -715,7 +847,9 @@ function getEmailsRemainingCount($conn, $campaign_id, $csv_list_id = 0) {
                 AND mb.campaign_id = $campaign_id
                 AND mb.status = 'success'
             )
-    ");
+        ");
+    }
+    
     return ($res && $res->num_rows > 0) ? intval($res->fetch_assoc()['remaining']) : 0;
 }
 
@@ -781,7 +915,7 @@ function launchPerServerWorkers($conn, $campaign_id, $smtp_servers, $campaign) {
             'name' => $server['name']
         ];
         logMessage("Launched server worker for #{$server['id']} ({$server['name']})");
-        usleep(50000);
+        usleep(10000); // OPTIMIZED: Reduced from 50ms to 10ms
     }
 
     return [
@@ -818,7 +952,7 @@ while (true) {
         require_once __DIR__ . '/../config/db.php';
         if ($conn->connect_error) {
             logMessage("Database connection failed: " . $conn->connect_error);
-            sleep(10);
+            sleep(5); // OPTIMIZED: Reduced retry time
             continue;
         }
         
@@ -884,7 +1018,7 @@ while (true) {
                 } else {
                     logMessage("No SMTP accounts available. Keeping campaign pending.");
                     $conn->close();
-                    sleep(60);
+                    sleep(30); // OPTIMIZED: Reduced from 60 to 30 seconds
                     continue;
                 }
             }
@@ -900,7 +1034,7 @@ while (true) {
         if (!checkNetworkConnectivity()) {
             logMessage("Network connection unavailable. Waiting to retry...");
             $conn->close();
-            sleep(60);
+            sleep(30); // OPTIMIZED: Reduced from 60 to 30 seconds
             continue;
         }
 

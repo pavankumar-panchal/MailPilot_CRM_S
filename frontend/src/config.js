@@ -34,6 +34,9 @@ export const getBaseUrl = () => {
 const BASE_URL = getBaseUrl();
 
 export const API_CONFIG = {
+  // Base URL for direct access
+  BASE_URL: BASE_URL,
+  
   // Backend base paths
   BACKEND_BASE: `${BASE_URL}/backend`,
   INCLUDES: `${BASE_URL}/backend/includes`,

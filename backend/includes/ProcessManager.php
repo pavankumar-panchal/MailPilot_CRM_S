@@ -52,7 +52,7 @@ class ProcessManager
             if (is_numeric($key)) {
                 $argStr .= ' ' . escapeshellarg($val);
             } else {
-                $argStr .= ' --' . $key . '=' . escapeshellarg($val);
+                $argStr .= ' --' . $key . '=' . escapeshellarg((string)$val);
             }
         }
         
@@ -61,7 +61,7 @@ class ProcessManager
             escapeshellarg($phpBin),
             escapeshellarg($script),
             $argStr,
-            escapeshellarg($logFile)
+            escapeshellarg((string)$logFile)
         );
         
         $pid = trim(shell_exec($cmd));

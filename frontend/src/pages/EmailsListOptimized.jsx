@@ -13,6 +13,7 @@ const EmailsList = ({ listId, onClose }) => {
     total: 0,
   });
   const [filter, setFilter] = useState("all");
+  const [counts, setCounts] = useState({ all: 0, valid: 0, invalid: 0, timeout: 0 });
 
   // Fetch email details with server-side pagination
   const fetchListEmails = useCallback(async () => {
@@ -42,6 +43,37 @@ const EmailsList = ({ listId, onClose }) => {
     }
   }, [listId, pagination.page, pagination.rowsPerPage, filter]);
 
+  // Fetch server-side counts for all filter types
+  const fetchCounts = useCallback(async () => {
+    try {
+      const urlBase = `${API_CONFIG.API_RESULTS}?csv_list_id=${listId}&limit=1`;
+      const [allRes, validRes, invalidRes, timeoutRes] = await Promise.all([
+        fetch(urlBase),
+        fetch(`${urlBase}&filter=valid`),
+        fetch(`${urlBase}&filter=invalid`),
+        fetch(`${urlBase}&filter=timeout`),
+      ]);
+
+      const [allJson, validJson, invalidJson, timeoutJson] = await Promise.all([
+        allRes.json(),
+        validRes.json(),
+        invalidRes.json(),
+        timeoutRes.json(),
+      ]);
+
+      setCounts({
+        all: Number(allJson?.total ?? 0),
+        valid: Number(validJson?.total ?? 0),
+        invalid: Number(invalidJson?.total ?? 0),
+        timeout: Number(timeoutJson?.total ?? 0),
+      });
+    } catch (error) {
+      console.error("Failed to fetch counts:", error);
+      // Fallback to pagination total if available
+      setCounts(prev => ({ ...prev, all: pagination.total }));
+    }
+  }, [listId, pagination.total]);
+
   // Utility function for timeout detection
   const isTimeout = useCallback((e) =>
     (e.validation_response || "").toLowerCase().includes("timeout") ||
@@ -55,6 +87,11 @@ const EmailsList = ({ listId, onClose }) => {
     fetchListEmails();
   }, [fetchListEmails]);
 
+  // Fetch counts when listId changes
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
+
   // Reset to page 1 when filter changes
   useEffect(() => {
     setPagination((prev) => ({
@@ -63,55 +100,39 @@ const EmailsList = ({ listId, onClose }) => {
     }));
   }, [filter]);
 
-  // Count emails by status (for display only - using totals from server)
-  const emailCounts = useMemo(() => {
-    // For display, we show the counts from the current loaded data
-    // The "all" count comes from pagination.total (server-provided)
-    return {
-      all: pagination.total,
-      valid: listEmails.filter((e) => e.domain_status === 1).length,
-      invalid: listEmails.filter((e) => e.domain_status === 0 && !isTimeout(e)).length,
-      timeout: listEmails.filter(isTimeout).length,
-    };
-  }, [listEmails, pagination.total, isTimeout]);
+  // Export emails to CSV - Uses backend API to export ALL data (not just current page)
+  const exportToCSV = useCallback(async (type) => {
+    try {
+      // Use backend export API to get ALL data for this list
+      const exportType = type === 'timeout' ? 'connection_timeout' : type;
+      const url = `${API_CONFIG.GET_RESULTS}?export=${exportType}&csv_list_id=${listId}`;
+      console.log('Export URL:', url);
+      
+      const res = await fetch(url);
+      console.log('Export response status:', res.status);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const blob = await res.blob();
+      console.log('Export blob size:', blob.size);
 
-  // Export emails to CSV
-  const exportToCSV = useCallback((type) => {
-    let dataToExport = [];
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${type}_emails_list_${listId}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
 
-    if (type === "valid") {
-      dataToExport = listEmails.filter((e) => e.domain_status === 1);
-    } else if (type === "invalid") {
-      dataToExport = listEmails.filter((e) => e.domain_status === 0 && !isTimeout(e));
-    } else if (type === "timeout") {
-      dataToExport = listEmails.filter(isTimeout);
-    } else {
-      dataToExport = listEmails;
+      setStatus({ type: "success", message: `Exported all ${type} emails from this list` });
+    } catch (error) {
+      console.error('Export error:', error);
+      setStatus({ type: "error", message: `Failed to export ${type} emails: ${error.message}` });
     }
-
-    if (dataToExport.length === 0) {
-      setStatus({ type: "error", message: "No emails found for export." });
-      return;
-    }
-
-    const csvRows = [
-      "EMAILS",
-      ...dataToExport.map((row) => `"${row.email.replace(/"/g, '""')}"`),
-    ];
-
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${type}_emails_list_${listId}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    setStatus({ type: "success", message: "Exported successfully." });
-  }, [listEmails, listId, isTimeout]);
+  }, [listId]);
 
   // Status message component
   const StatusMessage = ({ status, onClose }) =>
@@ -153,7 +174,7 @@ const EmailsList = ({ listId, onClose }) => {
           <div>
             <h3 className="text-2xl font-bold text-gray-800 mb-1">Email List Details</h3>
             <p className="text-gray-600">
-              List ID: {listId} • {emailCounts.all.toLocaleString()} total emails
+              List ID: {listId} • {counts.all.toLocaleString()} total emails
             </p>
           </div>
           <button
@@ -179,7 +200,7 @@ const EmailsList = ({ listId, onClose }) => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                All ({emailCounts.all.toLocaleString()})
+                All ({counts.all.toLocaleString()})
               </button>
               <button
                 onClick={() => setFilter("valid")}
@@ -189,7 +210,7 @@ const EmailsList = ({ listId, onClose }) => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                Valid ({emailCounts.valid.toLocaleString()})
+                Valid ({counts.valid.toLocaleString()})
               </button>
               <button
                 onClick={() => setFilter("invalid")}
@@ -199,7 +220,7 @@ const EmailsList = ({ listId, onClose }) => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                Invalid ({emailCounts.invalid.toLocaleString()})
+                Invalid ({counts.invalid.toLocaleString()})
               </button>
               <button
                 onClick={() => setFilter("timeout")}
@@ -209,7 +230,7 @@ const EmailsList = ({ listId, onClose }) => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                Timeout ({emailCounts.timeout.toLocaleString()})
+                Timeout ({counts.timeout.toLocaleString()})
               </button>
             </div>
 
@@ -242,18 +263,6 @@ const EmailsList = ({ listId, onClose }) => {
           </div>
         </div>
 
-        {/* Table Header */}
-        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-            <div className="w-16">ID</div>
-            <div className="flex-1 px-2">Email</div>
-            <div className="w-32 px-2">Account</div>
-            <div className="w-32 px-2">Domain</div>
-            <div className="w-24 px-2">Verified</div>
-            <div className="w-24 px-2">Status</div>
-            <div className="w-40 px-2">Response</div>
-          </div>
-        </div>
 
         {/* Email Table */}
         <div className="flex-1 overflow-auto">
@@ -272,22 +281,47 @@ const EmailsList = ({ listId, onClose }) => {
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200 bg-white">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    ID
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                    Account
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    Domain
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                    Verified
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                    Response
+                  </th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-200">
                 {listEmails.map((email) => (
                   <tr key={email.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 w-20">
                       {email.id}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
                       {email.raw_emailid || email.email || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 w-40">
                       {email.sp_account || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
                       {email.sp_domain || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap text-center w-28">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           email.domain_verified == 1
@@ -298,7 +332,7 @@ const EmailsList = ({ listId, onClose }) => {
                         {email.domain_verified == 1 ? "Verified" : "Invalid"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap text-center w-28">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           isTimeout(email)
@@ -316,7 +350,7 @@ const EmailsList = ({ listId, onClose }) => {
                       </span>
                     </td>
                     <td
-                      className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate"
+                      className="px-4 py-4 text-sm text-gray-500 w-48 truncate max-w-xs"
                       title={email.validation_response || "N/A"}
                     >
                       {email.validation_response || "N/A"}

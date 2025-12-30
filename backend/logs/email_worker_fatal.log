@@ -1,0 +1,35 @@
+[2025-12-23 10:39:24] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:24] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:25] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:25] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:26] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:27] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+[2025-12-23 10:39:31] FATAL ERROR: Uncaught mysqli_sql_exception: Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation '=' in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280
+Stack trace:
+#0 /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php(280): mysqli->query()
+#1 {main}
+  thrown in /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php:280

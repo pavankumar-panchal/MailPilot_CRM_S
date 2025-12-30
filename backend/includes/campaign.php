@@ -7,27 +7,46 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
 
-// Ensure campaign_master has a send_as_html column (boolean flag).
-// If missing, add it with a safe default of 0. This migration runs on-demand
+// Ensure campaign_master has required columns for templates.
+// If missing, add them with safe defaults. This migration runs on-demand
 // to keep backwards-compatibility with existing databases.
-// We perform a safe information_schema check and run ALTER TABLE if needed.
 try {
     $dbNameRes = $conn->query("SELECT DATABASE() as db");
     $dbName = $dbNameRes ? $dbNameRes->fetch_assoc()['db'] : '';
     if ($dbName) {
+        // Check and add send_as_html
         $colCheckSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $conn->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_master' AND COLUMN_NAME = 'send_as_html'";
         $colCheck = $conn->query($colCheckSql);
         if ($colCheck) {
             $hasCol = (int)$colCheck->fetch_assoc()['cnt'] > 0;
             if (!$hasCol) {
-                // Try to add the column; ignore error if it fails.
                 @$conn->query("ALTER TABLE campaign_master ADD COLUMN send_as_html TINYINT(1) NOT NULL DEFAULT 0");
+            }
+        }
+        
+        // Check and add template_id
+        $colCheckSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $conn->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_master' AND COLUMN_NAME = 'template_id'";
+        $colCheck = $conn->query($colCheckSql);
+        if ($colCheck) {
+            $hasCol = (int)$colCheck->fetch_assoc()['cnt'] > 0;
+            if (!$hasCol) {
+                @$conn->query("ALTER TABLE campaign_master ADD COLUMN template_id INT NULL DEFAULT NULL");
+            }
+        }
+        
+        // Check and add import_batch_id
+        $colCheckSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $conn->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_master' AND COLUMN_NAME = 'import_batch_id'";
+        $colCheck = $conn->query($colCheckSql);
+        if ($colCheck) {
+            $hasCol = (int)$colCheck->fetch_assoc()['cnt'] > 0;
+            if (!$hasCol) {
+                @$conn->query("ALTER TABLE campaign_master ADD COLUMN import_batch_id VARCHAR(100) NULL DEFAULT NULL");
             }
         }
     }
 } catch (Exception $e) {
-    // If anything fails here, continue without throwing -- this keeps API
-    // compatible on environments where the DB user cannot ALTER TABLE.
+    // Log but don't fail - keeps API compatible on restricted environments
+    error_log("Campaign schema migration warning: " . $e->getMessage());
 }
 
 // Handle preflight (CORS)
@@ -107,6 +126,8 @@ try {
             $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
             $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
+            $template_id = isset($_POST['template_id']) && $_POST['template_id'] !== '' ? (int)$_POST['template_id'] : null;
+            $import_batch_id = isset($_POST['import_batch_id']) && $_POST['import_batch_id'] !== '' ? $conn->real_escape_string($_POST['import_batch_id']) : null;
             $attachment_path = null;
             $images_paths = [];
 
@@ -157,16 +178,19 @@ try {
                 }
             }
 
-            if (!$description || !$mail_subject || !$mail_body) {
+            if (!$description || !$mail_subject) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'All fields are required.']);
+                echo json_encode(['success' => false, 'message' => 'Description and subject are required.']);
                 exit;
             }
+            
+            // Allow campaigns with either template or body (or both)
+            // No strict validation here - flexible for different campaign types
 
             $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
-            $updateFields = ['description=?', 'mail_subject=?', 'mail_body=?', 'send_as_html=?'];
-            $params = [$description, $mail_subject, $mail_body, $send_as_html];
-            $types = 'sssi';
+            $updateFields = ['description=?', 'mail_subject=?', 'mail_body=?', 'send_as_html=?', 'template_id=?', 'import_batch_id=?'];
+            $params = [$description, $mail_subject, $mail_body, $send_as_html, $template_id, $import_batch_id];
+            $types = 'sssiis';
 
             if ($attachment_path !== null) {
                 $updateFields[] = 'attachment_path=?';
@@ -281,6 +305,8 @@ try {
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
         $send_as_html = isset($_POST['send_as_html']) ? (int)$_POST['send_as_html'] : 0;
         $csv_list_id = isset($_POST['csv_list_id']) && $_POST['csv_list_id'] !== '' ? (int)$_POST['csv_list_id'] : null;
+        $template_id = isset($_POST['template_id']) && $_POST['template_id'] !== '' ? (int)$_POST['template_id'] : null;
+        $import_batch_id = isset($_POST['import_batch_id']) && $_POST['import_batch_id'] !== '' ? $conn->real_escape_string($_POST['import_batch_id']) : null;
         $attachment_path = null;
         $images_paths = [];
 
@@ -332,17 +358,36 @@ try {
             }
         }
 
-        if (!$description || !$mail_subject || !$mail_body) {
+        if (!$description || !$mail_subject) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'All fields are required.']);
+            echo json_encode(['success' => false, 'message' => 'Description and subject are required.']);
             exit;
         }
+        
+        // Allow campaigns with either template or body (or both)
+        // No strict validation here - flexible for different campaign types
 
         // Store images as JSON (null if empty array)
         $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
         
-        $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssis", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id);
+        // Check if template_id and import_batch_id columns exist
+        try {
+            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id, template_id, import_batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("sssssiiss", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id, $template_id, $import_batch_id);
+        } catch (Exception $e) {
+            // Fallback: columns might not exist on server
+            error_log("Template columns missing, using fallback INSERT: " . $e->getMessage());
+            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . $conn->error]);
+                exit;
+            }
+            $stmt->bind_param("sssssis", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id);
+        }
 
         if ($stmt->execute()) {
             $campaignId = $stmt->insert_id;

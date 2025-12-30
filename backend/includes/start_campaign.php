@@ -48,6 +48,7 @@ try {
     }
 
     $csv_list_id = $campaign['csv_list_id'];
+    $import_batch_id = isset($campaign['import_batch_id']) ? $campaign['import_batch_id'] : null;
     $csvListFilter = $csv_list_id ? " AND csv_list_id = " . (int)$csv_list_id : "";
 
     // Determine total valid emails eligible for sending.
@@ -58,15 +59,30 @@ try {
     if ($mbTotal > 0) {
         $totalEmails = $mbTotal;
     } else {
-        // Fallback to emails table (filtered by csv_list_id if specified)
-        $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM emails WHERE domain_status = 1" . $csvListFilter);
-        $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
-        $totalEmails = (int)($totalRow['total_valid'] ?? 0);
+        // Check if using imported_recipients or emails table
+        if ($import_batch_id) {
+            // Count from imported_recipients table
+            $batch_escaped = $conn->real_escape_string($import_batch_id);
+            $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM imported_recipients WHERE import_batch_id = '$batch_escaped' AND is_active = 1 AND Emails IS NOT NULL AND Emails <> ''");
+            $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
+            $totalEmails = (int)($totalRow['total_valid'] ?? 0);
+        } else {
+            // Fallback to emails table (filtered by csv_list_id if specified)
+            $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM emails WHERE domain_status = 1" . $csvListFilter);
+            $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
+            $totalEmails = (int)($totalRow['total_valid'] ?? 0);
+        }
     }
 
     if ($totalEmails === 0) {
         http_response_code(400);
-        $message = $csv_list_id ? 'No recipients found for this campaign in the selected CSV list.' : 'No recipients found for this campaign. Please add recipients to mail_blaster first.';
+        if ($import_batch_id) {
+            $message = 'No recipients found in the imported Excel batch.';
+        } elseif ($csv_list_id) {
+            $message = 'No recipients found for this campaign in the selected CSV list.';
+        } else {
+            $message = 'No recipients found for this campaign. Please add recipients to mail_blaster first.';
+        }
         echo json_encode(['error' => $message]);
         exit();
     }
@@ -107,8 +123,35 @@ try {
         }
     }
 
+    // Check if PID column exists
+    $hasPid = false;
+    if ($dbName) {
+        $pidCheck = $conn->query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" . $conn->real_escape_string($dbName) . "' AND TABLE_NAME = 'campaign_status' AND COLUMN_NAME = 'process_pid'");
+        if ($pidCheck) {
+            $hasPid = (int)$pidCheck->fetch_assoc()['cnt'] > 0;
+        }
+    }
+
+    // If PID column exists, check if campaign is already running with an active process
+    if ($hasPid && $statusRow && $statusRow['status'] === 'running') {
+        $existingPid = isset($statusRow['process_pid']) ? (int)$statusRow['process_pid'] : 0;
+        if ($existingPid > 0) {
+            // Check if process is still running
+            $pidExists = file_exists("/proc/$existingPid");
+            if ($pidExists) {
+                echo json_encode([
+                    'status' => 'already_running',
+                    'message' => 'Campaign is already running with PID ' . $existingPid,
+                    'campaign_id' => $campaign_id,
+                    'pid' => $existingPid
+                ]);
+                exit();
+            }
+        }
+    }
+
     if (!$statusRow) {
-        // Insert new status row
+        // Insert new status row (PID will be updated after process starts)
         if ($hasStartTime) {
             $conn->query("INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails, start_time) VALUES ($campaign_id, 'running', $totalEmails, $pending, $sent, $failed, NOW())");
         } else {
@@ -173,6 +216,13 @@ try {
         'campaign_id' => $campaign_id
     ], $logFile);
 
+
+    // Store PID in campaign_status if column exists
+    if ($hasPid && $pid) {
+        // Reconnect to database to store PID
+        require_once __DIR__ . '/../config/db.php';
+        $conn->query("UPDATE campaign_status SET process_pid = $pid WHERE campaign_id = $campaign_id");
+    }
 
     // Log the start
     error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid\n", 3, $logsDir . '/campaign_starts.log');

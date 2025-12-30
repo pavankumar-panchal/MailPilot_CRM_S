@@ -67,6 +67,22 @@ try {
             $campaign_id = (int)($input['campaign_id'] ?? 0);
             $response['success'] = true;
             $response['data'] = getEmailCounts($conn, $campaign_id);
+        } elseif ($action === 'get_campaign_emails') {
+            $campaign_id = (int)($input['campaign_id'] ?? 0);
+            $page = (int)($input['page'] ?? 1);
+            $limit = (int)($input['limit'] ?? 50);
+            $response['success'] = true;
+            $response['data'] = getCampaignEmails($conn, $campaign_id, $page, $limit);
+        } elseif ($action === 'get_template_preview') {
+            $campaign_id = (int)($input['campaign_id'] ?? 0);
+            $email_index = (int)($input['email_index'] ?? 0);
+            $response['success'] = true;
+            $response['data'] = getTemplatePreview($conn, $campaign_id, $email_index);
+        } elseif ($action === 'update_campaign_status') {
+            $campaign_id = (int)($input['campaign_id'] ?? 0);
+            updateCampaignCompletionStatus($conn, $campaign_id);
+            $response['success'] = true;
+            $response['message'] = "Campaign status updated successfully";
         } else {
             throw new Exception('Invalid action');
         }
@@ -90,6 +106,163 @@ echo json_encode($response);
 function getCampaignsWithStats()
 {
     global $conn;
+    
+    // FIRST: Ensure every campaign has a campaign_status row
+    // a) from mail_blaster (already sent)
+    $conn->query("
+        INSERT INTO campaign_status (campaign_id, status, total_emails, sent_emails, failed_emails, pending_emails, start_time)
+        SELECT 
+            mb.campaign_id,
+            'running' as status,
+            0 as total_emails,
+            COUNT(DISTINCT CASE WHEN mb.status = 'success' THEN mb.to_mail END) as sent_emails,
+            COUNT(DISTINCT CASE WHEN mb.status = 'failed' THEN mb.to_mail END) as failed_emails,
+            0 as pending_emails,
+            MIN(mb.delivery_time) as start_time
+        FROM mail_blaster mb
+        WHERE mb.campaign_id NOT IN (SELECT campaign_id FROM campaign_status)
+        GROUP BY mb.campaign_id
+        ON DUPLICATE KEY UPDATE campaign_id = campaign_id
+    ");
+    // b) from campaign_master (not started yet)
+    $conn->query("
+        INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails)
+        SELECT cm.campaign_id, 'pending', 0, 0, 0, 0
+        FROM campaign_master cm
+        WHERE cm.campaign_id NOT IN (SELECT campaign_id FROM campaign_status)
+    ");
+    
+    // SECOND: Update totals for all campaigns based on their source
+    $allCampaigns = $conn->query("
+        SELECT cs.campaign_id, cm.import_batch_id, cm.csv_list_id
+        FROM campaign_status cs
+        JOIN campaign_master cm ON cs.campaign_id = cm.campaign_id
+    ");
+    
+    if ($allCampaigns) {
+        while ($camp = $allCampaigns->fetch_assoc()) {
+            $cid = $camp['campaign_id'];
+            $import_batch_id = $camp['import_batch_id'];
+            $csv_list_id = intval($camp['csv_list_id']);
+            
+            $total = 0;
+            if ($import_batch_id) {
+                $batch_escaped = $conn->real_escape_string($import_batch_id);
+                $totalRes = $conn->query("SELECT COUNT(*) as total FROM imported_recipients WHERE import_batch_id = '$batch_escaped' AND is_active = 1 AND Emails IS NOT NULL AND Emails <> ''");
+                $total = intval($totalRes->fetch_assoc()['total']);
+            } elseif ($csv_list_id > 0) {
+                $totalRes = $conn->query("SELECT COUNT(*) as total FROM emails WHERE csv_list_id = $csv_list_id AND domain_status = 1 AND validation_status = 'valid' AND raw_emailid IS NOT NULL AND raw_emailid <> ''");
+                $total = intval($totalRes->fetch_assoc()['total']);
+            }
+            
+            // Always update total_emails to the current expected count
+            $conn->query("UPDATE campaign_status SET total_emails = $total WHERE campaign_id = $cid");
+        }
+    }
+    
+    // THIRD: Auto-update running campaigns to completed based on mail_blaster actual counts
+    $runningCampaigns = $conn->query("
+        SELECT cs.campaign_id, cm.import_batch_id, cm.csv_list_id,
+               cs.total_emails, cs.sent_emails, cs.failed_emails, cs.pending_emails
+        FROM campaign_status cs
+        JOIN campaign_master cm ON cs.campaign_id = cm.campaign_id
+        WHERE cs.status = 'running'
+    ");
+    
+    if ($runningCampaigns) {
+        while ($campaign = $runningCampaigns->fetch_assoc()) {
+            $campaign_id = $campaign['campaign_id'];
+            $import_batch_id = $campaign['import_batch_id'];
+            $csv_list_id = intval($campaign['csv_list_id']);
+            
+            // Get actual counts from mail_blaster
+            $blasterStats = $conn->query("
+                SELECT 
+                    COUNT(DISTINCT to_mail) as total_in_blaster,
+                    COUNT(DISTINCT CASE WHEN status = 'success' THEN to_mail END) as actual_sent,
+                    COUNT(DISTINCT CASE WHEN status = 'failed' AND attempt_count >= 5 THEN to_mail END) as actual_failed
+                FROM mail_blaster
+                WHERE campaign_id = $campaign_id
+            ");
+            
+            if ($blasterStats && $blasterStats->num_rows > 0) {
+                $stats = $blasterStats->fetch_assoc();
+                $actual_sent = intval($stats['actual_sent']);
+                $actual_failed = intval($stats['actual_failed']);
+                $total_in_blaster = intval($stats['total_in_blaster']);
+                
+                // Get expected total from source
+                $expected_total = 0;
+                if ($import_batch_id) {
+                    $batch_escaped = $conn->real_escape_string($import_batch_id);
+                    $totalRes = $conn->query("
+                        SELECT COUNT(*) as total 
+                        FROM imported_recipients 
+                        WHERE import_batch_id = '$batch_escaped' 
+                        AND is_active = 1 
+                        AND Emails IS NOT NULL 
+                        AND Emails <> ''
+                    ");
+                    $expected_total = intval($totalRes->fetch_assoc()['total']);
+                } elseif ($csv_list_id > 0) {
+                    $totalRes = $conn->query("
+                        SELECT COUNT(*) as total 
+                        FROM emails 
+                        WHERE csv_list_id = $csv_list_id 
+                        AND domain_status = 1 
+                        AND validation_status = 'valid'
+                        AND raw_emailid IS NOT NULL 
+                        AND raw_emailid <> ''
+                    ");
+                    $expected_total = intval($totalRes->fetch_assoc()['total']);
+                } else {
+                    $expected_total = intval($campaign['total_emails']);
+                }
+                
+                // Fallback to mail_blaster total if source total is 0
+                if ($expected_total === 0 && $total_in_blaster > 0) {
+                    $expected_total = $total_in_blaster;
+                }
+
+                // Compute pending
+                $pending = max(0, $expected_total - $actual_sent - $actual_failed);
+                $pending_in_blaster = max(0, $total_in_blaster - $actual_sent - $actual_failed);
+
+                // Determine if campaign should be completed
+                $should_complete = false;
+                if ($expected_total > 0 && ($actual_sent + $actual_failed) >= $expected_total) {
+                    $should_complete = true;
+                } elseif ($total_in_blaster > 0 && $pending_in_blaster === 0 && $expected_total > 0) {
+                    $should_complete = true;
+                }
+                
+                // Update the campaign status
+                if ($should_complete) {
+                    $conn->query("
+                        UPDATE campaign_status 
+                        SET status = 'completed',
+                            total_emails = $expected_total,
+                            sent_emails = $actual_sent,
+                            failed_emails = $actual_failed,
+                            pending_emails = 0,
+                            end_time = CASE WHEN end_time IS NULL THEN NOW() ELSE end_time END
+                        WHERE campaign_id = $campaign_id
+                    ");
+                } else {
+                    // Just update counts
+                    $conn->query("
+                        UPDATE campaign_status 
+                        SET total_emails = $expected_total,
+                            sent_emails = $actual_sent,
+                            failed_emails = $actual_failed,
+                            pending_emails = $pending
+                        WHERE campaign_id = $campaign_id
+                    ");
+                }
+            }
+        }
+    }
+    
     // Get total valid emails from emails table (only validation_status = 'valid')
     $valid_emails_total = 0;
     $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND validation_status = 'valid'");
@@ -103,6 +276,8 @@ function getCampaignsWithStats()
                 cm.mail_subject,
                 cm.attachment_path,
                 cm.csv_list_id,
+                cm.import_batch_id,
+                cm.template_id,
                 cl.list_name as csv_list_name,
                 cs.status as campaign_status,
                 COALESCE(cs.total_emails, 0) as total_emails,
@@ -144,8 +319,24 @@ function getCampaignsWithStats()
     foreach ($campaigns as &$campaign) {
         $campaign['valid_emails'] = $valid_emails_total; // Total valid emails in system
         
-        // Get actual valid email count for this campaign's CSV list
-        if ($campaign['csv_list_id']) {
+        // Determine email source type
+        if ($campaign['import_batch_id']) {
+            $campaign['email_source'] = 'imported_recipients';
+            $campaign['email_source_label'] = 'Excel Import';
+            
+            // Get count from imported_recipients
+            $batch_escaped = $conn->real_escape_string($campaign['import_batch_id']);
+            $importedRes = $conn->query("SELECT COUNT(*) as cnt FROM imported_recipients WHERE import_batch_id = '$batch_escaped' AND is_active = 1 AND Emails IS NOT NULL AND Emails <> ''");
+            if ($importedRes) {
+                $campaign['csv_list_valid_count'] = (int)$importedRes->fetch_assoc()['cnt'];
+            } else {
+                $campaign['csv_list_valid_count'] = 0;
+            }
+        } elseif ($campaign['csv_list_id']) {
+            $campaign['email_source'] = 'csv_upload';
+            $campaign['email_source_label'] = 'CSV Upload';
+            
+            // Get actual valid email count for this campaign's CSV list
             $csvListId = (int)$campaign['csv_list_id'];
             $csvValidRes = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE csv_list_id = $csvListId AND domain_status = 1 AND validation_status = 'valid'");
             if ($csvValidRes) {
@@ -154,7 +345,10 @@ function getCampaignsWithStats()
                 $campaign['csv_list_valid_count'] = 0;
             }
         } else {
-            // If no CSV list selected, show total valid emails
+            $campaign['email_source'] = 'all_emails';
+            $campaign['email_source_label'] = 'All Valid Emails';
+            
+            // If no CSV list or import batch selected, show total valid emails
             $campaign['csv_list_valid_count'] = $valid_emails_total;
         }
         
@@ -225,31 +419,54 @@ function startCampaign($conn, $campaign_id)
             }
         }
     }
-    $conn->query("SET SESSION innodb_lock_wait_timeout = 50");
+    if ($conn && !$conn->connect_error) {
+        $conn->query("SET SESSION innodb_lock_wait_timeout = 50");
+    }
 }
 
 function getEmailCounts($conn, $campaign_id)
 {
-    // Get csv_list_id for this campaign
-    $csvListResult = $conn->query("SELECT csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    // Get csv_list_id and import_batch_id for this campaign
+    $campaignResult = $conn->query("SELECT csv_list_id, import_batch_id FROM campaign_master WHERE campaign_id = $campaign_id");
     $csvListId = null;
-    if ($csvListResult && $csvListResult->num_rows > 0) {
-        $csvListRow = $csvListResult->fetch_assoc();
-        $csvListId = $csvListRow['csv_list_id'];
+    $importBatchId = null;
+    
+    if ($campaignResult && $campaignResult->num_rows > 0) {
+        $campaignRow = $campaignResult->fetch_assoc();
+        $csvListId = $campaignRow['csv_list_id'];
+        $importBatchId = $campaignRow['import_batch_id'];
+    }
+    
+    // Count total valid emails based on source
+    if ($importBatchId) {
+        // Count from imported_recipients table
+        $batch_escaped = $conn->real_escape_string($importBatchId);
+        $totalQuery = "SELECT COUNT(*) as total_valid 
+                FROM imported_recipients 
+                WHERE import_batch_id = '$batch_escaped' 
+                AND is_active = 1 
+                AND Emails IS NOT NULL 
+                AND Emails <> ''";
+        $totalResult = $conn->query($totalQuery);
+        $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
+        
+        // For imported_recipients, we don't use csv_list_id filter in mail_blaster
+        $csvListFilter = "";
+    } else {
+        // Count from emails table (CSV upload)
+        $csvListFilter = $csvListId ? "AND mb.csv_list_id = $csvListId" : "";
+        
+        $totalQuery = "SELECT COUNT(*) as total_valid 
+                FROM emails e 
+                WHERE e.domain_status = 1 
+                AND e.validation_status = 'valid'
+                " . ($csvListId ? "AND e.csv_list_id = $csvListId" : "");
+        $totalResult = $conn->query($totalQuery);
+        $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
     }
     
     // Build WHERE clause based on csv_list_id
     // Now filter by mail_blaster.csv_list_id since we store it there when sending
-    $csvListFilter = $csvListId ? "AND mb.csv_list_id = $csvListId" : "";
-    
-    // Count total valid emails for this campaign and CSV list from emails table
-    $totalQuery = "SELECT COUNT(*) as total_valid 
-            FROM emails e 
-            WHERE e.domain_status = 1 
-            AND e.validation_status = 'valid'
-            " . ($csvListId ? "AND e.csv_list_id = $csvListId" : "");
-    $totalResult = $conn->query($totalQuery);
-    $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
     
     // Count sent and failed from mail_blaster (filtered by csv_list_id stored in mail_blaster)
     // Only count permanently failed (attempt_count >= 5)
@@ -339,8 +556,8 @@ function startEmailBlasterProcess($campaign_id)
             : '/opt/plesk/php/8.1/bin/php';
     }
     
-    // Close DB and send response immediately
-    ProcessManager::closeConnections($conn);
+    // Don't close the main connection here - let the calling code handle it
+    // ProcessManager::closeConnections($conn);
     
     // Start background process
     $pid = ProcessManager::execute($php_path, $script_path, [$campaign_id], null); // Log file disabled
@@ -443,4 +660,471 @@ function retryFailedEmails($conn, $campaign_id)
     } else {
         return "No emails available for retry. All failed emails have reached maximum attempts (5).";
     }
+}
+
+/**
+ * Get list of emails for a specific campaign
+ * Shows emails from imported_recipients if campaign uses Excel import
+ * Shows emails from emails table if campaign uses CSV upload
+ */
+function getCampaignEmails($conn, $campaign_id, $page = 1, $limit = 50)
+{
+    // Get campaign details to determine source
+    $campaignQuery = "SELECT csv_list_id, import_batch_id, template_id, description 
+                      FROM campaign_master 
+                      WHERE campaign_id = $campaign_id";
+    $campaignResult = $conn->query($campaignQuery);
+    
+    if (!$campaignResult || $campaignResult->num_rows === 0) {
+        return [
+            'error' => 'Campaign not found',
+            'campaign_id' => $campaign_id
+        ];
+    }
+    
+    $campaign = $campaignResult->fetch_assoc();
+    $csvListId = $campaign['csv_list_id'];
+    $importBatchId = $campaign['import_batch_id'];
+    $templateId = $campaign['template_id'];
+    
+    $offset = ($page - 1) * $limit;
+    $emails = [];
+    $total = 0;
+    $source = '';
+    
+    // Determine source and fetch emails
+    if ($importBatchId) {
+        // Fetch from imported_recipients (Excel import)
+        $source = 'imported_recipients';
+        $batch_escaped = $conn->real_escape_string($importBatchId);
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total 
+                       FROM imported_recipients 
+                       WHERE import_batch_id = '$batch_escaped' 
+                       AND is_active = 1 
+                       AND Emails IS NOT NULL 
+                       AND Emails <> ''";
+        $countResult = $conn->query($countQuery);
+        $total = ($countResult && $countResult->num_rows > 0) ? (int)$countResult->fetch_assoc()['total'] : 0;
+        
+        // Get paginated emails with their data
+        $emailQuery = "SELECT 
+                        id,
+                        Emails as email,
+                        BilledName as name,
+                        Company,
+                        Amount,
+                        Days,
+                        BillNumber,
+                        CustomerID,
+                        Phone,
+                        source_file_type
+                       FROM imported_recipients 
+                       WHERE import_batch_id = '$batch_escaped' 
+                       AND is_active = 1 
+                       AND Emails IS NOT NULL 
+                       AND Emails <> ''
+                       ORDER BY id ASC
+                       LIMIT $limit OFFSET $offset";
+        
+        $emailResult = $conn->query($emailQuery);
+        
+        if ($emailResult) {
+            while ($row = $emailResult->fetch_assoc()) {
+                // Get send status from mail_blaster if exists
+                $email_escaped = $conn->real_escape_string($row['email']);
+                $statusQuery = "SELECT status, attempt_count, delivery_date, delivery_time, error_message 
+                                FROM mail_blaster 
+                                WHERE campaign_id = $campaign_id 
+                                AND to_mail = '$email_escaped' 
+                                LIMIT 1";
+                $statusResult = $conn->query($statusQuery);
+                
+                $send_status = 'not_sent';
+                $attempt_count = 0;
+                $delivery_info = null;
+                $error_message = null;
+                
+                if ($statusResult && $statusResult->num_rows > 0) {
+                    $status = $statusResult->fetch_assoc();
+                    $send_status = $status['status'] ?? 'pending';
+                    $attempt_count = (int)($status['attempt_count'] ?? 0);
+                    $delivery_info = $status['delivery_date'] . ' ' . $status['delivery_time'];
+                    $error_message = $status['error_message'];
+                }
+                
+                $emails[] = [
+                    'id' => $row['id'],
+                    'email' => $row['email'],
+                    'name' => $row['name'] ?: $row['Company'] ?: 'N/A',
+                    'company' => $row['Company'] ?: $row['name'] ?: '',
+                    'amount' => $row['Amount'] ?: '',
+                    'days' => $row['Days'] ?: '',
+                    'bill_number' => $row['BillNumber'] ?: '',
+                    'customer_id' => $row['CustomerID'] ?: '',
+                    'phone' => $row['Phone'] ?: '',
+                    'file_type' => $row['source_file_type'] ?: 'unknown',
+                    'send_status' => $send_status,
+                    'attempt_count' => $attempt_count,
+                    'delivery_info' => $delivery_info,
+                    'error_message' => $error_message
+                ];
+            }
+        }
+        
+    } elseif ($csvListId) {
+        // Fetch from emails table (CSV upload)
+        $source = 'csv_upload';
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total 
+                       FROM emails 
+                       WHERE csv_list_id = $csvListId 
+                       AND domain_status = 1 
+                       AND validation_status = 'valid'";
+        $countResult = $conn->query($countQuery);
+        $total = ($countResult && $countResult->num_rows > 0) ? (int)$countResult->fetch_assoc()['total'] : 0;
+        
+        // Get paginated emails
+        $emailQuery = "SELECT 
+                        id,
+                        raw_emailid as email,
+                        name,
+                        company,
+                        phone
+                       FROM emails 
+                       WHERE csv_list_id = $csvListId 
+                       AND domain_status = 1 
+                       AND validation_status = 'valid'
+                       ORDER BY id ASC
+                       LIMIT $limit OFFSET $offset";
+        
+        $emailResult = $conn->query($emailQuery);
+        
+        if ($emailResult) {
+            while ($row = $emailResult->fetch_assoc()) {
+                // Get send status from mail_blaster if exists
+                $email_escaped = $conn->real_escape_string($row['email']);
+                $statusQuery = "SELECT status, attempt_count, delivery_date, delivery_time, error_message 
+                                FROM mail_blaster 
+                                WHERE campaign_id = $campaign_id 
+                                AND to_mail = '$email_escaped' 
+                                LIMIT 1";
+                $statusResult = $conn->query($statusQuery);
+                
+                $send_status = 'not_sent';
+                $attempt_count = 0;
+                $delivery_info = null;
+                $error_message = null;
+                
+                if ($statusResult && $statusResult->num_rows > 0) {
+                    $status = $statusResult->fetch_assoc();
+                    $send_status = $status['status'] ?? 'pending';
+                    $attempt_count = (int)($status['attempt_count'] ?? 0);
+                    $delivery_info = $status['delivery_date'] . ' ' . $status['delivery_time'];
+                    $error_message = $status['error_message'];
+                }
+                
+                $emails[] = [
+                    'id' => $row['id'],
+                    'email' => $row['email'],
+                    'name' => $row['name'] ?: 'N/A',
+                    'company' => $row['company'] ?: '',
+                    'phone' => $row['phone'] ?: '',
+                    'file_type' => 'csv',
+                    'send_status' => $send_status,
+                    'attempt_count' => $attempt_count,
+                    'delivery_info' => $delivery_info,
+                    'error_message' => $error_message
+                ];
+            }
+        }
+        
+    } else {
+        // No specific source - use all valid emails
+        $source = 'all_valid_emails';
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total 
+                       FROM emails 
+                       WHERE domain_status = 1 
+                       AND validation_status = 'valid'";
+        $countResult = $conn->query($countQuery);
+        $total = ($countResult && $countResult->num_rows > 0) ? (int)$countResult->fetch_assoc()['total'] : 0;
+        
+        // Get paginated emails
+        $emailQuery = "SELECT 
+                        id,
+                        raw_emailid as email,
+                        name,
+                        company,
+                        phone
+                       FROM emails 
+                       WHERE domain_status = 1 
+                       AND validation_status = 'valid'
+                       ORDER BY id ASC
+                       LIMIT $limit OFFSET $offset";
+        
+        $emailResult = $conn->query($emailQuery);
+        
+        if ($emailResult) {
+            while ($row = $emailResult->fetch_assoc()) {
+                // Get send status from mail_blaster if exists
+                $email_escaped = $conn->real_escape_string($row['email']);
+                $statusQuery = "SELECT status, attempt_count, delivery_date, delivery_time, error_message 
+                                FROM mail_blaster 
+                                WHERE campaign_id = $campaign_id 
+                                AND to_mail = '$email_escaped' 
+                                LIMIT 1";
+                $statusResult = $conn->query($statusQuery);
+                
+                $send_status = 'not_sent';
+                $attempt_count = 0;
+                $delivery_info = null;
+                $error_message = null;
+                
+                if ($statusResult && $statusResult->num_rows > 0) {
+                    $status = $statusResult->fetch_assoc();
+                    $send_status = $status['status'] ?? 'pending';
+                    $attempt_count = (int)($status['attempt_count'] ?? 0);
+                    $delivery_info = $status['delivery_date'] . ' ' . $status['delivery_time'];
+                    $error_message = $status['error_message'];
+                }
+                
+                $emails[] = [
+                    'id' => $row['id'],
+                    'email' => $row['email'],
+                    'name' => $row['name'] ?: 'N/A',
+                    'company' => $row['company'] ?: '',
+                    'phone' => $row['phone'] ?: '',
+                    'file_type' => 'system',
+                    'send_status' => $send_status,
+                    'attempt_count' => $attempt_count,
+                    'delivery_info' => $delivery_info,
+                    'error_message' => $error_message
+                ];
+            }
+        }
+    }
+    
+    return [
+        'campaign_id' => $campaign_id,
+        'campaign_description' => $campaign['description'],
+        'email_source' => $source,
+        'uses_template' => !empty($templateId),
+        'template_id' => $templateId,
+        'total' => $total,
+        'page' => $page,
+        'limit' => $limit,
+        'total_pages' => ceil($total / $limit),
+        'emails' => $emails
+    ];
+}
+
+function getTemplatePreview($conn, $campaign_id, $email_index = 0) {
+    require_once __DIR__ . '/../includes/template_merge_helper.php';
+    
+    $campaign_id = intval($campaign_id);
+    $email_index = intval($email_index);
+    
+    // Get campaign details
+    $query = "SELECT cm.template_id, cm.import_batch_id, cm.description, cm.mail_subject,
+                     mt.template_name, mt.template_html, mt.merge_fields
+              FROM campaign_master cm
+              LEFT JOIN mail_templates mt ON cm.template_id = mt.template_id
+              WHERE cm.campaign_id = $campaign_id";
+    
+    $result = $conn->query($query);
+    if (!$result || $result->num_rows === 0) {
+        return ['error' => 'Campaign not found'];
+    }
+    
+    $campaign = $result->fetch_assoc();
+    
+    // Check if campaign uses template
+    if (!$campaign['template_id']) {
+        return ['error' => 'Campaign does not use a template'];
+    }
+    
+    // Get all sample emails from imported_recipients
+    $sampleEmails = [];
+    $totalCount = 0;
+    $selectedEmail = null;
+    
+    if ($campaign['import_batch_id']) {
+        $batch_escaped = $conn->real_escape_string($campaign['import_batch_id']);
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total FROM imported_recipients 
+                      WHERE import_batch_id = '$batch_escaped' 
+                      AND is_active = 1 
+                      AND Emails IS NOT NULL 
+                      AND Emails <> ''";
+        $countResult = $conn->query($countQuery);
+        if ($countResult) {
+            $totalCount = (int)$countResult->fetch_assoc()['total'];
+        }
+        
+        // Get list of sample emails (first 10 for dropdown)
+        $listQuery = "SELECT * FROM imported_recipients 
+                     WHERE import_batch_id = '$batch_escaped' 
+                     AND is_active = 1 
+                     AND Emails IS NOT NULL 
+                     AND Emails <> ''
+                     LIMIT 10";
+        $listResult = $conn->query($listQuery);
+        if ($listResult) {
+            while ($row = $listResult->fetch_assoc()) {
+                $sampleEmails[] = [
+                    'email' => $row['Emails'] ?? '',
+                    'name' => $row['BilledName'] ?? $row['Name'] ?? '',
+                    'preview_label' => ($row['BilledName'] ?? $row['Name'] ?? $row['Emails']) . 
+                                      ($row['Amount'] ? ' - ₹' . $row['Amount'] : '') .
+                                      ($row['CustomerID'] ? ' (ID: ' . $row['CustomerID'] . ')' : '')
+                ];
+            }
+        }
+        
+        // Get selected email data
+        $offset = max(0, $email_index);
+        $selectedQuery = "SELECT * FROM imported_recipients 
+                         WHERE import_batch_id = '$batch_escaped' 
+                         AND is_active = 1 
+                         AND Emails IS NOT NULL 
+                         AND Emails <> ''
+                         LIMIT 1 OFFSET $offset";
+        $selectedResult = $conn->query($selectedQuery);
+        if ($selectedResult && $selectedResult->num_rows > 0) {
+            $selectedEmail = $selectedResult->fetch_assoc();
+        }
+    }
+    
+    // Prepare template HTML
+    $templateHtml = $campaign['template_html'] ?? '';
+    $mergeFields = json_decode($campaign['merge_fields'] ?? '[]', true);
+    
+    // If we have sample data, merge it
+    if ($selectedEmail) {
+        $mergedHtml = mergeTemplateWithData($templateHtml, $selectedEmail);
+    } else {
+        $mergedHtml = $templateHtml;
+    }
+    
+    // Prepare current email data for display (excluding internal fields)
+    $currentEmailData = null;
+    if ($selectedEmail) {
+        $currentEmailData = $selectedEmail;
+        // Remove internal database fields
+        unset($currentEmailData['id']);
+        unset($currentEmailData['import_batch_id']);
+        unset($currentEmailData['is_active']);
+        unset($currentEmailData['created_at']);
+    }
+    
+    return [
+        'campaign_id' => $campaign_id,
+        'campaign_name' => $campaign['description'],
+        'template_id' => $campaign['template_id'],
+        'template_name' => $campaign['template_name'],
+        'template_html' => $mergedHtml,
+        'has_sample_data' => $selectedEmail ? true : false,
+        'current_index' => $email_index,
+        'total_emails' => $totalCount,
+        'sample_emails' => $sampleEmails,
+        'current_email' => $currentEmailData,
+        'merge_fields' => $mergeFields
+    ];
+}
+
+/**
+ * Update campaign completion status based on actual progress
+ * Handles both Excel import and CSV list sources
+ */
+function updateCampaignCompletionStatus($conn, $campaign_id) {
+    // Get campaign details to check source
+    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    if (!$campaignResult || $campaignResult->num_rows === 0) {
+        return false;
+    }
+    
+    $campaignData = $campaignResult->fetch_assoc();
+    $import_batch_id = $campaignData['import_batch_id'];
+    $csv_list_id = intval($campaignData['csv_list_id']);
+    
+    // Get sent and failed counts from mail_blaster
+    $stats = $conn->query("
+        SELECT 
+            COUNT(DISTINCT CASE WHEN mb.status = 'success' THEN mb.to_mail END) as sent_count,
+            COUNT(DISTINCT CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN mb.to_mail END) as failed_count
+        FROM mail_blaster mb
+        WHERE mb.campaign_id = $campaign_id
+    ")->fetch_assoc();
+    
+    $sent_emails = intval($stats['sent_count']);
+    $failed_emails = intval($stats['failed_count']);
+    
+    // Get total emails based on campaign source
+    if ($import_batch_id) {
+        // Excel import source
+        $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $total_result = $conn->query("
+            SELECT COUNT(*) as total
+            FROM imported_recipients
+            WHERE import_batch_id = '$batch_escaped'
+            AND is_active = 1
+            AND Emails IS NOT NULL
+            AND Emails <> ''
+        ");
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+    } elseif ($csv_list_id > 0) {
+        // CSV list source
+        $total_result = $conn->query("
+            SELECT COUNT(*) as total
+            FROM emails
+            WHERE csv_list_id = $csv_list_id
+            AND domain_status = 1
+            AND validation_status = 'valid'
+            AND raw_emailid IS NOT NULL
+            AND raw_emailid <> ''
+        ");
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+    } else {
+        // All valid emails source
+        $total_result = $conn->query("
+            SELECT COUNT(DISTINCT raw_emailid) as total
+            FROM emails
+            WHERE domain_status = 1
+            AND validation_status = 'valid'
+            AND raw_emailid IS NOT NULL
+            AND raw_emailid <> ''
+        ");
+        $total_emails = intval($total_result->fetch_assoc()['total']);
+    }
+    
+    // Calculate pending emails
+    $pending_emails = max(0, $total_emails - $sent_emails - $failed_emails);
+    
+    // Determine campaign status
+    $campaign_status = 'running';
+    if ($pending_emails == 0 && $total_emails > 0) {
+        $campaign_status = 'completed';
+    } elseif ($total_emails == 0) {
+        $campaign_status = 'completed';
+    }
+    
+    // Update campaign_status table
+    $conn->query("
+        UPDATE campaign_status 
+        SET 
+            sent_emails = $sent_emails,
+            failed_emails = $failed_emails,
+            pending_emails = $pending_emails,
+            total_emails = $total_emails,
+            status = '$campaign_status',
+            end_time = CASE WHEN '$campaign_status' = 'completed' THEN NOW() ELSE end_time END
+        WHERE campaign_id = $campaign_id
+    ");
+    
+    return true;
 }

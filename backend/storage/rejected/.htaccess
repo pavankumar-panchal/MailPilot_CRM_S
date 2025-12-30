@@ -1,0 +1,14 @@
+# Allow access to CSV files
+<FilesMatch "\.(csv)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Set correct content type for CSV
+<IfModule mod_mime.c>
+    AddType text/csv .csv
+    AddType application/csv .csv
+</IfModule>
+
+# Enable download header
+Header set Content-Disposition "attachment"

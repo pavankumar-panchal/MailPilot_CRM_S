@@ -55,7 +55,9 @@ if (isset($_GET['export'])) {
     if ($type === 'valid') {
         $where[] = "domain_status = 1";
     } elseif ($type === 'invalid') {
+        // Match UI: invalid excludes timeout cases
         $where[] = "domain_status = 0";
+        $where[] = "(validation_response IS NULL OR (validation_response NOT LIKE '%timeout%' AND validation_response NOT LIKE '%Connection refused%' AND validation_response NOT LIKE '%failed to connect%'))";
     } elseif ($type === 'connection_timeout') {
         $where[] = "(validation_response LIKE '%timeout%' OR validation_response LIKE '%Connection refused%')";
         $filename = 'connection_timeout_emails.csv';
@@ -127,6 +129,9 @@ $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 100;
 $offset = ($page - 1) * $limit;
 
+// If limit is very high (e.g., 1000000), fetch all data without pagination
+$fetchAll = ($limit >= 1000000);
+
 $csv_list_id = isset($_GET['csv_list_id']) ? intval($_GET['csv_list_id']) : 0;
 $filter = isset($_GET['filter']) ? $_GET['filter'] : '';
 $whereParts = [];
@@ -145,9 +150,15 @@ if ($filter !== '') {
         $types .= 'i';
     }
     if ($filter === 'invalid') {
+        // Invalid excludes timeout cases to match UI
         $whereParts[] = "domain_status = ?";
         $params[] = 0;
         $types .= 'i';
+        $whereParts[] = "(validation_response IS NULL OR (validation_response NOT LIKE ? AND validation_response NOT LIKE ? AND validation_response NOT LIKE ?))";
+        $params[] = '%timeout%';
+        $params[] = '%Connection refused%';
+        $params[] = '%failed to connect%';
+        $types .= 'sss';
     }
     if ($filter === 'timeout') {
         $whereParts[] = "(validation_response LIKE ? OR validation_response LIKE ? OR validation_response LIKE ?)";
@@ -168,16 +179,27 @@ $countResult = $countStmt->get_result();
 $total = $countResult ? (int) $countResult->fetch_assoc()['cnt'] : 0;
 $countStmt->close();
 
-// Get paginated data
-$sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response 
-        FROM emails $where ORDER BY id ASC LIMIT ? OFFSET ?";
-$dataStmt = $conn->prepare($sql);
-if ($params) {
-    $typesWithLimit = $types . 'ii';
-    $dataParams = array_merge($params, [$limit, $offset]);
-    $dataStmt->bind_param($typesWithLimit, ...$dataParams);
+// Get data (with or without pagination)
+if ($fetchAll) {
+    // Fetch ALL data without pagination
+    $sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response 
+            FROM emails $where ORDER BY id ASC";
+    $dataStmt = $conn->prepare($sql);
+    if ($params) {
+        $dataStmt->bind_param($types, ...$params);
+    }
 } else {
-    $dataStmt->bind_param('ii', $limit, $offset);
+    // Fetch paginated data
+    $sql = "SELECT id, raw_emailid AS email, sp_account, sp_domain, domain_verified, domain_status, validation_response 
+            FROM emails $where ORDER BY id ASC LIMIT ? OFFSET ?";
+    $dataStmt = $conn->prepare($sql);
+    if ($params) {
+        $typesWithLimit = $types . 'ii';
+        $dataParams = array_merge($params, [$limit, $offset]);
+        $dataStmt->bind_param($typesWithLimit, ...$dataParams);
+    } else {
+        $dataStmt->bind_param('ii', $limit, $offset);
+    }
 }
 $dataStmt->execute();
 $result = $dataStmt->get_result();
@@ -194,6 +216,6 @@ echo json_encode([
     "data" => $emails,
     "total" => $total,
     "page" => $page,
-    "limit" => $limit
+    "limit" => $fetchAll ? $total : $limit
 ]);
 exit;

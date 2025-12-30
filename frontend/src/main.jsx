@@ -15,6 +15,7 @@ const Master = lazy(() => import("./pages/Master.jsx"));
 const EmailSent = lazy(() => import("./pages/monitor/EmailSent.jsx"));
 const ReceivedResponse = lazy(() => import("./pages/monitor/ReceivedResponse.jsx"));
 const Workers = lazy(() => import("./pages/Workers.jsx"));
+const MailTemplates = lazy(() => import("./pages/MailTemplates.jsx"));
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -28,6 +29,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/smtp" element={<Smtp />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/master" element={<Master />} />
+            <Route path="/mail-templates" element={<MailTemplates />} />
             <Route path="/monitor/email-sent" element={<EmailSent />} />
             <Route path="/monitor/received-response" element={<ReceivedResponse />} />
             <Route path="/workers" element={<Workers />} />

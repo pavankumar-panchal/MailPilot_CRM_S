@@ -10,6 +10,8 @@ const emptyCampaign = {
   attachment: null,
   existing_attachment: null, // Track existing attachment path
   images: [], // Track uploaded image paths
+  template_id: null, // Template selection
+  import_batch_id: null, // Imported recipients batch ID
 };
 
 // Glassmorphism Status Message Popup
@@ -17,7 +19,7 @@ const StatusMessage = ({ message, onClose }) =>
   message && (
     <div
       className={`
-        fixed top-6 left-1/2 transform -translate-x-1/2 z-50
+        fixed top-6 left-1/2 transform -translate-x-1/2
         px-6 py-3 rounded-xl shadow text-base font-semibold
         flex items-center gap-3
         transition-all duration-300
@@ -30,6 +32,7 @@ const StatusMessage = ({ message, onClose }) =>
       style={{
         minWidth: 250,
         maxWidth: 400,
+        zIndex: 99999,
         boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.23)",
         background:
           message.type === "error"
@@ -68,6 +71,15 @@ const Campaigns = () => {
   const [_uploadedImages, setUploadedImages] = useState([]); // Track images uploaded via Quill (unused directly)
   const [editId, setEditId] = useState(null);
   const [message, setMessage] = useState(null);
+  const [templates, setTemplates] = useState([]); // Mail templates
+  const [importBatches, setImportBatches] = useState([]); // Imported data batches
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  // Preview modal state
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
   // Status tracking removed; only Master page shows run state
 
   // Pagination state
@@ -82,6 +94,80 @@ const Campaigns = () => {
   const API_URL_CRUD = API_CONFIG.API_CAMPAIGNS; // For create, read, update, delete, and listing with previews
   const _API_URL_OPERATIONS = API_CONFIG.API_MASTER_CAMPAIGNS; // For start, pause, list status (not used on this page)
   const UPLOAD_IMAGE_URL = API_CONFIG.UPLOAD_IMAGE;
+
+  // Fetch mail templates
+  const fetchTemplates = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=list`);
+      const data = await res.json();
+      if (data.success) {
+        setTemplates(data.templates.filter(t => t.is_active == 1 || t.is_active === '1'));
+      }
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    }
+  }, [BASE_URL]);
+
+  // Fetch import batches
+  const fetchImportBatches = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=list`);
+      const data = await res.json();
+      if (data.success) {
+        setImportBatches(data.batches || []);
+      }
+    } catch (error) {
+      console.error('Failed to load import batches:', error);
+    }
+  }, [BASE_URL]);
+
+  // Handle file import
+  const handleImportFile = async () => {
+    if (!uploadFile) {
+      setMessage({ type: 'error', text: 'Please select a CSV or Excel file to import' });
+      return;
+    }
+
+    const ext = uploadFile.name.split('.').pop().toLowerCase();
+    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+      setMessage({ type: 'error', text: 'Please select a CSV or Excel (.xlsx, .xls) file' });
+      return;
+    }
+
+    setImporting(true);
+
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+
+    try {
+      const res = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=import`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: `✓ Imported ${data.imported} records! Batch ID: ${data.batch_id}` 
+        });
+        setImportModalOpen(false);
+        setUploadFile(null);
+        fetchImportBatches(); // Reload batches
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Import failed' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to import file: ' + error.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   // Fetch campaigns list (from CRUD endpoint to include mail_body and mail_body_preview)
   const fetchCampaigns = React.useCallback(async () => {
@@ -111,7 +197,9 @@ const Campaigns = () => {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [fetchCampaigns]);
+    fetchTemplates();
+    fetchImportBatches();
+  }, [fetchCampaigns, fetchTemplates, fetchImportBatches]);
 
   // Handle form input
   const handleChange = (e) => {
@@ -140,8 +228,8 @@ const Campaigns = () => {
     // Remove any protocol and domain
     let normalized = path.replace(/^https?:\/\/[^/]+/i, '');
     
-    // Remove common prefixes
-    normalized = normalized.replace(/^\/verify_emails\/MailPilot_CRM\/backend\//i, '');
+    // Remove common prefixes - handle both MailPilot_CRM and MailPilot_CRM_S
+    normalized = normalized.replace(/^\/verify_emails\/MailPilot_CRM(_S)?\/backend\//i, '');
     normalized = normalized.replace(/^\/backend\//i, '');
     normalized = normalized.replace(/^backend\//i, '');
     
@@ -163,16 +251,16 @@ const Campaigns = () => {
     // Replace all absolute URLs pointing to our backend storage with relative paths
     let processed = htmlBody;
     
-    // Pattern 1: Full localhost URLs
+    // Pattern 1: Full localhost URLs - handle both MailPilot_CRM and MailPilot_CRM_S
     processed = processed.replace(
-      /http:\/\/localhost\/verify_emails\/MailPilot_CRM\/backend\/(storage\/[^"'\s>]+)/gi,
-      '$1'
+      /http:\/\/localhost\/verify_emails\/MailPilot_CRM(_S)?\/backend\/(storage\/[^"'\s>]+)/gi,
+      '$2'
     );
     
     // Pattern 2: Protocol-relative or absolute paths
     processed = processed.replace(
-      /\/verify_emails\/MailPilot_CRM\/backend\/(storage\/[^"'\s>]+)/gi,
-      '$1'
+      /\/verify_emails\/MailPilot_CRM(_S)?\/backend\/(storage\/[^"'\s>]+)/gi,
+      '$2'
     );
     
     // Pattern 3: Just /backend/ prefix
@@ -212,15 +300,30 @@ const Campaigns = () => {
   const ensureAbsoluteBackendImagePaths = (htmlBody) => {
     if (!htmlBody) return htmlBody;
     
-    return htmlBody.replace(
+    // Replace relative paths with absolute URLs
+    let processed = htmlBody.replace(
       /src=(["'])(storage\/images\/[^"']+)\1/gi,
       (_, quote, relativePath) => `src=${quote}${BASE_URL}/backend/${relativePath}${quote}`
     );
+    
+    // Also handle paths that might already have /backend/ but missing the base URL
+    processed = processed.replace(
+      /src=(["'])\/backend\/(storage\/images\/[^"']+)\1/gi,
+      (_, quote, path) => `src=${quote}${BASE_URL}/backend/${path}${quote}`
+    );
+    
+    return processed;
   };
 
   // Add campaign
   const handleAdd = async (e) => {
     e.preventDefault();
+    
+    // Validate: Either template_id or mail_body must be provided
+    if (!form.template_id && (!form.mail_body || form.mail_body.trim() === '')) {
+      setMessage({ type: "error", text: "Please select a template or compose an email body." });
+      return;
+    }
     
     // Replace localhost URLs with relative paths before sending
     const processedBody = replaceLocalhostWithRelativePaths(form.mail_body);
@@ -232,8 +335,18 @@ const Campaigns = () => {
     const formData = new FormData();
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
-    formData.append("mail_body", processedBody);
+    formData.append("mail_body", processedBody || '');
     formData.append("send_as_html", "1"); // Always send as HTML for rich content
+    
+    // Add template_id if selected
+    if (form.template_id) {
+      formData.append("template_id", form.template_id);
+    }
+    
+    // Add import_batch_id if selected
+    if (form.import_batch_id) {
+      formData.append("import_batch_id", form.import_batch_id);
+    }
     
     if (attachmentFile) {
       formData.append("attachment", attachmentFile);
@@ -297,6 +410,8 @@ const Campaigns = () => {
         attachment: null,
         existing_attachment: data.attachment_path || null,
         images,
+        template_id: data.template_id || null,
+        import_batch_id: data.import_batch_id || null,
       });
       setAttachmentFile(null);
       setUploadedImages([]);
@@ -317,8 +432,16 @@ const Campaigns = () => {
     const formData = new FormData();
     formData.append("description", form.description);
     formData.append("mail_subject", form.mail_subject);
-    formData.append("mail_body", processedBody);
+    formData.append("mail_body", processedBody || '');
     formData.append("send_as_html", "1"); // Always send as HTML for rich content
+    
+    if (form.template_id) {
+      formData.append("template_id", form.template_id);
+    }
+    
+    if (form.import_batch_id) {
+      formData.append("import_batch_id", form.import_batch_id);
+    }
     
     if (attachmentFile) {
       formData.append("attachment", attachmentFile);
@@ -447,6 +570,76 @@ const Campaigns = () => {
     return snippet + (words.length > 30 ? "..." : "");
   };
 
+  // Get merged preview with real data for a specific email
+  const getMergedPreview = async (campaign, email = null) => {
+    try {
+      // If campaign uses template, merge with real data
+      if (campaign.template_id && (campaign.import_batch_id || campaign.csv_list_id)) {
+        const response = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=get&template_id=${campaign.template_id}`);
+        const templateData = await response.json();
+        
+        if (templateData.success) {
+          // Get sample data from the import/CSV
+          let sampleEmail = email;
+          
+          if (!sampleEmail) {
+            // Fetch first email from the batch or CSV list
+            if (campaign.import_batch_id) {
+              const recipientsRes = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=get_batch&batch_id=${campaign.import_batch_id}`);
+              const recipientsData = await recipientsRes.json();
+              if (recipientsData.success && recipientsData.recipients && recipientsData.recipients.length > 0) {
+                sampleEmail = recipientsData.recipients[0].Emails;
+              }
+            } else if (campaign.csv_list_id) {
+              const emailsRes = await fetch(`${BASE_URL}/backend/includes/get_csv_list.php?list_id=${campaign.csv_list_id}&limit=1`);
+              const emailsData = await emailsRes.json();
+              if (emailsData.emails && emailsData.emails.length > 0) {
+                sampleEmail = emailsData.emails[0].raw_emailid;
+              }
+            }
+          }
+          
+          // Merge template with data for preview
+          const previewRes = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=merge_preview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              template_html: templateData.template.template_html,
+              import_batch_id: campaign.import_batch_id,
+              csv_list_id: campaign.csv_list_id
+            })
+          });
+          
+          const previewData = await previewRes.json();
+          if (previewData.success) {
+            return previewData.merged_html;
+          }
+        }
+      }
+      
+      // Fallback to regular mail_body
+      return campaign.mail_body || '';
+    } catch (error) {
+      console.error('Error getting merged preview:', error);
+      return campaign.mail_body || '';
+    }
+  };
+
+  const handleViewPreview = async (campaign) => {
+    setPreviewLoading(true);
+    setPreviewModalOpen(true);
+    setPreviewHtml(''); // Clear previous content
+    try {
+      const html = await getMergedPreview(campaign);
+      setPreviewHtml(html);
+    } catch (error) {
+      console.error('Preview error:', error);
+      setPreviewHtml('<p>Error loading preview</p>');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.rowsPerPage));
   const paginatedCampaigns = campaigns.slice(
@@ -493,6 +686,13 @@ const Campaigns = () => {
                 </div>
               </div>
               <div className="flex flex-col gap-2 items-end ml-2">
+                <button
+                  onClick={() => handleViewPreview(c)}
+                  className="text-purple-600 hover:text-purple-800 p-1 rounded"
+                  title="View Email Preview"
+                >
+                  <i className="fas fa-eye text-xl"></i>
+                </button>
                 <button
                   onClick={() => handleEdit(c)}
                   className="text-blue-600 hover:text-blue-800 p-1 rounded"
@@ -639,6 +839,13 @@ const Campaigns = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {/* Send button removed - sending managed in Master page */}
+                        <button
+                          onClick={() => handleViewPreview(c)}
+                          className="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-50"
+                          title="View Email Preview"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
                         <button
                           onClick={() => handleEdit(c)}
                           className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
@@ -865,7 +1072,99 @@ const Campaigns = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
-                      Email Body
+                      <i className="fas fa-file-code mr-2 text-blue-600"></i>
+                      Mail Template (Optional)
+                    </label>
+                    <select
+                      name="template_id"
+                      className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                      value={form.template_id || ''}
+                      onChange={(e) => {
+                        const templateId = e.target.value ? parseInt(e.target.value) : null;
+                        setForm(prev => ({ ...prev, template_id: templateId }));
+                      }}
+                    >
+                      <option value="">No Template (Use Email Body below)</option>
+                      {templates.map(template => (
+                        <option key={template.template_id} value={template.template_id}>
+                          {template.template_name} {template.merge_fields && template.merge_fields.length > 0 ? `(${template.merge_fields.length} fields)` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {form.template_id && (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm text-green-800">
+                          <i className="fas fa-check-circle mr-2"></i>
+                          <strong>Template Selected:</strong> This template will be used as the email body.
+                          It will automatically merge with CSV data fields like [[Amount]], [[Days]], [[BilledName]], etc.
+                        </p>
+                        <p className="text-xs text-green-700 mt-1">
+                          <i className="fas fa-database mr-1"></i>
+                          Make sure your CSV file has columns matching the template merge fields.
+                        </p>
+                      </div>
+                    )}
+                    {!form.template_id && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <i className="fas fa-info-circle mr-1"></i>
+                        Select a template above to use pre-designed HTML with CSV data merging, or compose email body below.
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      <i className="fas fa-database mr-2 text-purple-600"></i>
+                      Import Recipients Data (Optional)
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        name="import_batch_id"
+                        className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                        value={form.import_batch_id || ''}
+                        onChange={(e) => {
+                          setForm(prev => ({ ...prev, import_batch_id: e.target.value || null }));
+                        }}
+                      >
+                        <option value="">No Imported Data (Use CSV list)</option>
+                        {importBatches.map(batch => (
+                          <option key={batch.import_batch_id} value={batch.import_batch_id}>
+                            {batch.import_filename} ({batch.record_count} records)
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setImportModalOpen(true)}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                        title="Import new Excel/CSV file"
+                      >
+                        <i className="fas fa-upload mr-2"></i>
+                        Import
+                      </button>
+                    </div>
+                    {form.import_batch_id && (
+                      <div className="mt-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <p className="text-sm text-purple-800">
+                          <i className="fas fa-check-circle mr-2"></i>
+                          <strong>Imported Data Selected:</strong> Template merge fields will use data from this import.
+                        </p>
+                        <p className="text-xs text-purple-700 mt-1">
+                          <i className="fas fa-info-circle mr-1"></i>
+                          Emails will be sent to all recipients in this import batch.
+                        </p>
+                      </div>
+                    )}
+                    {!form.import_batch_id && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <i className="fas fa-info-circle mr-1"></i>
+                        Import Excel data or use existing CSV lists for recipients.
+                      </p>
+                    )}
+                  </div>
+                  {!form.template_id && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Email Body <span className="text-red-500">*</span>
                     </label>
                     <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
                       <RichTextEditor
@@ -877,6 +1176,7 @@ const Campaigns = () => {
                       />
                     </div>
                   </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Attachment (Optional)
@@ -988,6 +1288,104 @@ const Campaigns = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <i className="fas fa-file-code mr-2 text-blue-600"></i>
+                        Mail Template (Optional)
+                      </label>
+                      <select
+                        name="template_id"
+                        className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                        value={form.template_id || ''}
+                        onChange={(e) => {
+                          const templateId = e.target.value ? parseInt(e.target.value) : null;
+                          setForm(prev => ({ ...prev, template_id: templateId }));
+                        }}
+                      >
+                        <option value="">No Template (Use Email Body below)</option>
+                        {templates.map(template => (
+                          <option key={template.template_id} value={template.template_id}>
+                            {template.template_name} {template.merge_fields && template.merge_fields.length > 0 ? `(${template.merge_fields.length} fields)` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {form.template_id && !form.import_batch_id && (
+                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                          <p className="text-sm text-yellow-800">
+                            <i className="fas fa-exclamation-triangle mr-2"></i>
+                            <strong>Warning:</strong> Template selected but no Excel data imported!
+                          </p>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            <i className="fas fa-arrow-down mr-1"></i>
+                            Please select an imported data batch below or import a new Excel file.
+                          </p>
+                        </div>
+                      )}
+                      {form.template_id && form.import_batch_id && (
+                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-800">
+                            <i className="fas fa-check-circle mr-2"></i>
+                            <strong>Template + Excel Data:</strong> Ready to merge!
+                          </p>
+                        </div>
+                      )}
+                      {!form.template_id && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <i className="fas fa-info-circle mr-1"></i>
+                          If template is selected, it will merge with Excel data fields like [[Amount]], [[Days]], etc.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <i className="fas fa-database mr-2 text-purple-600"></i>
+                        Import Recipients Data {form.template_id && <span className="text-red-500">* (Required for Template)</span>}
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          name="import_batch_id"
+                          className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors sm:text-sm"
+                          value={form.import_batch_id || ''}
+                          onChange={(e) => {
+                            setForm(prev => ({ ...prev, import_batch_id: e.target.value || null }));
+                          }}
+                        >
+                          <option value="">No Imported Data (Use CSV list)</option>
+                          {importBatches.map(batch => (
+                            <option key={batch.import_batch_id} value={batch.import_batch_id}>
+                              {batch.import_filename} ({batch.record_count} records)
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setImportModalOpen(true)}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                          title="Import new Excel/CSV file"
+                        >
+                          <i className="fas fa-upload mr-2"></i>
+                          Import
+                        </button>
+                      </div>
+                      {form.import_batch_id && (
+                        <div className="mt-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                          <p className="text-sm text-purple-800">
+                            <i className="fas fa-check-circle mr-2"></i>
+                            <strong>Imported Data Selected:</strong> Template merge fields will use data from this import.
+                          </p>
+                          <p className="text-xs text-purple-700 mt-1">
+                            <i className="fas fa-info-circle mr-1"></i>
+                            Emails will be sent to all recipients in this import batch.
+                          </p>
+                        </div>
+                      )}
+                      {!form.import_batch_id && !form.template_id && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <i className="fas fa-info-circle mr-1"></i>
+                          Import Excel data or use existing CSV lists for recipients.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         Email Body (Use image button in toolbar to add images)
                       </label>
                       <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm" style={{ zIndex: 1001 }}>
@@ -1076,6 +1474,175 @@ const Campaigns = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+              <h2 className="text-xl font-bold text-gray-800">
+                <i className="fas fa-upload mr-2 text-purple-600"></i>
+                Import Recipients Data
+              </h2>
+              <button
+                onClick={() => {
+                  setImportModalOpen(false);
+                  setUploadFile(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            <div className="px-6 py-4">
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  <i className="fas fa-info-circle mr-2"></i>
+                  Instructions:
+                </h3>
+                <ul className="text-sm text-blue-800 space-y-1 ml-4">
+                  <li>• Upload Excel (.xlsx, .xls) or CSV file directly</li>
+                  <li>• File must have an <strong>"email"</strong> column</li>
+                  <li>• Supported columns: name, company, phone, amount, days, bill_number, bill_date, executive_name, executive_contact</li>
+                  <li>• Any additional columns will be stored and available for templates</li>
+                </ul>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <i className="fas fa-file-excel mr-2 text-green-600"></i>
+                  Select Excel or CSV File
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors">
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => setUploadFile(e.target.files[0])}
+                    className="hidden"
+                    id="csvFileInput"
+                  />
+                  <label htmlFor="csvFileInput" className="cursor-pointer">
+                    <div className="text-gray-400 mb-2">
+                      <i className="fas fa-cloud-upload-alt text-5xl"></i>
+                    </div>
+                    <p className="text-gray-600 font-medium">
+                      Click to select Excel or CSV file
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Supports .xlsx, .xls, .csv
+                    </p>
+                  </label>
+                </div>
+                {uploadFile && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center">
+                      <i className={`fas ${uploadFile.name.endsWith('.csv') ? 'fa-file-csv' : 'fa-file-excel'} text-green-600 text-2xl mr-3`}></i>
+                      <div>
+                        <p className="font-medium text-gray-900">{uploadFile.name}</p>
+                        <p className="text-sm text-gray-600">{(uploadFile.size / 1024).toFixed(2)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setUploadFile(null)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportModalOpen(false);
+                    setUploadFile(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportFile}
+                  disabled={!uploadFile || importing}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {importing ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-upload mr-2"></i>
+                      Import Data
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Preview Modal */}
+      {previewModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-11/12 md:w-4/5 lg:w-3/4 max-w-6xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-gray-200 rounded-t-xl">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <i className="fas fa-eye text-purple-600"></i>
+                    Email Preview with Merged Data
+                  </h3>
+                  <button
+                    onClick={() => setPreviewModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-500 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    aria-label="Close"
+                  >
+                    <i className="fas fa-times text-lg"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="px-6 py-4">
+                {previewLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <i className="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
+                    <span className="ml-3 text-gray-600">Loading preview...</span>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <iframe
+                      srcDoc={previewHtml}
+                      className="w-full border-0 rounded-lg bg-white"
+                      style={{ minHeight: '500px', height: '70vh' }}
+                      title="Email Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setPreviewModalOpen(false)}
+                    className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

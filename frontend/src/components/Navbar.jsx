@@ -6,6 +6,7 @@ const navLinks = [
   { to: "/smtp", icon: "fa-server", label: "SMTP" },
   { to: "/workers", icon: "fa-users-cog", label: "Workers" },
   { to: "/campaigns", icon: "fa-bullhorn", label: "Campaigns" },
+  { to: "/mail-templates", icon: "fa-file-code", label: "Mail Templates" },
   { to: "/master", icon: "fa-crown", label: "Master" },
 ];
 

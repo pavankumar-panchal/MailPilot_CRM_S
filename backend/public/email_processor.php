@@ -102,6 +102,7 @@ try {
     $lineNumber = 1;
     $emailIndex = 0; // For worker distribution
     $seen = [];
+    $rejectedEmails = []; // Track rejected emails with reasons
 
     while (($data = fgetcsv($handle)) !== false) {
         $lineNumber++;
@@ -118,11 +119,17 @@ try {
         }
 
         // Basic email validation
+        $originalEmail = $email;
         $email = strtolower($email);
         $email = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $email); // Remove non-printable characters
         
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $invalidCount++;
+            $rejectedEmails[] = [
+                'email' => $originalEmail,
+                'reason' => 'Invalid email format',
+                'line' => $lineNumber
+            ];
             continue;
         }
 
@@ -130,6 +137,11 @@ try {
         $parts = explode('@', $email);
         if (count($parts) !== 2) {
             $invalidCount++;
+            $rejectedEmails[] = [
+                'email' => $originalEmail,
+                'reason' => 'Invalid email structure',
+                'line' => $lineNumber
+            ];
             continue;
         }
 
@@ -139,18 +151,33 @@ try {
         // Check if domain is excluded
         if (in_array($domain, $excludedDomains)) {
             $invalidCount++;
+            $rejectedEmails[] = [
+                'email' => $email,
+                'reason' => 'Excluded domain',
+                'line' => $lineNumber
+            ];
             continue;
         }
         
         // Check if account is excluded
         if (in_array($account, $excludedAccounts)) {
             $invalidCount++;
+            $rejectedEmails[] = [
+                'email' => $email,
+                'reason' => 'Excluded account',
+                'line' => $lineNumber
+            ];
             continue;
         }
 
         // De-duplicate within the uploaded file (case-insensitive)
         if (isset($seen[$email])) {
             $duplicateCount++;
+            $rejectedEmails[] = [
+                'email' => $email,
+                'reason' => 'Duplicate in file',
+                'line' => $lineNumber
+            ];
             continue;
         }
         $seen[$email] = true;
@@ -195,7 +222,15 @@ try {
     $filtered = [];
     foreach ($emails as $row) {
         $e = strtolower($row['raw_emailid']);
-        if (isset($existingSet[$e])) { $duplicateCount++; continue; }
+        if (isset($existingSet[$e])) {
+            $duplicateCount++;
+            $rejectedEmails[] = [
+                'email' => $row['raw_emailid'],
+                'reason' => 'Already exists in database',
+                'line' => 'N/A'
+            ];
+            continue;
+        }
         $filtered[] = $row;
     }
 
@@ -268,16 +303,25 @@ try {
             exec($cmd);
         }
 
-        echo json_encode([
+        $response = [
             'status' => 'success',
             'message' => "Successfully uploaded {$validCount} valid emails. Domain verification started.",
             'data' => [
                 'csv_list_id' => $csvListId,
                 'valid_count' => $validCount,
                 'invalid_count' => $invalidCount,
+                'duplicate_count' => $duplicateCount,
+                'rejected_count' => count($rejectedEmails),
                 'total_emails' => $totalEmails,
             ]
-        ]);
+        ];
+        
+        // Include rejected emails data if exists (don't save to file)
+        if (!empty($rejectedEmails)) {
+            $response['data']['rejected_emails'] = $rejectedEmails;
+        }
+        
+        echo json_encode($response);
 
     } catch (Exception $e) {
         $conn->rollback();

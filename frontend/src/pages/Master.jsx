@@ -19,6 +19,10 @@ const Master = () => {
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [selectedCampaignForModal, setSelectedCampaignForModal] = useState(null);
   const [csvSearchQuery, setCsvSearchQuery] = useState('');
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [templatePreviewData, setTemplatePreviewData] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -240,6 +244,9 @@ const Master = () => {
         [campaignId]: csvListId
       }));
       
+      // Refresh campaigns to get updated csv_list_valid_count
+      await fetchData();
+      
       // Refresh email counts to reflect the new CSV list selection
       await fetchEmailCounts(campaignId);
       
@@ -250,7 +257,7 @@ const Master = () => {
         text: error.response?.data?.error || "Failed to save CSV list selection"
       });
     }
-  }, [fetchEmailCounts]);
+  }, [fetchEmailCounts, fetchData]);
 
   // Open CSV selection modal
   const openCsvModal = useCallback((campaignId) => {
@@ -274,6 +281,46 @@ const Master = () => {
     if (!csvListId) return null;
     return csvLists.find(list => list.id === parseInt(csvListId));
   }, [campaignCsvListSelections, csvLists]);
+
+  // Show template preview
+  const showTemplatePreviewModal = useCallback(async (campaignId, emailIndex = 0) => {
+    setLoadingPreview(true);
+    setShowTemplatePreview(true);
+    setCurrentEmailIndex(emailIndex);
+    try {
+      const res = await axios.post(API_PUBLIC_URL, {
+        action: 'get_template_preview',
+        campaign_id: campaignId,
+        email_index: emailIndex
+      });
+      if (res.data.success) {
+        console.log('Template preview data received:', res.data.data);
+        console.log('Current email data:', res.data.data.current_email);
+        setTemplatePreviewData(res.data.data);
+      } else {
+        setMessage({ type: 'error', text: res.data.message || 'Failed to load template preview' });
+        setShowTemplatePreview(false);
+      }
+    } catch (error) {
+      console.error('Template preview error:', error);
+      setMessage({ type: 'error', text: 'Failed to load template preview' });
+      setShowTemplatePreview(false);
+    } finally {
+      setLoadingPreview(false);
+    }
+  }, []);
+
+  // Navigate to different email in preview
+  const changePreviewEmail = useCallback((campaignId, newIndex) => {
+    showTemplatePreviewModal(campaignId, newIndex);
+  }, [showTemplatePreviewModal]);
+
+  // Close template preview
+  const closeTemplatePreview = useCallback(() => {
+    setShowTemplatePreview(false);
+    setTemplatePreviewData(null);
+    setCurrentEmailIndex(0);
+  }, []);
 
   // Initialize CSV list selections from campaigns
   useEffect(() => {
@@ -303,9 +350,17 @@ const Master = () => {
           {paginatedCampaigns.map((campaign) => {
             const counts = emailCounts[campaign.campaign_id] || {};
             const selectedCsvList = getSelectedCsvList(campaign.campaign_id);
-            const emailCount = selectedCsvList 
-              ? (selectedCsvList.valid_count || 0) 
-              : Number(campaign.valid_emails || 0);
+            const isTemplateImport = campaign.import_batch_id || campaign.email_source === 'imported_recipients';
+            
+            // Determine email count based on source
+            let emailCount;
+            if (campaign.csv_list_valid_count !== undefined && campaign.csv_list_valid_count !== null) {
+              emailCount = Number(campaign.csv_list_valid_count);
+            } else if (selectedCsvList?.valid_count) {
+              emailCount = Number(selectedCsvList.valid_count);
+            } else {
+              emailCount = Number(campaign.valid_emails || 0);
+            }
 
             return (
               <div
@@ -324,15 +379,32 @@ const Master = () => {
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-xs sm:text-sm font-medium">
                           <i className="fas fa-envelope mr-1"></i>
-                          {emailCount.toLocaleString()} {selectedCsvList ? 'Valid' : ''} Emails
+                          {emailCount.toLocaleString()} Emails
                         </span>
-                        {selectedCsvList && (
+                        {isTemplateImport && (
+                          <>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-xs sm:text-sm font-medium">
+                              <i className="fas fa-file-excel mr-1"></i>
+                              Excel Import
+                            </span>
+                            {campaign.template_id && (
+                              <button
+                                onClick={() => showTemplatePreviewModal(campaign.campaign_id)}
+                                className="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs sm:text-sm font-medium hover:bg-indigo-200 transition-colors"
+                              >
+                                <i className="fas fa-eye mr-1"></i>
+                                Preview Template
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {!isTemplateImport && selectedCsvList && (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium">
                             <i className="fas fa-list mr-1"></i>
                             {selectedCsvList.list_name}
                           </span>
                         )}
-                        {campaign.csv_list_name && !selectedCsvList && (
+                        {!isTemplateImport && campaign.csv_list_name && !selectedCsvList && (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium">
                             <i className="fas fa-list mr-1"></i>
                             {campaign.csv_list_name}
@@ -366,22 +438,31 @@ const Master = () => {
                         </span>
                       ) : (
                         <>
-                          <button
-                            onClick={() => openCsvModal(campaign.campaign_id)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-w-[180px] text-left"
-                          >
-                            {(() => {
-                              const selected = getSelectedCsvList(campaign.campaign_id);
-                              return selected ? (
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-gray-900">{selected.list_name}</span>
-                                  <span className="text-xs text-gray-500">{campaign.csv_list_valid_count || selected.valid_count || 0} valid emails</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-600"><i className="fas fa-list mr-1"></i>Select CSV List</span>
-                              );
-                            })()}
-                          </button>
+                          {isTemplateImport ? (
+                            <div className="px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 min-w-[180px] text-left opacity-60 cursor-not-allowed">
+                              <div className="flex items-center text-gray-500">
+                                <i className="fas fa-lock mr-2"></i>
+                                <span>Using Imported Emails</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => openCsvModal(campaign.campaign_id)}
+                              className="px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-w-[180px] text-left"
+                            >
+                              {(() => {
+                                const selected = getSelectedCsvList(campaign.campaign_id);
+                                return selected ? (
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-gray-900">{selected.list_name}</span>
+                                    <span className="text-xs text-gray-500">{campaign.csv_list_valid_count || selected.valid_count || 0} valid emails</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-600"><i className="fas fa-list mr-1"></i>Select CSV List</span>
+                                );
+                              })()}
+                            </button>
+                          )}
                           <button
                             onClick={() => startCampaign(campaign.campaign_id)}
                             className="px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-lg text-xs sm:text-sm font-medium"
@@ -694,6 +775,240 @@ const Master = () => {
           </div>
         </div>
       )}
+
+      {/* Template Preview Modal */}
+      {showTemplatePreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                    <i className="fas fa-envelope-open-text text-indigo-600 mr-3"></i>
+                    Email Template Preview
+                  </h3>
+                  {templatePreviewData && (
+                    <p className="text-sm text-gray-600 mt-1 flex items-center gap-3">
+                      <span className="font-medium">{templatePreviewData.template_name}</span>
+                      <span className="text-gray-400">•</span>
+                      <span>{templatePreviewData.campaign_name}</span>
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={closeTemplatePreview}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-white transition-colors ml-4"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+
+              {/* Email Navigation */}
+              {templatePreviewData && templatePreviewData.has_sample_data && (
+                <div className="mt-4 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Navigation Controls */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.max(0, currentEmailIndex - 1))}
+                        disabled={currentEmailIndex === 0 || loadingPreview}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                      >
+                        <i className="fas fa-chevron-left mr-2"></i>
+                        Previous
+                      </button>
+                      <div className="px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+                        <span className="text-sm font-bold text-indigo-900">
+                          Email {currentEmailIndex + 1} <span className="text-indigo-400 mx-1">of</span> {templatePreviewData.total_emails.toLocaleString()}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.min(templatePreviewData.total_emails - 1, currentEmailIndex + 1))}
+                        disabled={currentEmailIndex >= templatePreviewData.total_emails - 1 || loadingPreview}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                      >
+                        Next
+                        <i className="fas fa-chevron-right ml-2"></i>
+                      </button>
+                    </div>
+                    
+                    {/* Current Email Info */}
+                    {templatePreviewData.current_email && (
+                      <div className="flex-1 ml-4 pl-4 border-l-2 border-indigo-200">
+                        <div className="flex items-start gap-2">
+                          <i className="fas fa-user-circle text-indigo-600 text-xl mt-0.5"></i>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900 flex items-center gap-2">
+                              {templatePreviewData.current_email.Emails || 
+                               templatePreviewData.current_email.Email || 
+                               templatePreviewData.current_email.email ||
+                               templatePreviewData.current_email.raw_emailid ||
+                               templatePreviewData.recipient_email ||
+                               templatePreviewData.to ||
+                               'Email not available'}
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                                <i className="fas fa-check-circle mr-1"></i>Valid
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1 flex flex-wrap items-center gap-3">
+                              {/* Show only key fields - max 4 */}
+                              {(templatePreviewData.current_email['Billed Name'] || 
+                                templatePreviewData.current_email.BilledName || 
+                                templatePreviewData.current_email.Name) && (
+                                <span className="flex items-center">
+                                  <i className="fas fa-building text-gray-400 mr-1"></i>
+                                  {templatePreviewData.current_email['Billed Name'] || 
+                                   templatePreviewData.current_email.BilledName || 
+                                   templatePreviewData.current_email.Name}
+                                </span>
+                              )}
+                              {templatePreviewData.current_email.Amount && (
+                                <span className="flex items-center">
+                                  <i className="fas fa-rupee-sign text-gray-400 mr-1"></i>
+                                  {templatePreviewData.current_email.Amount}
+                                </span>
+                              )}
+                              {templatePreviewData.current_email.Days && (
+                                <span className="flex items-center">
+                                  <i className="fas fa-calendar-day text-gray-400 mr-1"></i>
+                                  {templatePreviewData.current_email.Days} days
+                                </span>
+                              )}
+                              {(templatePreviewData.current_email['Bill Number'] || 
+                                templatePreviewData.current_email.BillNumber) && (
+                                <span className="flex items-center">
+                                  <i className="fas fa-file-invoice text-gray-400 mr-1"></i>
+                                  {templatePreviewData.current_email['Bill Number'] || 
+                                   templatePreviewData.current_email.BillNumber}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-hidden flex">
+              {loadingPreview ? (
+                <div className="flex-1 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <i className="fas fa-spinner fa-spin text-5xl text-indigo-600 mb-4"></i>
+                    <p className="text-gray-600 font-medium">Loading email preview...</p>
+                    <p className="text-sm text-gray-500 mt-2">Merging template with recipient data</p>
+                  </div>
+                </div>
+              ) : templatePreviewData ? (
+                <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+                  {!templatePreviewData.has_sample_data && (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4 mb-6 shadow-sm">
+                      <div className="flex items-start">
+                        <i className="fas fa-exclamation-triangle text-yellow-600 text-xl mt-0.5 mr-3"></i>
+                        <div>
+                          <p className="font-semibold text-yellow-800">No Sample Data Available</p>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            Showing template without merged data. Upload Excel data to see personalized preview with actual values.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Email Preview Frame */}
+                  <div className="mx-auto" style={{ maxWidth: '800px' }}>
+                    {/* Email Client Mock Header */}
+                    <div className="bg-white rounded-t-xl shadow-lg border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div className="text-xs text-gray-500 font-medium">Email Preview</div>
+                        <div className="flex items-center gap-2">
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <i className="fas fa-search text-sm"></i>
+                          </button>
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <i className="fas fa-ellipsis-v text-sm"></i>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Email Meta Info */}
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start">
+                          <span className="text-gray-500 font-medium w-16">From:</span>
+                          <span className="text-gray-900 flex-1">Your Company &lt;noreply@yourcompany.com&gt;</span>
+                        </div>
+                        {templatePreviewData.current_email && (
+                          <div className="flex items-start">
+                            <span className="text-gray-500 font-medium w-16">To:</span>
+                            <span className="text-gray-900 flex-1">{templatePreviewData.current_email.Emails || templatePreviewData.current_email.Email || 'recipient@example.com'}</span>
+                          </div>
+                        )}
+                        <div className="flex items-start">
+                          <span className="text-gray-500 font-medium w-16">Subject:</span>
+                          <span className="text-gray-900 flex-1 font-semibold">
+                            {templatePreviewData.campaign_name}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Email Body Frame */}
+                    <div className="bg-white shadow-lg border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
+                      <div 
+                        className="email-preview-body p-6"
+                        style={{
+                          minHeight: '400px',
+                          fontFamily: 'system-ui, -apple-system, sans-serif'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: templatePreviewData.template_html }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50">
+                  <div className="text-center">
+                    <i className="fas fa-file-alt text-5xl mb-4 text-gray-300"></i>
+                    <p className="text-lg font-medium">No template data available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  {templatePreviewData && templatePreviewData.has_sample_data && (
+                    <>
+                      <i className="fas fa-info-circle text-indigo-600"></i>
+                      <span>Use <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Previous</kbd> / <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Next</kbd> to browse different recipients</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={closeTemplatePreview}
+                    className="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md"
+                  >
+                    <i className="fas fa-times mr-2"></i>
+                    Close Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };// Memoized status badge component
@@ -720,7 +1035,7 @@ const StatusMessage = React.memo(({ message, onClose }) => {
   if (!message) return null;
 
   return (
-    <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50
+    <div className={`fixed top-6 left-1/2 transform -translate-x-1/2
       px-6 py-3 rounded-xl shadow text-base font-semibold
       flex items-center gap-3
       ${message.type === "error"
@@ -730,6 +1045,7 @@ const StatusMessage = React.memo(({ message, onClose }) => {
       style={{
         minWidth: 250,
         maxWidth: 400,
+        zIndex: 99999,
         boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.23)",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
