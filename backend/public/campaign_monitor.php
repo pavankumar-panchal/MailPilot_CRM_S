@@ -94,6 +94,44 @@ try {
                 $actual_failed = intval($stats['actual_failed']);
                 $total_in_blaster = intval($stats['total_in_blaster']);
                 
+                // CRITICAL: Check for unclaimed emails (not in mail_blaster yet)
+                $unclaimed = 0;
+                if ($import_batch_id) {
+                    $batch_escaped = $conn->real_escape_string($import_batch_id);
+                    $unclaimedRes = $conn->query("
+                        SELECT COUNT(*) as unclaimed FROM imported_recipients ir
+                        WHERE ir.import_batch_id = '$batch_escaped'
+                        AND ir.is_active = 1
+                        AND ir.Emails IS NOT NULL
+                        AND ir.Emails <> ''
+                        AND NOT EXISTS (
+                            SELECT 1 FROM mail_blaster mb
+                            WHERE mb.campaign_id = $campaign_id
+                            AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
+                        )
+                    ");
+                    if ($unclaimedRes) {
+                        $unclaimed = intval($unclaimedRes->fetch_assoc()['unclaimed']);
+                    }
+                } elseif ($csv_list_id > 0) {
+                    $unclaimedRes = $conn->query("
+                        SELECT COUNT(*) as unclaimed FROM emails e
+                        WHERE e.domain_status = 1
+                        AND e.validation_status = 'valid'
+                        AND e.raw_emailid IS NOT NULL
+                        AND e.raw_emailid <> ''
+                        AND e.csv_list_id = $csv_list_id
+                        AND NOT EXISTS (
+                            SELECT 1 FROM mail_blaster mb
+                            WHERE mb.campaign_id = $campaign_id
+                            AND mb.to_mail = e.raw_emailid
+                        )
+                    ");
+                    if ($unclaimedRes) {
+                        $unclaimed = intval($unclaimedRes->fetch_assoc()['unclaimed']);
+                    }
+                }
+                
                 // Get expected total from source (fallback to mail_blaster count if source total is 0)
                 $expected_total = 0;
                 if ($import_batch_id) {
@@ -135,12 +173,13 @@ try {
                 $pending_in_blaster = max(0, $total_in_blaster - $actual_sent - $actual_failed);
 
                 // Determine if campaign should be completed
-                // Completed if: all emails processed (sent + failed >= expected_total) OR
-                // mail_blaster shows no pending rows
+                // ONLY mark completed when ALL emails are claimed (unclaimed = 0) AND processed
                 $should_complete = false;
-                if ($expected_total > 0 && ($actual_sent + $actual_failed) >= $expected_total) {
+                if ($unclaimed === 0 && $expected_total > 0 && ($actual_sent + $actual_failed) >= $expected_total) {
+                    // No unclaimed emails AND all expected emails are processed
                     $should_complete = true;
-                } elseif ($total_in_blaster > 0 && $pending_in_blaster === 0 && $expected_total > 0) {
+                } elseif ($unclaimed === 0 && $total_in_blaster > 0 && $pending_in_blaster === 0 && $expected_total > 0) {
+                    // No unclaimed emails AND all in mail_blaster are processed
                     $should_complete = true;
                 }
                 
