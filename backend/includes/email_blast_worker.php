@@ -278,12 +278,34 @@
     function sendEmail($conn, $campaign_id, $to_email, $server, $account, $campaign, $csv_list_id = null) {
         if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) { throw new Exception("Invalid email: $to_email"); }
         
-        // CRITICAL: Check if this email was already sent successfully for this campaign
-        $checkExisting = $conn->query("SELECT status FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '" . $conn->real_escape_string($to_email) . "' AND status = 'success' LIMIT 1");
+        // CRITICAL: Start transaction and lock the row IMMEDIATELY to prevent duplicates
+        $conn->query("START TRANSACTION");
+        
+        $to_escaped = $conn->real_escape_string($to_email);
+        $checkExisting = $conn->query("SELECT status, smtpid FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
+        
         if ($checkExisting && $checkExisting->num_rows > 0) {
-            workerLog("SKIP: Email $to_email already sent successfully for campaign $campaign_id");
-            throw new Exception("Duplicate prevented: Email already sent successfully");
+            $existing = $checkExisting->fetch_assoc();
+            
+            // Already sent successfully - abort
+            if ($existing['status'] === 'success') {
+                $conn->query("ROLLBACK");
+                workerLog("SKIP: Email $to_email already sent successfully for campaign $campaign_id");
+                throw new Exception("Duplicate prevented: Email already sent successfully");
+            }
+            
+            // Being processed by another worker - abort
+            if ($existing['status'] === 'pending' && $existing['smtpid'] != $account['id']) {
+                $conn->query("ROLLBACK");
+                workerLog("SKIP: Email $to_email is being processed by another worker (SMTP #{$existing['smtpid']})");
+                throw new Exception("Duplicate prevented: Email being processed by another worker");
+            }
+            
+            // Update to mark this worker is now sending it
+            $conn->query("UPDATE mail_blaster SET smtpid = {$account['id']}, delivery_date = CURDATE(), delivery_time = CURTIME() WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped'");
         }
+        
+        $conn->query("COMMIT");
         
         $mail = new PHPMailer(true);
         $mail->isSMTP();
@@ -680,7 +702,7 @@
                     AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
                 )
                 ORDER BY ir.id ASC 
-                LIMIT 1 OFFSET $offset");
+                LIMIT 1 OFFSET $offset LOCK IN SHARE MODE");
             workerLog("claimNextEmail: Query result: " . ($res ? "SUCCESS" : "FAILED") . " rows=" . ($res ? $res->num_rows : 0) . " error=" . $conn->error);
         } else {
             // Fetch from emails table (original CSV logic)
@@ -698,7 +720,7 @@
                 )
                 ORDER BY e.id ASC 
                 LIMIT 1 OFFSET $offset
-                FOR UPDATE");
+                LOCK IN SHARE MODE");
         }
             
         if (!$res || $res->num_rows === 0) {
@@ -721,7 +743,7 @@
                             AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
                         )
                         ORDER BY ir.id ASC 
-                        LIMIT 1");
+                        LIMIT 1 LOCK IN SHARE MODE");
                     workerLog("claimNextEmail: Retry result: " . ($res ? "SUCCESS" : "FAILED") . " rows=" . ($res ? $res->num_rows : 0) . " error=" . $conn->error);
                 } else {
                     $res = $conn->query("SELECT e.id, e.raw_emailid AS to_mail, e.csv_list_id 
@@ -738,7 +760,7 @@
                         )
                         ORDER BY e.id ASC 
                         LIMIT 1
-                        FOR UPDATE");
+                        LOCK IN SHARE MODE");
                 }
             }
             

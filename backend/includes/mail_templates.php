@@ -297,6 +297,16 @@ function mergePreview($conn) {
             // Add common aliases
             if (isset($row['Group Name'])) $realData['Company'] = $row['Group Name'];
             if (isset($row['BilledName'])) $realData['Name'] = $row['BilledName'];
+            if (isset($row['Emails'])) $realData['Email'] = $row['Emails'];
+            
+            // Add case variants for all fields
+            $caseVariants = [];
+            foreach ($realData as $key => $value) {
+                $caseVariants[$key] = $value;
+                $caseVariants[strtoupper($key)] = $value;
+                $caseVariants[strtolower($key)] = $value;
+            }
+            $realData = $caseVariants;
         }
     } elseif ($csv_list_id > 0) {
         // Get first row from emails table
@@ -370,6 +380,7 @@ function extractMergeFields($html) {
 /**
  * Merge template with data
  * Replaces [[FieldName]] with actual values
+ * Uses intelligent field mapping from template_merge_helper.php
  */
 function mergeTemplate($html, $data) {
     // Add current date if not provided
@@ -377,10 +388,7 @@ function mergeTemplate($html, $data) {
         $data['CurrentDate'] = date('F jS, Y');
     }
     
-    foreach ($data as $key => $value) {
-        $placeholder = '[[' . $key . ']]';
-        $html = str_replace($placeholder, $value, $html);
-    }
-    
-    return $html;
+    // Use the intelligent merge function from template_merge_helper
+    require_once __DIR__ . '/template_merge_helper.php';
+    return mergeTemplateWithData($html, $data);
 }

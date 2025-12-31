@@ -280,19 +280,52 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Generate unique batch ID
     $batchId = 'BATCH_' . date('Ymd_His') . '_' . uniqid();
     
-    // Map by exact column position (index), not by column name matching
-    // Based on Excel structure: BillDate(0), BillNumber(1), BilledName(2), Group Name(3), 
-    // ExecutiveName(4), ExecutiveContact(5), Amount(6), Days(7), empty(8), Emails(9)
-    $columnPositions = [
-        0 => 'BillDate',
-        1 => 'BillNumber', 
-        2 => 'BilledName',
-        3 => 'Group Name',
-        4 => 'ExecutiveName',
-        5 => 'ExecutiveContact',
-        6 => 'Amount',
-        7 => 'Days',
-        9 => 'Emails',  // Skip index 8 (empty column)
+    // Create a mapping of Excel column names to database fields
+    // This allows ANY Excel structure to work dynamically
+    $knownFields = [
+        // Common fields (multiple variations)
+        'email' => 'Emails', 'emails' => 'Emails', 'e-mail' => 'Emails', 'emailid' => 'Emails',
+        'email id' => 'Emails', 'email_id' => 'Emails', 'emailaddress' => 'Emails',
+        
+        // Invoice fields
+        'billdate' => 'BillDate', 'bill date' => 'BillDate', 'bill_date' => 'BillDate',
+        'billnumber' => 'BillNumber', 'bill number' => 'BillNumber', 'bill_number' => 'BillNumber',
+        'billedname' => 'BilledName', 'billed name' => 'BilledName', 'billed_name' => 'BilledName',
+        'groupname' => 'Group Name', 'group name' => 'Group Name', 'group_name' => 'Group Name',
+        'executivename' => 'ExecutiveName', 'executive name' => 'ExecutiveName', 'executive_name' => 'ExecutiveName',
+        'executivecontact' => 'ExecutiveContact', 'executive contact' => 'ExecutiveContact', 'executive_contact' => 'ExecutiveContact',
+        'amount' => 'Amount',
+        'days' => 'Days',
+        
+        // Customer/TDS fields
+        'slno' => 'SlNo', 'sl no' => 'SlNo', 'sl_no' => 'SlNo', 'sno' => 'SlNo',
+        'customerid' => 'CustomerID', 'customer id' => 'CustomerID', 'customer_id' => 'CustomerID',
+        'company' => 'Company',
+        'contactperson' => 'ContactPerson', 'contact person' => 'ContactPerson', 'contact_person' => 'ContactPerson',
+        'address' => 'Address',
+        'place' => 'Place',
+        'pincode' => 'Pincode', 'pin code' => 'Pincode', 'pin_code' => 'Pincode',
+        'district' => 'District',
+        'state' => 'State',
+        'cell' => 'Cell', 'cellno' => 'Cell', 'cell no' => 'Cell',
+        'phone' => 'Phone', 'phoneno' => 'Phone', 'phone no' => 'Phone',
+        'region' => 'Region',
+        'branch' => 'Branch',
+        'type' => 'Type',
+        'category' => 'Category',
+        'productgroup' => 'ProductGroup', 'product group' => 'ProductGroup', 'product_group' => 'ProductGroup',
+        'lastproduct' => 'LastProduct', 'last product' => 'LastProduct', 'last_product' => 'LastProduct',
+        'usagetype' => 'UsageType', 'usage type' => 'UsageType', 'usage_type' => 'UsageType',
+        'lastyear' => 'LastYear', 'last year' => 'LastYear', 'last_year' => 'LastYear',
+        'lastlicenses' => 'LastLicenses', 'last licenses' => 'LastLicenses', 'last_licenses' => 'LastLicenses',
+        'lastregdate' => 'LastRegDate', 'last reg date' => 'LastRegDate', 'last_reg_date' => 'LastRegDate',
+        'dealername' => 'DealerName', 'dealer name' => 'DealerName', 'dealer_name' => 'DealerName',
+        'dealeremail' => 'DealerEmail', 'dealer email' => 'DealerEmail', 'dealer_email' => 'DealerEmail',
+        'dealercell' => 'DealerCell', 'dealer cell' => 'DealerCell', 'dealer_cell' => 'DealerCell',
+        'price' => 'Price',
+        'tax' => 'Tax',
+        'netprice' => 'NetPrice', 'net price' => 'NetPrice', 'net_price' => 'NetPrice',
+        'edition' => 'Edition',
     ];
     
     // Start transaction
@@ -326,102 +359,40 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Initialize all fields to null
             $data = [
-                // Common fields
-                'Emails' => null,
-                'Phone' => null,
-                
-                // Invoice file fields (Final -naveen)
-                'BillDate' => null,
-                'BillNumber' => null,
-                'BilledName' => null,
-                'Group Name' => null,
-                'ExecutiveName' => null,
-                'ExecutiveContact' => null,
-                'Amount' => null,
-                'Days' => null,
-                
-                // Customer file fields (TDS Report)
-                'CustomerID' => null,
-                'Company' => null,
-                'ContactPerson' => null,
-                'Address' => null,
-                'Place' => null,
-                'Pincode' => null,
-                'District' => null,
-                'State' => null,
-                'Cell' => null,
-                'Region' => null,
-                'Branch' => null,
-                'Type' => null,
-                'Category' => null,
-                'ProductGroup' => null,
-                'LastProduct' => null,
-                'UsageType' => null,
-                'LastYear' => null,
-                'LastLicenses' => null,
-                'LastRegDate' => null,
-                'DealerName' => null,
-                'DealerEmail' => null,
-                'DealerCell' => null,
-                'Price' => null,
-                'Tax' => null,
-                'NetPrice' => null,
-                'Edition' => null,
-                'SlNo' => null,
+                'Emails' => null, 'Phone' => null, 'BillDate' => null, 'BillNumber' => null,
+                'BilledName' => null, 'Group Name' => null, 'ExecutiveName' => null,
+                'ExecutiveContact' => null, 'Amount' => null, 'Days' => null,
+                'CustomerID' => null, 'Company' => null, 'ContactPerson' => null,
+                'Address' => null, 'Place' => null, 'Pincode' => null, 'District' => null,
+                'State' => null, 'Cell' => null, 'Region' => null, 'Branch' => null,
+                'Type' => null, 'Category' => null, 'ProductGroup' => null,
+                'LastProduct' => null, 'UsageType' => null, 'LastYear' => null,
+                'LastLicenses' => null, 'LastRegDate' => null, 'DealerName' => null,
+                'DealerEmail' => null, 'DealerCell' => null, 'Price' => null,
+                'Tax' => null, 'NetPrice' => null, 'Edition' => null, 'SlNo' => null,
             ];
             
-            // Map based on file type
-            if ($fileType === 'invoice') {
-                // Final -naveen.xlsx format (hardcoded positions)
-                $data['BillDate'] = isset($row[0]) ? trim($row[0]) : null;
-                $data['BillNumber'] = isset($row[1]) ? trim($row[1]) : null;
-                $data['BilledName'] = isset($row[2]) ? trim($row[2]) : null;
-                $data['Group Name'] = isset($row[3]) ? trim($row[3]) : null;
-                $data['ExecutiveName'] = isset($row[4]) ? trim($row[4]) : null;
-                $data['ExecutiveContact'] = isset($row[5]) ? trim($row[5]) : null;
-                $data['Amount'] = isset($row[6]) ? trim($row[6]) : null;
-                $data['Days'] = isset($row[8]) ? trim($row[8]) : null; // Position 8 (Column I)
-                $data['Emails'] = isset($row[9]) ? trim($row[9]) : null; // Position 9 (Column J)
-            } else {
-                // TDS Report or other format - use header-based mapping
-                foreach ($headers as $colIndex => $headerName) {
-                    $normalizedHeader = strtolower(str_replace([' ', '_', '-'], '', $headerName));
-                    $value = isset($row[$colIndex]) ? trim($row[$colIndex]) : null;
-                    
-                    // Map to appropriate field
-                    switch ($normalizedHeader) {
-                        case 'slno': $data['SlNo'] = $value; break;
-                        case 'customerid': $data['CustomerID'] = $value; break;
-                        case 'company': $data['Company'] = $value; break;
-                        case 'contactperson': $data['ContactPerson'] = $value; break;
-                        case 'address': $data['Address'] = $value; break;
-                        case 'place': $data['Place'] = $value; break;
-                        case 'pincode': $data['Pincode'] = $value; break;
-                        case 'district': $data['District'] = $value; break;
-                        case 'state': $data['State'] = $value; break;
-                        case 'cell': $data['Cell'] = $value; break;
-                        case 'phone': $data['Phone'] = $value; break;
-                        case 'region': $data['Region'] = $value; break;
-                        case 'branch': $data['Branch'] = $value; break;
-                        case 'type': $data['Type'] = $value; break;
-                        case 'category': $data['Category'] = $value; break;
-                        case 'productgroup': $data['ProductGroup'] = $value; break;
-                        case 'lastproduct': $data['LastProduct'] = $value; break;
-                        case 'usagetype': $data['UsageType'] = $value; break;
-                        case 'lastyear': $data['LastYear'] = $value; break;
-                        case 'lastlicenses': $data['LastLicenses'] = $value; break;
-                        case 'lastregdate': $data['LastRegDate'] = $value; break;
-                        case 'dealername': $data['DealerName'] = $value; break;
-                        case 'dealeremail': $data['DealerEmail'] = $value; break;
-                        case 'dealercell': $data['DealerCell'] = $value; break;
-                        case 'relyonexecutive': $data['ExecutiveName'] = $value; break;
-                        case 'price': $data['Price'] = $value; break;
-                        case 'tax': $data['Tax'] = $value; break;
-                        case 'netprice': $data['NetPrice'] = $value; break;
-                        case 'edition': $data['Edition'] = $value; break;
-                        case 'email':
-                        case 'emails': $data['Emails'] = $value; break;
-                    }
+            $extraData = []; // Store unmapped columns
+            
+            // DYNAMIC MAPPING: Map Excel columns to database fields
+            foreach ($headers as $colIndex => $headerName) {
+                $value = isset($row[$colIndex]) ? trim($row[$colIndex]) : null;
+                
+                // Skip empty values
+                if ($value === '' || $value === null) {
+                    continue;
+                }
+                
+                // Normalize header for matching
+                $normalizedHeader = strtolower(trim(str_replace([' ', '_', '-'], '', $headerName)));
+                
+                // Check if this column maps to a known database field
+                if (isset($knownFields[$normalizedHeader])) {
+                    $dbField = $knownFields[$normalizedHeader];
+                    $data[$dbField] = $value;
+                } else {
+                    // Unknown column - store in extra_data
+                    $extraData[$headerName] = $value;
                 }
             }
             
@@ -448,8 +419,8 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // No extra data needed
-            $extraDataJson = null;
+            // Store extra_data as JSON (unmapped columns)
+            $extraDataJson = !empty($extraData) ? json_encode($extraData, JSON_UNESCAPED_UNICODE) : null;
             
             // Extract to variables for bind_param (41 parameters total)
             $stmt->bind_param(
