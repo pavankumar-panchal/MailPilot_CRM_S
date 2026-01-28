@@ -1,4 +1,0 @@
-[2025-11-27 15:46:06] === CRON JOB START ===
-[2025-11-27 15:46:06] PHP Version: 8.3.6
-[2025-11-27 15:46:06] Working directory: /opt/lampp/htdocs/verify_emails/MailPilot_CRM
-[2025-11-27 15:46:06] Script path: /opt/lampp/htdocs/verify_emails/MailPilot_CRM/backend/campaign_cron.php

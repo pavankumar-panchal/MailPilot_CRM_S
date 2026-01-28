@@ -1,13 +1,20 @@
 <?php
 
+// Use centralized session configuration
+require_once __DIR__ . '/session_config.php';
 require_once __DIR__ . '/security_helpers.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
 
 // Set security headers
 setSecurityHeaders();
 
 // Handle CORS securely
 handleCors();
+
+// Ensure user_id columns exist
+ensureUserIdColumns($conn);
 
 header('Content-Type: application/json');
 
@@ -19,14 +26,29 @@ function getJsonInput() {
 
 // GET: List all SMTP servers with their accounts
 if ($method === 'GET') {
-    $serversRes = $conn->query("SELECT * FROM smtp_servers ORDER BY id DESC");
+    // Use unified auth (supports both session cookies and tokens)
+    $currentUser = requireAuth();
+    $isAdmin = isAuthenticatedAdmin();
+    
+    error_log("=== SMTP GET REQUEST ===");
+    error_log("User: " . json_encode($currentUser));
+    error_log("Is Admin: " . ($isAdmin ? 'YES' : 'NO'));
+    
+    $userFilter = getAuthFilterWhere();
+    error_log("User Filter: '$userFilter'");
+    
+    $query = "SELECT * FROM smtp_servers " . $userFilter . " ORDER BY id DESC";
+    error_log("Query: $query");
+    
+    $serversRes = $conn->query($query);
     $servers = [];
 
     while ($server = $serversRes->fetch_assoc()) {
         $server['is_active'] = (bool)$server['is_active'];
 
-        // Fetch accounts for each server
-        $accountsRes = $conn->query("SELECT * FROM smtp_accounts WHERE smtp_server_id = {$server['id']} ORDER BY id ASC");
+        // Fetch accounts for each server (also filter by user_id if not admin)
+        $accountUserFilter = getAuthFilterAnd();
+        $accountsRes = $conn->query("SELECT * FROM smtp_accounts WHERE smtp_server_id = {$server['id']} $accountUserFilter ORDER BY id ASC");
         $accounts = [];
         while ($acc = $accountsRes->fetch_assoc()) {
             $acc['is_active'] = (bool)$acc['is_active'];
@@ -35,13 +57,18 @@ if ($method === 'GET') {
         $server['accounts'] = $accounts;
         $servers[] = $server;
     }
-    echo json_encode(['data' => $servers]);
+    
+    echo json_encode(['success' => true, 'data' => $servers]);
     $conn->close();
     exit;
 }
 
 // POST: Add new SMTP server + accounts
 if ($method === 'POST') {
+    // Require authentication
+    $currentUser = requireAuth();
+    error_log("master_smtps.php POST - User: " . json_encode($currentUser));
+    
     try {
         $data = getJsonInput();
         if (!$data) {
@@ -55,10 +82,13 @@ if ($method === 'POST') {
         $encryption = validateEncryption($data['encryption'] ?? '');
         $received_email = !empty($data['received_email']) ? validateEmail($data['received_email']) : '';
         $is_active = validateBoolean($data['is_active'] ?? 1);
+        
+        // Get user ID (already verified above)
+        $user_id = $currentUser['id'];
 
         // Use prepared statement for INSERT
-        $stmt = $conn->prepare("INSERT INTO smtp_servers (name, host, port, encryption, received_email, is_active) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssissi", $name, $host, $port, $encryption, $received_email, $is_active);
+        $stmt = $conn->prepare("INSERT INTO smtp_servers (name, host, port, encryption, received_email, is_active, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssissii", $name, $host, $port, $encryption, $received_email, $is_active, $user_id);
         
         if (!$stmt->execute()) {
             throw new Exception('Error adding SMTP server: ' . $stmt->error);
@@ -69,7 +99,7 @@ if ($method === 'POST') {
 
         // Insert accounts if provided
         if (!empty($data['accounts']) && is_array($data['accounts'])) {
-            $stmt_acc = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, password, daily_limit, hourly_limit, is_active) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt_acc = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, password, daily_limit, hourly_limit, is_active, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
             
             foreach ($data['accounts'] as $acc) {
                 try {
@@ -81,7 +111,7 @@ if ($method === 'POST') {
                     $hourly_limit = validateInteger($acc['hourly_limit'] ?? 100, 0, 1000);
                     $acc_active = validateBoolean($acc['is_active'] ?? 1);
 
-                    $stmt_acc->bind_param("issiii", $serverId, $email, $password, $daily_limit, $hourly_limit, $acc_active);
+                    $stmt_acc->bind_param("issiiii", $serverId, $email, $password, $daily_limit, $hourly_limit, $acc_active, $user_id);
                     $stmt_acc->execute();
                 } catch (Exception $e) {
                     // Log and continue with next account
@@ -104,9 +134,29 @@ if ($method === 'POST') {
 
 // PUT: Update SMTP server or accounts
 if ($method === 'PUT') {
+    // Require authentication
+    $currentUser = requireAuth();
+    error_log("master_smtps.php PUT - User: " . json_encode($currentUser));
+    
     try {
         parse_str($_SERVER['QUERY_STRING'], $query);
         $id = validateInteger($query['id'] ?? 0, 1);
+        
+        // Check if user can access this server
+        if (!isAdmin()) {
+            $checkStmt = $conn->prepare("SELECT user_id FROM smtp_servers WHERE id = ?");
+            $checkStmt->bind_param("i", $id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $serverData = $checkResult->fetch_assoc();
+            $checkStmt->close();
+            
+            if (!$serverData || !canAccessRecord($serverData['user_id'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Access denied']);
+                exit;
+            }
+        }
 
         $data = getJsonInput();
         if (!$data) {
@@ -173,12 +223,15 @@ if ($method === 'PUT') {
                         $daily_limit = validateInteger($acc['daily_limit'] ?? 500, 0, 10000);
                         $hourly_limit = validateInteger($acc['hourly_limit'] ?? 100, 0, 1000);
                         $acc_active = validateBoolean($acc['is_active'] ?? 1);
+                        
+                        // Use current user from requireAuth() above
+                        $user_id = $currentUser['id'];
 
-                        $stmt = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, password, daily_limit, hourly_limit, is_active) VALUES (?, ?, ?, ?, ?, ?)");
+                        $stmt = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, password, daily_limit, hourly_limit, is_active, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
                         if (!$stmt) {
                             throw new Exception("Prepare account insert failed: " . $conn->error);
                         }
-                        $stmt->bind_param("issiii", $id, $email, $password, $daily_limit, $hourly_limit, $acc_active);
+                        $stmt->bind_param("issiiii", $id, $email, $password, $daily_limit, $hourly_limit, $acc_active, $user_id);
                         if (!$stmt->execute()) {
                             throw new Exception("Execute account insert failed: " . $stmt->error);
                         }
@@ -206,9 +259,29 @@ if ($method === 'PUT') {
 
 // DELETE: Delete server and its accounts
 if ($method === 'DELETE') {
+    // Require authentication
+    $currentUser = requireAuth();
+    error_log("master_smtps.php DELETE - User: " . json_encode($currentUser));
+    
     try {
         parse_str($_SERVER['QUERY_STRING'], $query);
         $id = validateInteger($query['id'] ?? 0, 1);
+        
+        // Check if user can access this server
+        if (!isAdmin()) {
+            $checkStmt = $conn->prepare("SELECT user_id FROM smtp_servers WHERE id = ?");
+            $checkStmt->bind_param("i", $id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $serverData = $checkResult->fetch_assoc();
+            $checkStmt->close();
+            
+            if (!$serverData || !canAccessRecord($serverData['user_id'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Access denied']);
+                exit;
+            }
+        }
 
         $stmt = $conn->prepare("DELETE FROM smtp_servers WHERE id = ?");
         $stmt->bind_param("i", $id);

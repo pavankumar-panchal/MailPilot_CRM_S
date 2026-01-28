@@ -209,6 +209,17 @@
     </div>
 
     <script>
+        // Optional: Authentication check (commented out to make this the main page)
+        // const user = localStorage.getItem('mailpilot_user');
+        // const token = localStorage.getItem('mailpilot_token');
+        // if (!user || !token) {
+        //     window.location.href = 'http://localhost:5173';
+        // }
+        
+        // Parse user data (if logged in)
+        // const userData = user ? JSON.parse(user) : null;
+        // if (userData) console.log('Logged in as:', userData.name, '(' + userData.role + ')');
+        
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');

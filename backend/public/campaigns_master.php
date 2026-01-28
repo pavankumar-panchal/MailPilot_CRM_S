@@ -1,19 +1,25 @@
 <?php
-// Note: CORS headers and db.php are handled by api.php when routed through it
-// Only set headers if accessed directly (not through api.php router)
-if (!defined('DB_HOST')) {
-    require_once __DIR__ . '/../config/db.php';
-    header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-    
-    // Handle preflight requests
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        http_response_code(200);
-        exit();
-    }
+// Load authentication and configuration
+require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/security_helpers.php';
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/user_filtering.php';
+require_once __DIR__ . '/../includes/auth_helper.php';
+
+// Set security headers
+setSecurityHeaders();
+handleCors();
+
+// Require authentication (supports both session and token)
+$currentUser = requireAuth();
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
+
+header('Content-Type: application/json');
 
 require_once __DIR__ . '/../includes/ProcessManager.php';
 
@@ -65,8 +71,11 @@ try {
             ];
         } elseif ($action === 'email_counts') {
             $campaign_id = (int)($input['campaign_id'] ?? 0);
+            $user = getAuthenticatedUser();
+            $userId = $user['id'] ?? null;
+            $isAdmin = $userId ? isAuthenticatedAdmin() : false;
             $response['success'] = true;
-            $response['data'] = getEmailCounts($conn, $campaign_id);
+            $response['data'] = getEmailCounts($conn, $campaign_id, $userId, $isAdmin);
         } elseif ($action === 'get_campaign_emails') {
             $campaign_id = (int)($input['campaign_id'] ?? 0);
             $page = (int)($input['page'] ?? 1);
@@ -97,6 +106,8 @@ try {
 } catch (Exception $e) {
     $response['success'] = false;
     $response['message'] = $e->getMessage();
+    error_log("campaigns_master.php Error: " . $e->getMessage());
+    error_log("campaigns_master.php Stack: " . $e->getTraceAsString());
 }
 
 echo json_encode($response);
@@ -106,6 +117,21 @@ echo json_encode($response);
 function getCampaignsWithStats()
 {
     global $conn;
+    
+    // Get auth filter for campaign_master table
+    $user = getAuthenticatedUser();
+    $userId = $user ? $user['id'] : null;
+    $isAdmin = $userId ? isAuthenticatedAdmin() : false;
+    
+    error_log("getCampaignsWithStats - userId: $userId, isAdmin: " . ($isAdmin ? 'YES' : 'NO'));
+    
+    // For single table queries
+    $userFilter = $isAdmin ? "" : "WHERE user_id = $userId";
+    $userFilterAnd = $isAdmin ? "" : "AND user_id = $userId";
+    
+    // For campaign_master table with alias
+    $userFilterCm = $isAdmin ? "" : "WHERE cm.user_id = $userId";
+    $userFilterCmAnd = $isAdmin ? "" : "AND cm.user_id = $userId";
     
     // FIRST: Ensure every campaign has a campaign_status row
     // a) from mail_blaster (already sent)
@@ -120,7 +146,9 @@ function getCampaignsWithStats()
             0 as pending_emails,
             MIN(mb.delivery_time) as start_time
         FROM mail_blaster mb
+        INNER JOIN campaign_master cm ON mb.campaign_id = cm.campaign_id
         WHERE mb.campaign_id NOT IN (SELECT campaign_id FROM campaign_status)
+        $userFilterCmAnd
         GROUP BY mb.campaign_id
         ON DUPLICATE KEY UPDATE campaign_id = campaign_id
     ");
@@ -130,6 +158,7 @@ function getCampaignsWithStats()
         SELECT cm.campaign_id, 'pending', 0, 0, 0, 0
         FROM campaign_master cm
         WHERE cm.campaign_id NOT IN (SELECT campaign_id FROM campaign_status)
+        $userFilterCmAnd
     ");
     
     // SECOND: Update totals for all campaigns based on their source
@@ -137,6 +166,7 @@ function getCampaignsWithStats()
         SELECT cs.campaign_id, cm.import_batch_id, cm.csv_list_id
         FROM campaign_status cs
         JOIN campaign_master cm ON cs.campaign_id = cm.campaign_id
+        $userFilterCm
     ");
     
     if ($allCampaigns) {
@@ -151,7 +181,8 @@ function getCampaignsWithStats()
                 $totalRes = $conn->query("SELECT COUNT(*) as total FROM imported_recipients WHERE import_batch_id = '$batch_escaped' AND is_active = 1 AND Emails IS NOT NULL AND Emails <> ''");
                 $total = intval($totalRes->fetch_assoc()['total']);
             } elseif ($csv_list_id > 0) {
-                $totalRes = $conn->query("SELECT COUNT(*) as total FROM emails WHERE csv_list_id = $csv_list_id AND domain_status = 1 AND validation_status = 'valid' AND raw_emailid IS NOT NULL AND raw_emailid <> ''");
+                $emailUserFilter = $isAdmin ? "" : "AND user_id = $userId";
+                $totalRes = $conn->query("SELECT COUNT(*) as total FROM emails WHERE csv_list_id = $csv_list_id AND domain_status = 1 AND validation_status = 'valid' AND raw_emailid IS NOT NULL AND raw_emailid <> '' $emailUserFilter");
                 $total = intval($totalRes->fetch_assoc()['total']);
             }
             
@@ -167,6 +198,7 @@ function getCampaignsWithStats()
         FROM campaign_status cs
         JOIN campaign_master cm ON cs.campaign_id = cm.campaign_id
         WHERE cs.status = 'running'
+        $userFilterCmAnd
     ");
     
     if ($runningCampaigns) {
@@ -211,6 +243,7 @@ function getCampaignsWithStats()
                         $unclaimed = intval($unclaimedRes->fetch_assoc()['unclaimed']);
                     }
                 } elseif ($csv_list_id > 0) {
+                    $emailUserFilter = $isAdmin ? "" : "AND e.user_id = $userId";
                     $unclaimedRes = $conn->query("
                         SELECT COUNT(*) as unclaimed FROM emails e
                         WHERE e.domain_status = 1
@@ -218,6 +251,7 @@ function getCampaignsWithStats()
                         AND e.raw_emailid IS NOT NULL
                         AND e.raw_emailid <> ''
                         AND e.csv_list_id = $csv_list_id
+                        $emailUserFilter
                         AND NOT EXISTS (
                             SELECT 1 FROM mail_blaster mb
                             WHERE mb.campaign_id = $campaign_id
@@ -243,6 +277,7 @@ function getCampaignsWithStats()
                     ");
                     $expected_total = intval($totalRes->fetch_assoc()['total']);
                 } elseif ($csv_list_id > 0) {
+                    $emailUserFilter = $isAdmin ? "" : "AND user_id = $userId";
                     $totalRes = $conn->query("
                         SELECT COUNT(*) as total 
                         FROM emails 
@@ -251,6 +286,7 @@ function getCampaignsWithStats()
                         AND validation_status = 'valid'
                         AND raw_emailid IS NOT NULL 
                         AND raw_emailid <> ''
+                        $emailUserFilter
                     ");
                     $expected_total = intval($totalRes->fetch_assoc()['total']);
                 } else {
@@ -306,7 +342,8 @@ function getCampaignsWithStats()
     
     // Get total valid emails from emails table (only validation_status = 'valid')
     $valid_emails_total = 0;
-    $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND validation_status = 'valid'");
+    $emailUserFilter = $isAdmin ? "" : "AND user_id = $userId";
+    $valid_res = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE domain_status = 1 AND validation_status = 'valid' $emailUserFilter");
     if ($valid_res) {
         $valid_emails_total = (int)$valid_res->fetch_assoc()['cnt'];
     }
@@ -353,6 +390,7 @@ function getCampaignsWithStats()
                       GROUP BY campaign_id
                   ) cs2 ON cs1.campaign_id = cs2.campaign_id AND cs1.id = cs2.max_id
               ) cs ON cm.campaign_id = cs.campaign_id
+              $userFilterCm
               ORDER BY cm.campaign_id DESC";
     $result = $conn->query($query);
     $campaigns = $result->fetch_all(MYSQLI_ASSOC);
@@ -377,9 +415,10 @@ function getCampaignsWithStats()
             $campaign['email_source'] = 'csv_upload';
             $campaign['email_source_label'] = 'CSV Upload';
             
-            // Get actual valid email count for this campaign's CSV list
+            // Get actual valid email count for this campaign's CSV list (user-filtered)
             $csvListId = (int)$campaign['csv_list_id'];
-            $csvValidRes = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE csv_list_id = $csvListId AND domain_status = 1 AND validation_status = 'valid'");
+            $emailUserFilter = $isAdmin ? "" : "AND user_id = $userId";
+            $csvValidRes = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE csv_list_id = $csvListId AND domain_status = 1 AND validation_status = 'valid' $emailUserFilter");
             if ($csvValidRes) {
                 $campaign['csv_list_valid_count'] = (int)$csvValidRes->fetch_assoc()['cnt'];
             } else {
@@ -413,6 +452,10 @@ function getCampaignsWithStats()
 
 function startCampaign($conn, $campaign_id)
 {
+    // Get user context for permission check
+    $userId = getCurrentUserId();
+    $isAdmin = isAuthenticatedAdmin();
+    
     $max_retries = 5;
     $retry_count = 0;
     $success = false;
@@ -420,17 +463,20 @@ function startCampaign($conn, $campaign_id)
         try {
             $conn->query("SET SESSION innodb_lock_wait_timeout = 10");
             $conn->begin_transaction();
-            $check = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = $campaign_id");
+            
+            // Check if campaign exists and user has permission
+            $userCheck = $isAdmin ? "" : " AND user_id = $userId";
+            $check = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = $campaign_id $userCheck");
             if ($check->num_rows == 0) {
                 $conn->commit();
-                throw new Exception("Campaign #$campaign_id does not exist");
+                throw new Exception($isAdmin ? "Campaign #$campaign_id does not exist" : "Campaign #$campaign_id not found or you don't have permission");
             }
             $status_check = $conn->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
             if ($status_check->num_rows > 0 && $status_check->fetch_assoc()['status'] === 'completed') {
                 $conn->commit();
                 throw new Exception("Campaign #$campaign_id is already completed");
             }
-            $counts = getEmailCounts($conn, $campaign_id);
+            $counts = getEmailCounts($conn, $campaign_id, $userId, $isAdmin);
             // Use INSERT...ON DUPLICATE KEY to prevent duplicates and ensure single row per campaign
             $conn->query("INSERT INTO campaign_status 
                     (campaign_id, total_emails, pending_emails, sent_emails, failed_emails, status, start_time)
@@ -465,72 +511,125 @@ function startCampaign($conn, $campaign_id)
     }
 }
 
-function getEmailCounts($conn, $campaign_id)
+function getEmailCounts($conn, $campaign_id, $userId = null, $isAdmin = false)
 {
+    // First, verify the campaign belongs to the user (if not admin)
+    if ($userId && !$isAdmin) {
+        $campaignCheck = $conn->query("SELECT campaign_id FROM campaign_master WHERE campaign_id = $campaign_id AND user_id = $userId");
+        if (!$campaignCheck || $campaignCheck->num_rows == 0) {
+            // User doesn't have access to this campaign
+            return [
+                'total_valid' => 0,
+                'sent' => 0,
+                'failed' => 0,
+                'pending' => 0,
+                'retryable' => 0
+            ];
+        }
+    }
+    
     // Get csv_list_id and import_batch_id for this campaign
-    $campaignResult = $conn->query("SELECT csv_list_id, import_batch_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    $campaignResult = $conn->query("SELECT csv_list_id, import_batch_id, user_id FROM campaign_master WHERE campaign_id = $campaign_id");
     $csvListId = null;
     $importBatchId = null;
+    $campaignUserId = null;
     
     if ($campaignResult && $campaignResult->num_rows > 0) {
         $campaignRow = $campaignResult->fetch_assoc();
         $csvListId = $campaignRow['csv_list_id'];
         $importBatchId = $campaignRow['import_batch_id'];
+        $campaignUserId = $campaignRow['user_id'];
     }
+    
+    error_log("getEmailCounts - campaign_id: $campaign_id, csv_list_id: " . ($csvListId ?? 'NULL') . ", import_batch_id: " . ($importBatchId ?? 'NULL'));
     
     // Count total valid emails based on source
     if ($importBatchId) {
         // Count from imported_recipients table
         $batch_escaped = $conn->real_escape_string($importBatchId);
+        $userFilter = $campaignUserId ? " AND user_id = $campaignUserId" : "";
+        
         $totalQuery = "SELECT COUNT(*) as total_valid 
                 FROM imported_recipients 
                 WHERE import_batch_id = '$batch_escaped' 
                 AND is_active = 1 
                 AND Emails IS NOT NULL 
-                AND Emails <> ''";
+                AND Emails <> ''
+                $userFilter";
         $totalResult = $conn->query($totalQuery);
         $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
         
-        // For imported_recipients, we don't use csv_list_id filter in mail_blaster
-        $csvListFilter = "";
+        // Count sent and failed
+        $countQuery = "SELECT 
+                    COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                FROM mail_blaster mb
+                WHERE mb.campaign_id = $campaign_id
+                AND mb.import_batch_id = '$batch_escaped'";
+        
+    } elseif ($csvListId) {
+        // Count from emails table (CSV upload) - FILTERED BY CSV LIST
+        $userFilter = $campaignUserId ? " AND e.user_id = $campaignUserId" : "";
+        
+        $totalQuery = "SELECT COUNT(*) as total_valid 
+                FROM emails e 
+                WHERE e.csv_list_id = $csvListId
+                AND e.domain_status = 1 
+                AND e.validation_status = 'valid'
+                $userFilter";
+        $totalResult = $conn->query($totalQuery);
+        $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
+        
+        error_log("getEmailCounts - Total valid emails in CSV list $csvListId: $totalValid");
+        
+        // Count sent and failed from mail_blaster for this CSV list
+        $countQuery = "SELECT 
+                    COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                FROM mail_blaster mb
+                INNER JOIN emails e ON mb.to_mail = e.raw_emailid
+                WHERE mb.campaign_id = $campaign_id
+                AND e.csv_list_id = $csvListId";
+        
     } else {
-        // Count from emails table (CSV upload)
-        $csvListFilter = $csvListId ? "AND mb.csv_list_id = $csvListId" : "";
+        // No CSV list or import batch specified - count all valid emails
+        $userFilter = $campaignUserId ? " AND e.user_id = $campaignUserId" : "";
         
         $totalQuery = "SELECT COUNT(*) as total_valid 
                 FROM emails e 
                 WHERE e.domain_status = 1 
                 AND e.validation_status = 'valid'
-                " . ($csvListId ? "AND e.csv_list_id = $csvListId" : "");
+                $userFilter";
         $totalResult = $conn->query($totalQuery);
         $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
+        
+        // Count sent and failed
+        $countQuery = "SELECT 
+                    COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
+                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                FROM mail_blaster mb
+                WHERE mb.campaign_id = $campaign_id";
     }
     
-    // Build WHERE clause based on csv_list_id
-    // Now filter by mail_blaster.csv_list_id since we store it there when sending
-    
-    // Count sent and failed from mail_blaster (filtered by csv_list_id stored in mail_blaster)
-    // Only count permanently failed (attempt_count >= 5)
-    $query = "SELECT 
-                COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
-                COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed
-            FROM mail_blaster mb
-            WHERE mb.campaign_id = $campaign_id
-            $csvListFilter";
-    
-    $result = $conn->query($query);
+    $result = $conn->query($countQuery);
     $counts = $result->fetch_assoc();
     
-    // Calculate pending as total_valid - sent - failed
     $sent = (int)$counts['sent'];
     $failed = (int)$counts['failed'];
-    $pending = max(0, $totalValid - $sent - $failed);
+    $retryable = (int)$counts['retryable'];
+    $pending = max(0, $totalValid - $sent - $failed - $retryable);
+    
+    error_log("getEmailCounts - Results: total=$totalValid, sent=$sent, failed=$failed, retryable=$retryable, pending=$pending");
     
     return [
         'total_valid' => $totalValid,
         'pending' => $pending,
         'sent' => $sent,
-        'failed' => $failed
+        'failed' => $failed,
+        'retryable' => $retryable
     ];
 }
 
@@ -611,6 +710,17 @@ function startEmailBlasterProcess($campaign_id)
 
 function pauseCampaign($conn, $campaign_id)
 {
+    // Get user context for permission check
+    $userId = getCurrentUserId();
+    $isAdmin = isAuthenticatedAdmin();
+    
+    // Check if user has permission to pause this campaign
+    $userCheck = $isAdmin ? "" : " AND user_id = $userId";
+    $check = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = $campaign_id $userCheck");
+    if ($check->num_rows == 0) {
+        throw new Exception($isAdmin ? "Campaign #$campaign_id does not exist" : "Campaign #$campaign_id not found or you don't have permission");
+    }
+    
     $max_retries = 3;
     $retry_count = 0;
     $success = false;
@@ -668,6 +778,17 @@ function stopEmailBlasterProcess($campaign_id)
 
 function retryFailedEmails($conn, $campaign_id)
 {
+    // Get user context for permission check
+    $userId = getCurrentUserId();
+    $isAdmin = isAuthenticatedAdmin();
+    
+    // Check if user has permission to retry this campaign
+    $userCheck = $isAdmin ? "" : " AND user_id = $userId";
+    $check = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = $campaign_id $userCheck");
+    if ($check->num_rows == 0) {
+        throw new Exception($isAdmin ? "Campaign #$campaign_id does not exist" : "Campaign #$campaign_id not found or you don't have permission");
+    }
+    
     // Only retry emails that haven't exceeded 5 attempts
     $result = $conn->query("
             SELECT COUNT(*) as failed_count 

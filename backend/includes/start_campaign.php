@@ -21,6 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/BackgroundProcess.php';
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/auth_helper.php';
+
+// Get current user for user_id tracking
+$currentUser = getAuthenticatedUser();
+$user_id = $currentUser ? $currentUser['id'] : null;
 
 $campaign_id = isset($_POST['campaign_id']) ? (int)$_POST['campaign_id'] : 0;
 if ($campaign_id <= 0) {
@@ -30,15 +36,22 @@ if ($campaign_id <= 0) {
 }
 
 try {
-    // Validate campaign exists and get csv_list_id
-    $stmt = $conn->prepare('SELECT campaign_id, mail_subject, mail_body, csv_list_id FROM campaign_master WHERE campaign_id = ?');
+    // Get current user for filtering
+    require_once __DIR__ . '/auth_helper.php';
+    $currentUser = getAuthenticatedUser();
+    $isAdmin = isAuthenticatedAdmin();
+    $userId = $currentUser ? $currentUser['id'] : 0;
+    
+    // Validate campaign exists and get csv_list_id with user filtering
+    $userFilter = $isAdmin ? '' : ' AND user_id = ' . intval($userId);
+    $stmt = $conn->prepare('SELECT campaign_id, mail_subject, mail_body, csv_list_id, user_id FROM campaign_master WHERE campaign_id = ?' . $userFilter);
     $stmt->bind_param('i', $campaign_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $campaign = $result->fetch_assoc();
     if (!$campaign) {
         http_response_code(404);
-        echo json_encode(['error' => 'Campaign not found']);
+        echo json_encode(['error' => 'Campaign not found or access denied']);
         exit();
     }
     if (empty(trim($campaign['mail_subject'])) || empty(trim($campaign['mail_body']))) {
@@ -151,11 +164,13 @@ try {
     }
 
     if (!$statusRow) {
-        // Insert new status row (PID will be updated after process starts)
+        // Insert new status row with user_id (PID will be updated after process starts)
         if ($hasStartTime) {
-            $conn->query("INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails, start_time) VALUES ($campaign_id, 'running', $totalEmails, $pending, $sent, $failed, NOW())");
+            $insertSql = "INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails, start_time, user_id) VALUES ($campaign_id, 'running', $totalEmails, $pending, $sent, $failed, NOW(), " . ($user_id ? $user_id : "NULL") . ")";
+            $conn->query($insertSql);
         } else {
-            $conn->query("INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails) VALUES ($campaign_id, 'running', $totalEmails, $pending, $sent, $failed)");
+            $insertSql = "INSERT INTO campaign_status (campaign_id, status, total_emails, pending_emails, sent_emails, failed_emails, user_id) VALUES ($campaign_id, 'running', $totalEmails, $pending, $sent, $failed, " . ($user_id ? $user_id : "NULL") . ")";
+            $conn->query($insertSql);
         }
     } else {
         // Update existing row to running and refresh counts
@@ -167,16 +182,11 @@ try {
     }
 
     // Spawn background orchestrator process (per-server parallel sender)
-    // Prefer server-based orchestrator if available
-    $script = realpath(__DIR__ . '/email_sender_orchestrator.php');
+    // Use email_blast_parallel.php as the orchestrator
+    $script = realpath(__DIR__ . '/email_blast_parallel.php');
     if (!$script || !is_file($script)) {
         http_response_code(500);
-        echo json_encode(['error' => 'New orchestrator script missing']);
-        exit();
-    }
-    if (!$script || !is_file($script)) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Orchestrator script missing']);
+        echo json_encode(['error' => 'Email blast script missing']);
         exit();
     }
 

@@ -5,11 +5,18 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+// Require authentication
+$currentUser = requireAuth();
+$user_id = $currentUser['id'];
 
 $method = $_SERVER['REQUEST_METHOD'];
 

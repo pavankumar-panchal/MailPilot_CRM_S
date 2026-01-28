@@ -1,5 +1,12 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
+
+// Require authentication
+$currentUser = requireAuth();
+$userFilter = getAuthFilterWhere();
 
 $result = $conn->query("
     SELECT cm.campaign_id, cm.description, 
@@ -10,6 +17,7 @@ $result = $conn->query("
         COALESCE(cs.failed_emails, 0) as failed_emails
     FROM campaign_master cm
     LEFT JOIN campaign_status cs ON cm.campaign_id = cs.campaign_id
+    $userFilter
     ORDER BY cm.campaign_id DESC
 ");
 $rows = [];

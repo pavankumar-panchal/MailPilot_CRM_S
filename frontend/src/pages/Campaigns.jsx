@@ -20,24 +20,26 @@ const StatusMessage = ({ message, onClose }) =>
     <div
       className={`
         fixed top-6 left-1/2 transform -translate-x-1/2
-        px-6 py-3 rounded-xl shadow text-base font-semibold
+        px-6 py-3 rounded-xl shadow-lg text-base font-bold
         flex items-center gap-3
         transition-all duration-300
         backdrop-blur-md
         ${message.type === "error"
-          ? "bg-red-200/60 border border-red-400 text-red-800"
-          : "bg-green-200/60 border border-green-400 text-green-800"
+          ? "bg-red-50 border-2 border-red-500 text-red-700"
+          : "bg-green-50 border-2 border-green-500 text-green-700"
         }
       `}
       style={{
         minWidth: 250,
-        maxWidth: 400,
+        maxWidth: 600,
         zIndex: 99999,
-        boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.23)",
+        boxShadow: message.type === "error" 
+          ? "0 8px 32px 0 rgba(220, 38, 38, 0.4)"
+          : "0 8px 32px 0 rgba(34, 197, 94, 0.4)",
         background:
           message.type === "error"
-            ? "rgba(255, 0, 0, 0.29)"
-            : "rgba(0, 200, 83, 0.29)",
+            ? "rgba(254, 226, 226, 0.95)"
+            : "rgba(220, 252, 231, 0.95)",
         borderRadius: "16px",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
@@ -45,9 +47,9 @@ const StatusMessage = ({ message, onClose }) =>
       role="alert"
     >
       <i
-        className={`fas text-lg ${message.type === "error"
-          ? "fa-exclamation-circle text-red-500"
-          : "fa-check-circle text-green-500"
+        className={`fas text-xl ${message.type === "error"
+          ? "fa-exclamation-circle text-red-600"
+          : "fa-check-circle text-green-600"
           }`}
       ></i>
       <span className="flex-1">{message.text}</span>
@@ -98,7 +100,9 @@ const Campaigns = () => {
   // Fetch mail templates
   const fetchTemplates = React.useCallback(async () => {
     try {
-      const res = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=list`);
+      const res = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=list`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.success) {
         setTemplates(data.templates.filter(t => t.is_active == 1 || t.is_active === '1'));
@@ -111,7 +115,9 @@ const Campaigns = () => {
   // Fetch import batches
   const fetchImportBatches = React.useCallback(async () => {
     try {
-      const res = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=list`);
+      const res = await fetch(`${API_CONFIG.API_IMPORT_DATA}?action=list&source=campaign`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.success) {
         setImportBatches(data.batches || []);
@@ -121,7 +127,7 @@ const Campaigns = () => {
     }
   }, [BASE_URL]);
 
-  // Handle file import
+  // Handle file import - imports to imported_recipients table
   const handleImportFile = async () => {
     if (!uploadFile) {
       setMessage({ type: 'error', text: 'Please select a CSV or Excel file to import' });
@@ -137,28 +143,31 @@ const Campaigns = () => {
     setImporting(true);
 
     const formData = new FormData();
-    formData.append('file', uploadFile);
+    formData.append('csv_file', uploadFile);
 
     try {
-      const res = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=import`, {
+      // Use import_recipients endpoint which saves to imported_recipients table
+      const res = await fetch(`${BASE_URL}/backend/api/import_recipients.php`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'include'
       });
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && data.status === 'success') {
         setMessage({ 
           type: 'success', 
-          text: `✓ Imported ${data.imported} records! Batch ID: ${data.batch_id}` 
+          text: `✓ Imported ${data.data.imported} records! Batch ID: ${data.data.import_batch_id}` 
         });
         setImportModalOpen(false);
         setUploadFile(null);
         fetchImportBatches(); // Reload batches
       } else {
-        setMessage({ type: 'error', text: data.error || 'Import failed' });
+        setMessage({ type: 'error', text: data.error || data.message || 'Import failed' });
       }
     } catch (error) {
+      console.error('Import error:', error);
       setMessage({ type: 'error', text: 'Failed to import file: ' + error.message });
     } finally {
       setImporting(false);
@@ -173,7 +182,15 @@ const Campaigns = () => {
   const fetchCampaigns = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL_CRUD, { method: 'GET' });
+      const res = await fetch(API_URL_CRUD, { 
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
       // This endpoint returns an array of campaigns directly
       const campaignsList = Array.isArray(data) ? data : [];
@@ -182,14 +199,20 @@ const Campaigns = () => {
         ...prev,
         total: campaignsList.length,
       }));
+      
+      // Clear any previous errors on successful load
+      if (message?.type === 'error' && message?.text?.includes('Failed to load')) {
+        setMessage(null);
+      }
     } catch (error) {
       console.error('Failed to load campaigns:', error);
-      setMessage({ type: "error", text: "Failed to load campaigns." });
       setCampaigns([]);
       setPagination((prev) => ({
         ...prev,
         total: 0,
       }));
+      // Only show error for actual network/server errors
+      setMessage({ type: "error", text: "Failed to load data: Network Error. Please check your connection." });
     } finally {
       setLoading(false);
     }
@@ -359,6 +382,7 @@ const Campaigns = () => {
       const res = await fetch(API_URL_CRUD, {
         method: "POST",
         body: formData,
+        credentials: 'include'
       });
       const data = await res.json();
       if (data.success) {
@@ -383,7 +407,9 @@ const Campaigns = () => {
   const handleEdit = async (campaign) => {
     try {
       // Fetch full campaign data including complete mail_body
-      const res = await fetch(`${API_URL_CRUD}?id=${campaign.campaign_id}`);
+      const res = await fetch(`${API_URL_CRUD}?id=${campaign.campaign_id}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       
       if (!data || data.error) {
@@ -458,6 +484,7 @@ const Campaigns = () => {
       const res = await fetch(`${API_URL_CRUD}?id=${editId}`, {
         method: "POST", // Still POST for file upload, backend checks _method
         body: formData,
+        credentials: 'include'
       });
       const data = await res.json();
       if (data.success) {
@@ -488,7 +515,10 @@ const Campaigns = () => {
     }));
 
     try {
-      const res = await fetch(`${API_URL_CRUD}?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL_CRUD}?id=${id}`, { 
+        method: "DELETE",
+        credentials: 'include'
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -513,7 +543,9 @@ const Campaigns = () => {
   // Reuse campaign
   const handleReuse = async (id) => {
     try {
-      const res = await fetch(`${API_URL_CRUD}?id=${id}`);
+      const res = await fetch(`${API_URL_CRUD}?id=${id}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       const images = data.images_paths ? JSON.parse(data.images_paths) : [];
       let mail_body = ensureAbsoluteBackendImagePaths(data.mail_body || '');
@@ -575,7 +607,9 @@ const Campaigns = () => {
     try {
       // If campaign uses template, merge with real data
       if (campaign.template_id && (campaign.import_batch_id || campaign.csv_list_id)) {
-        const response = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=get&template_id=${campaign.template_id}`);
+        const response = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=get&template_id=${campaign.template_id}`, {
+          credentials: 'include'
+        });
         const templateData = await response.json();
         
         if (templateData.success) {
@@ -585,13 +619,17 @@ const Campaigns = () => {
           if (!sampleEmail) {
             // Fetch first email from the batch or CSV list
             if (campaign.import_batch_id) {
-              const recipientsRes = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=get_batch&batch_id=${campaign.import_batch_id}`);
+              const recipientsRes = await fetch(`${API_CONFIG.API_IMPORT_DATA}?action=get_batch&batch_id=${campaign.import_batch_id}`, {
+                credentials: 'include'
+              });
               const recipientsData = await recipientsRes.json();
               if (recipientsData.success && recipientsData.recipients && recipientsData.recipients.length > 0) {
                 sampleEmail = recipientsData.recipients[0].Emails;
               }
             } else if (campaign.csv_list_id) {
-              const emailsRes = await fetch(`${BASE_URL}/backend/includes/get_csv_list.php?list_id=${campaign.csv_list_id}&limit=1`);
+              const emailsRes = await fetch(`${BASE_URL}/backend/includes/get_csv_list.php?list_id=${campaign.csv_list_id}&limit=1`, {
+                credentials: 'include'
+              });
               const emailsData = await emailsRes.json();
               if (emailsData.emails && emailsData.emails.length > 0) {
                 sampleEmail = emailsData.emails[0].raw_emailid;
@@ -603,6 +641,7 @@ const Campaigns = () => {
           const previewRes = await fetch(`${BASE_URL}/backend/includes/mail_templates.php?action=merge_preview`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               template_html: templateData.template.template_html,
               import_batch_id: campaign.import_batch_id,
@@ -797,25 +836,25 @@ const Campaigns = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedCampaigns.map((c) => (
+                paginatedCampaigns.map((c, index) => (
                   <tr
                     key={c.campaign_id}
                     className="hover:bg-gray-50 transition-colors duration-150"
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-500">
-                      {c.campaign_id}
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-500">
+                      {(pagination.page - 1) * pagination.rowsPerPage + index + 1}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-xs">
                         {c.description}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900 truncate max-w-xs">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="text-xs sm:text-sm text-gray-900 truncate max-w-[120px] sm:max-w-xs">
                         {c.mail_subject}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
                       <div
                         className="text-sm text-gray-600 max-w-xs line-clamp-2"
                         title={preview(c)}
@@ -836,8 +875,8 @@ const Campaigns = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-1 sm:space-x-2">
                         {/* Send button removed - sending managed in Master page */}
                         <button
                           onClick={() => handleViewPreview(c)}

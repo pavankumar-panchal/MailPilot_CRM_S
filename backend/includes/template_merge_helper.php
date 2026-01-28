@@ -11,11 +11,17 @@
  * @param int $template_id Template ID
  * @return array|null Template data or null if not found
  */
-function loadMailTemplate($conn, $template_id) {
+function loadMailTemplate($conn, $template_id, $user_id = null) {
     $template_id = intval($template_id);
     if ($template_id === 0) return null;
     
-    $stmt = $conn->prepare("SELECT template_html, merge_fields FROM mail_templates WHERE template_id = ? AND is_active = 1");
+    // Add user filtering if user_id provided
+    $userFilter = '';
+    if ($user_id !== null) {
+        $userFilter = " AND user_id = " . intval($user_id);
+    }
+    
+    $stmt = $conn->prepare("SELECT template_html, merge_fields FROM mail_templates WHERE template_id = ? AND is_active = 1" . $userFilter);
     $stmt->bind_param("i", $template_id);
     $stmt->execute();
     $result = $stmt->get_result();

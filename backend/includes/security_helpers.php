@@ -155,8 +155,8 @@ function setSecurityHeaders() {
     // Referrer policy
     header("Referrer-Policy: strict-origin-when-cross-origin");
     
-    // Content Security Policy
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;");
+    // Content Security Policy - allow localhost dev servers for API calls
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://payrollsoft.in");
     
     // Remove PHP version disclosure
     header_remove("X-Powered-By");
@@ -187,6 +187,8 @@ function handleCors($allowedOrigins = []) {
         $allowedOrigins = [
             'http://localhost:5173',
             'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
             'http://localhost',
             'http://127.0.0.1',
             'https://payrollsoft.in',
@@ -195,22 +197,40 @@ function handleCors($allowedOrigins = []) {
     }
     
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowOrigin = false;
     
     // Check if origin is in whitelist
     if (in_array($origin, $allowedOrigins)) {
-        header("Access-Control-Allow-Origin: $origin");
-    } elseif (preg_match('/^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/', $origin)) {
-        // Allow local network IPs for development
-        header("Access-Control-Allow-Origin: $origin");
+        $allowOrigin = $origin;
+    } 
+    // Allow any localhost port for development
+    elseif (preg_match('/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i', $origin)) {
+        $allowOrigin = $origin;
+    } 
+    // Allow local network IPs for development
+    elseif (preg_match('/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/i', $origin)) {
+        $allowOrigin = $origin;
+    }
+    // Allow same-origin requests (when no Origin header - direct server access)
+    elseif (empty($origin)) {
+        // For same-origin requests, we don't need CORS headers
+        $allowOrigin = false;
     }
     
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-    header("Access-Control-Allow-Credentials: true");
+    // Set CORS headers
+    if ($allowOrigin) {
+        header("Access-Control-Allow-Origin: $allowOrigin");
+        header("Access-Control-Allow-Credentials: true");
+    }
+    
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
     header("Access-Control-Max-Age: 3600");
+    header("Vary: Origin");
     
     // Handle preflight OPTIONS request
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header('Content-Type: application/json');
         http_response_code(200);
         exit();
     }

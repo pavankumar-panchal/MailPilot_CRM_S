@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import { TableSkeleton } from "../components/SkeletonLoader";
 import { API_CONFIG } from "../config";
+import { authFetch } from "../utils/authFetch";
 
 // Use centralized config for API endpoints
 const API_BASE = API_CONFIG.API_WORKERS;
@@ -84,7 +85,7 @@ const Workers = () => {
     }
 
     try {
-      const res = await fetch(API_BASE, {
+      const res = await authFetch(API_BASE, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -114,7 +115,7 @@ const Workers = () => {
   const fetchWorkers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_BASE);
+      const res = await authFetch(API_BASE);
       const data = await res.json();
       if (Array.isArray(data)) {
         setWorkers(data);
@@ -151,7 +152,7 @@ const Workers = () => {
       return;
     }
     try {
-      const res = await fetch(API_BASE, {
+      const res = await authFetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -195,7 +196,7 @@ const Workers = () => {
       return;
     }
     try {
-      const res = await fetch(API_BASE, {
+      const res = await authFetch(API_BASE, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: editId, ...form }),
@@ -225,7 +226,7 @@ const Workers = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this worker?")) return;
     try {
-      const res = await fetch(API_BASE, {
+      const res = await authFetch(API_BASE, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),

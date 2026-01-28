@@ -1,5 +1,21 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/security_helpers.php';
+require_once __DIR__ . '/../includes/user_filtering.php';
+require_once __DIR__ . '/../includes/auth_helper.php';
+
+// Set security headers
+setSecurityHeaders();
+
+// Require authentication
+$currentUser = requireAuth();
+$isAdmin = isAuthenticatedAdmin();
+$userId = $currentUser['id'];
+
+// Get user filter for queries
+$userFilter = getAuthFilterWhere();
+$userFilterAnd = getAuthFilterAnd();
 
 
 // Initialize message variables
@@ -21,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $daily_limit = intval($_POST['daily_limit']);
     $is_active = isset($_POST['is_active']) ? 1 : 0;
 
-    $sql = "INSERT INTO smtp_servers (name, host, port, encryption, email, password, daily_limit,hourly_limit, is_active) 
-                VALUES ('$name', '$host', $port, '$encryption', '$email', '$password', $daily_limit,$hourly_limit, $is_active)";
+    $sql = "INSERT INTO smtp_servers (name, host, port, encryption, email, password, daily_limit, hourly_limit, is_active, user_id) 
+                VALUES ('$name', '$host', $port, '$encryption', '$email', '$password', $daily_limit, $hourly_limit, $is_active, $userId)";
 
     if ($conn->query($sql)) {
       $message = 'SMTP server added successfully!';
@@ -46,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $daily_limit = intval($_POST['daily_limit']);
     $hourly_limit = intval($_POST['hourly_limit']);
     $is_active = isset($_POST['is_active']) ? 1 : 0;
+    
+    // Build permission filter
+    $permissionFilter = $isAdmin ? "" : "AND user_id = $userId";
 
     $sql = "UPDATE smtp_servers SET 
                 name = '$name',
@@ -57,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 daily_limit = $daily_limit,
                 hourly_limit = $hourly_limit,
                 is_active = $is_active
-                WHERE id = $id";
+                WHERE id = $id $permissionFilter";
 
     if ($conn->query($sql)) {
       $message = 'SMTP server updated successfully!';
@@ -72,7 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } elseif (isset($_GET['delete'])) {
   // Delete SMTP server
   $id = intval($_GET['delete']);
-  $sql = "DELETE FROM smtp_servers WHERE id = $id";
+  
+  // Build permission filter
+  $permissionFilter = $isAdmin ? "" : "AND user_id = $userId";
+  
+  $sql = "DELETE FROM smtp_servers WHERE id = $id $permissionFilter";
 
   if ($conn->query($sql)) {
     $message = 'SMTP server deleted successfully!';
@@ -91,8 +114,8 @@ if (isset($_GET['message']) && isset($_GET['message_type'])) {
   $message_type = $_GET['message_type'];
 }
 
-// Get all SMTP servers
-$result = $conn->query("SELECT * FROM smtp_servers ORDER BY id DESC");
+// Get all SMTP servers with user filtering
+$result = $conn->query("SELECT * FROM smtp_servers $userFilter ORDER BY id DESC");
 $smtpServers = [];
 while ($row = $result->fetch_assoc()) {
   $smtpServers[] = $row;
@@ -102,7 +125,11 @@ while ($row = $result->fetch_assoc()) {
 $editServer = null;
 if (isset($_GET['edit'])) {
   $id = intval($_GET['edit']);
-  $result = $conn->query("SELECT * FROM smtp_servers WHERE id = $id");
+  
+  // Build permission filter
+  $permissionFilter = $isAdmin ? "" : "AND user_id = $userId";
+  
+  $result = $conn->query("SELECT * FROM smtp_servers WHERE id = $id $permissionFilter");
   $editServer = $result->fetch_assoc();
 }
 

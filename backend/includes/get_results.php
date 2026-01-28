@@ -6,15 +6,20 @@ error_reporting(E_ALL);
 
 ini_set('memory_limit', '1024M');
 ini_set('max_execution_time', 300);
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
 
 // Ensure REQUEST_METHOD is set for CLI runs
 if (!isset($_SERVER['REQUEST_METHOD'])) {
     $_SERVER['REQUEST_METHOD'] = php_sapi_name() === 'cli' ? 'CLI' : 'GET';
 }
+
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/security_helpers.php';
+
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -22,12 +27,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/user_filtering.php';
+
+// Start session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Ensure user_id columns exist
+ensureUserIdColumns($conn);
 
 // --- DELETE EMAIL BY ID ---
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     parse_str(file_get_contents("php://input"), $deleteVars);
     $id = isset($deleteVars['id']) ? intval($deleteVars['id']) : 0;
     if ($id > 0) {
+        // Check user access
+        if (!isAdmin()) {
+            $checkStmt = $conn->prepare("SELECT user_id FROM emails WHERE id = ?");
+            $checkStmt->bind_param("i", $id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $emailData = $checkResult->fetch_assoc();
+            $checkStmt->close();
+            
+            if (!$emailData || !canAccessRecord($emailData['user_id'])) {
+                echo json_encode([
+                    "success" => false,
+                    "message" => "Access denied"
+                ]);
+                exit;
+            }
+        }
+        
         $stmt = $conn->prepare("DELETE FROM emails WHERE id = ?");
         $stmt->bind_param("i", $id);
         $success = $stmt->execute();
@@ -51,6 +83,12 @@ if (isset($_GET['export'])) {
     $csv_list_id = isset($_GET['csv_list_id']) ? intval($_GET['csv_list_id']) : 0;
     $where = [];
     $filename = $type . '_emails.csv';
+    
+    // Add user filtering
+    $userFilterAnd = getUserFilterAnd('emails');
+    if ($userFilterAnd !== '') {
+        $where[] = substr($userFilterAnd, 4); // Remove 'AND ' prefix
+    }
 
     if ($type === 'valid') {
         $where[] = "domain_status = 1";
@@ -94,6 +132,13 @@ if (isset($_GET['retry_failed']) && $_GET['retry_failed'] == '1') {
     $csv_list_id = isset($_GET['csv_list_id']) ? intval($_GET['csv_list_id']) : 0;
 
     $where = ["domain_status = 2"];
+    
+    // Add user filtering
+    $userFilterAnd = getUserFilterAnd('emails');
+    if ($userFilterAnd !== '') {
+        $where[] = substr($userFilterAnd, 4); // Remove 'AND ' prefix
+    }
+    
     if ($csv_list_id > 0) $where[] = "csv_list_id = $csv_list_id";
     $whereSql = "WHERE " . implode(" AND ", $where);
 
@@ -137,6 +182,12 @@ $filter = isset($_GET['filter']) ? $_GET['filter'] : '';
 $whereParts = [];
 $params = [];
 $types = '';
+
+// Add user filtering first
+$userFilterAnd = getUserFilterAnd('emails');
+if ($userFilterAnd !== '') {
+    $whereParts[] = substr($userFilterAnd, 4); // Remove 'AND ' prefix to use in WHERE
+}
 
 if ($csv_list_id > 0) {
     $whereParts[] = "csv_list_id = ?";

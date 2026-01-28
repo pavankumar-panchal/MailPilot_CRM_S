@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { API_CONFIG } from "../config";
+import { authFetch } from "../utils/authFetch";
 
 const TopProgressBar = () => {
   const [percent, setPercent] = useState(0);
@@ -11,7 +12,7 @@ const TopProgressBar = () => {
 
     const fetchProgress = async () => {
       try {
-        const res = await fetch(API_CONFIG.PROGRESS);
+        const res = await authFetch(API_CONFIG.PROGRESS);
         const data = await res.json();
         if (
           data &&

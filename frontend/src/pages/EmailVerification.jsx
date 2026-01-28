@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 import EmailsList from "./EmailsListOptimized";
 import { API_CONFIG, getBaseUrl } from "../config";
+import { authFetch } from "../utils/authFetch";
 
 const BASE_URL = getBaseUrl();
 
 const checkRetryProgress = async () => {
   try {
-    const res = await fetch(`${API_CONFIG.RETRY_SMTP}?progress=1`);
+    const res = await authFetch(`${API_CONFIG.RETRY_SMTP}?progress=1`);
     return await res.json();
   } catch (error) {
     console.error("Error checking retry progress:", error);
@@ -59,31 +60,61 @@ const EmailVerification = () => {
   const fetchLists = useCallback(async () => {
     try {
       setListsLoading(true);
-      const params = new URLSearchParams({
-        page: listPagination.page,
-        limit: listPagination.rowsPerPage,
-        search: listPagination.search,
-      });
-
-      const res = await fetch(`${API_CONFIG.GET_CSV_LIST}?${params}`);
+      
+      // Use get_csv_list.php endpoint to get validation lists from csv_list table
+      const res = await authFetch(`${API_CONFIG.GET_CSV_LIST}?limit=-1`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
+      console.log('CSV list API response:', data);
 
-      setLists(Array.isArray(data.data) ? data.data : []);
-      setListPagination((prev) => ({ ...prev, total: data.total || 0 }));
+      // Check if response is successful
+      if (data.success === false) {
+        console.error('CSV list API returned error:', data.message || data.error);
+        throw new Error(data.message || data.error || 'Failed to load lists');
+      }
+
+      // Transform csv_list data for email verification
+      const lists = Array.isArray(data.data) ? data.data.map(list => ({
+        id: parseInt(list.id) || 0,
+        list_name: list.list_name || 'Unknown',
+        file_name: list.list_name || 'Unknown',
+        total_emails: parseInt(list.total_emails) || 0,
+        valid_count: parseInt(list.valid_count) || 0,
+        invalid_count: parseInt(list.invalid_count) || 0,
+        failed_count: parseInt(list.failed_count) || 0,
+        status: list.status || 'pending',
+        created_at: list.created_at,
+        is_verification_list: true
+      })) : [];
+
+      console.log('Email verification lists loaded:', lists.length, lists);
+      setLists(lists);
+      setListPagination((prev) => ({ ...prev, total: data.total || lists.length }));
     } catch (error) {
       console.error("Error fetching lists:", error);
       setLists([]);
       setListPagination((prev) => ({ ...prev, total: 0 }));
-      setStatus({ type: "error", message: "Failed to load lists" });
+      // Only set error status once to avoid infinite loop
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        // Redirect to login on auth failure
+        window.location.href = '/login';
+      } else {
+        // Silent fail - don't set status to avoid infinite loop
+        console.error("Failed to load lists:", error.message);
+      }
     } finally {
       setListsLoading(false);
     }
-  }, [listPagination.page, listPagination.rowsPerPage, listPagination.search]);
+  }, []);
 
   // Fetch retry failed count (unused function retained for commented code)
   const fetchRetryFailedCount = async () => {
     try {
-      const res = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
+      const res = await authFetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
       const data = await res.json();
       // Intentionally empty - for future use when uncommenting retry features
       console.log("Retry failed count:", data.total);
@@ -137,80 +168,47 @@ const EmailVerification = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(API_CONFIG.API_UPLOAD, {
+      
+      // Use email_processor.php endpoint for CSV import
+      const res = await authFetch(API_CONFIG.API_EMAIL_PROCESSOR, {
           method: "POST",
-          body: formDataObj,
+          body: formDataObj
         }
       );
       const data = await res.json();
+      
+      console.log('Import response:', data);
 
-      if (data.status === "success") {
-        // Auto-download rejected emails file if available
-        if (data.data?.rejected_emails && data.data?.rejected_count > 0) {
-          console.log('Rejected emails detected:', data.data.rejected_count);
-          
-          // Generate CSV from rejected emails data
-          setTimeout(() => {
-            const rejectedEmails = data.data.rejected_emails;
-            
-            // Create CSV content
-            const csvRows = [];
-            csvRows.push(['Email', 'Reason', 'Line Number']); // Header
-            
-            rejectedEmails.forEach(item => {
-              csvRows.push([
-                item.email || '',
-                item.reason || '',
-                item.line || 'N/A'
-              ]);
-            });
-            
-            // Convert to CSV string
-            const csvContent = csvRows.map(row => 
-              row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-            ).join('\n');
-            
-            // Create blob and download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `rejected_emails_list_${data.data.csv_list_id}_${Date.now()}.csv`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            
-            // Clean up
-            setTimeout(() => {
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }, 100);
-            
-            console.log('Rejected emails CSV downloaded');
-          }, 500);
-          
-          setStatus({
-            type: "success",
-            message: `${data.message} | ${data.data.rejected_count} rejected emails downloaded.`,
-          });
-        } else {
-          setStatus({
-            type: "success",
-            message: data.message || "Upload successful",
-          });
+      if (data.success || data.status === 'success') {
+        const validCount = data.data?.valid_count || data.imported || 0;
+        const invalidCount = data.data?.invalid_count || 0;
+        
+        let successMessage = data.message || `Successfully imported ${validCount} records!`;
+        if (invalidCount > 0) {
+          successMessage += ` | Invalid: ${invalidCount}`;
         }
         
-        setShowProgress(true);
-        startProgressTracking();
+        setStatus({
+          type: "success",
+          message: successMessage,
+        });
+        
         setFormData({ listName: "", fileName: "", csvFile: null });
-        fetchLists(); // Fetch latest lists
-        fetchRetryFailedCount(); // Fetch latest retry count
+        
+        // Add new list to the state immediately for instant UI update
+        if (data.data?.list_details) {
+          setLists(prevLists => [data.data.list_details, ...prevLists]);
+        }
+        
+        // Also refresh from server to ensure sync
+        fetchLists();
+        
       } else {
-        setStatus({ type: "error", message: data.message || "Upload failed" });
+        setStatus({ type: "error", message: data.error || data.message || "Import failed" });
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      setStatus({ type: "error", message: "Network error" });
+      setStatus({ type: "error", message: "Network error: " + error.message });
     } finally {
       setLoading(false);
     }
@@ -219,7 +217,7 @@ const EmailVerification = () => {
   const exportEmails = async (type, listId) => {
     try {
       const url = `${API_CONFIG.GET_RESULTS}?export=${type}&csv_list_id=${listId}`;
-      const res = await fetch(url);
+      const res = await authFetch(url);
       const blob = await res.blob();
 
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -241,7 +239,7 @@ const EmailVerification = () => {
 
     progressInterval.current = setInterval(async () => {
       try {
-        const res = await fetch("/api/verify/progress");
+        const res = await authFetch("/api/verify/progress");
         const data = await res.json();
         // Progress tracking logic disabled - setProgress removed
         console.log("Progress:", data);
@@ -270,24 +268,26 @@ const EmailVerification = () => {
       <div
         className={`
           fixed top-6 left-1/2 transform -translate-x-1/2 z-50
-          px-6 py-3 rounded-xl shadow text-base font-semibold
+          px-6 py-3 rounded-xl shadow-lg text-base font-bold
           flex items-center gap-3
           transition-all duration-300
           backdrop-blur-md
           ${
             status.type === "error"
-              ? "bg-red-200/60 border border-red-400 text-red-800"
-              : "bg-green-200/60 border border-green-400 text-green-800"
+              ? "bg-red-50 border-2 border-red-500 text-red-700"
+              : "bg-green-50 border-2 border-green-500 text-green-700"
           }
         `}
         style={{
           minWidth: 250,
-          maxWidth: 400,
-          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.23)",
+          maxWidth: 600,
+          boxShadow: status.type === "error" 
+            ? "0 8px 32px 0 rgba(220, 38, 38, 0.4)"
+            : "0 8px 32px 0 rgba(34, 197, 94, 0.4)",
           background:
             status.type === "error"
-              ? "rgba(255, 0, 0, 0.29)"
-              : "rgba(0, 200, 83, 0.29)",
+              ? "rgba(254, 226, 226, 0.95)"
+              : "rgba(220, 252, 231, 0.95)",
           borderRadius: "16px",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
@@ -295,10 +295,10 @@ const EmailVerification = () => {
         role="alert"
       >
         <i
-          className={`fas text-lg ${
+          className={`fas text-xl ${
             status.type === "error"
-              ? "fa-exclamation-circle text-red-500"
-              : "fa-check-circle text-green-500"
+              ? "fa-exclamation-circle text-red-600"
+              : "fa-check-circle text-green-600"
           }`}
         ></i>
         <span className="flex-1">{status.message}</span>
@@ -359,7 +359,7 @@ const EmailVerification = () => {
       await fetchRetryFailedCount();
 
       // Start by checking how many need retry
-      const resCount = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
+      const resCount = await authFetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1`);
       const countData = await resCount.json();
 
       if (countData.total === 0) {
@@ -369,7 +369,7 @@ const EmailVerification = () => {
       }
 
       // Start the retry process
-      const resStart = await fetch(API_CONFIG.API_RETRY_FAILED, {
+      const resStart = await authFetch(API_CONFIG.API_RETRY_FAILED, {
         method: "POST"
       });
       const startData = await resStart.json();
@@ -413,7 +413,7 @@ const EmailVerification = () => {
 
     try {
       // Fetch failed count for this list
-      const resCount = await fetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1&csv_list_id=${listId}`);
+      const resCount = await authFetch(`${API_CONFIG.GET_RESULTS}?retry_failed=1&csv_list_id=${listId}`);
       const countData = await resCount.json();
 
       if (!countData.total || countData.total === 0) {
@@ -423,7 +423,7 @@ const EmailVerification = () => {
       }
 
       // Start retry for this list
-      const resStart = await fetch(`${API_CONFIG.RETRY_SMTP}?csv_list_id=${listId}`, {
+      const resStart = await authFetch(`${API_CONFIG.RETRY_SMTP}?csv_list_id=${listId}`, {
         method: "POST"
       });
       const startData = await resStart.json();
@@ -464,15 +464,15 @@ const EmailVerification = () => {
   const _failedCount = lists.filter((list) => list.domain_status === 2).length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
       <StatusMessage status={status} onClose={() => setStatus(null)} />
 
       {/* Upload Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 mt-12">
-        <div className="flex items-center mb-6">
-          <div className="bg-blue-100 p-2 rounded-lg mr-4">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8 mt-14 sm:mt-12">
+        <div className="flex items-center mb-4 sm:mb-6">
+          <div className="bg-blue-100 p-2 rounded-lg mr-3 sm:mr-4">
             <svg
-              className="w-6 h-6 text-blue-600"
+              className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -485,7 +485,7 @@ const EmailVerification = () => {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
             Upload Email List
           </h2>
         </div>
@@ -503,7 +503,7 @@ const EmailVerification = () => {
                 value={formData.listName}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g. List_2025"
+                placeholder="e.g. My Email List"
                 required
               />
             </div>
@@ -519,7 +519,7 @@ const EmailVerification = () => {
                 value={formData.fileName}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g. File_2025.csv"
+                placeholder="e.g. emails_jan_2025.csv"
                 required
               />
             </div>
@@ -648,12 +648,12 @@ const EmailVerification = () => {
       </div>
 
       {/* Lists Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-lg mr-4">
+            <div className="bg-blue-100 p-2 rounded-lg mr-3 sm:mr-4">
               <svg
-                className="w-6 h-6 text-blue-600"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -666,7 +666,7 @@ const EmailVerification = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">Email Lists</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Email Lists</h2>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div className="relative flex-grow max-w-md">
@@ -758,26 +758,26 @@ const EmailVerification = () => {
         </div>
 
         {/* Lists Table */}
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto -mx-4 sm:mx-0 sm:rounded-lg border-t sm:border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   List Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Emails
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Valid/Invalid
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -819,18 +819,18 @@ const EmailVerification = () => {
                       .toLowerCase()
                       .includes(listPagination.search.toLowerCase())
                   )
-                  .map((list) => (
+                  .map((list, index) => (
                     <tr
                       key={list.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {list.id}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {(listPagination.page - 1) * listPagination.rowsPerPage + index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {list.list_name}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900">
+                        <div className="max-w-xs truncate">{list.list_name}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span
                           className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeColor(
                             list.status
@@ -840,10 +840,10 @@ const EmailVerification = () => {
                             list.status.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {list.total_emails} total
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {list.total_emails} <span className="hidden sm:inline">total</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                         <span className="text-emerald-600 font-medium">
                           {list.valid_count || 0} valid
                         </span>{" "}
@@ -852,13 +852,14 @@ const EmailVerification = () => {
                           {list.invalid_count || 0} invalid
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <button
                           onClick={() => setExpandedListId(list.id)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors flex items-center"
+                          className="text-blue-600 hover:text-blue-800 transition-colors flex items-center text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50"
                         >
                           <svg
-                            className="w-4 h-4 mr-1"
+                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -939,6 +940,7 @@ const EmailVerification = () => {
                             ? "Retrying..."
                             : `Retry (${list.failed_count || 0})`}
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))

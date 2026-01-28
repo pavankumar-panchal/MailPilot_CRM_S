@@ -1,15 +1,15 @@
 <?php
 /**
- * PHP Function Compatibility Checker for MailPilot CRM
+ * PHP Function Compatibility Checker for Relyon CRM
  * 
  * This script checks if all required PHP functions, extensions, and configurations
- * are available on the server for the MailPilot CRM project to work properly.
+ * are available on the server for the Relyon CRM project to work properly.
  */
 
 header('Content-Type: text/plain; charset=utf-8');
 
 echo "=================================================================\n";
-echo "   MailPilot CRM - PHP Compatibility Check\n";
+echo "   Relyon CRM - PHP Compatibility Check\n";
 echo "=================================================================\n\n";
 
 echo "Server: " . $_SERVER['SERVER_SOFTWARE'] . "\n";
@@ -266,7 +266,7 @@ echo "=================================================================\n\n";
 
 if (empty($errors)) {
     echo "✓✓✓ ALL CRITICAL REQUIREMENTS MET! ✓✓✓\n";
-    echo "Your server is fully compatible with MailPilot CRM.\n\n";
+    echo "Your server is fully compatible with Relyon CRM.\n\n";
 } else {
     echo "✗✗✗ CRITICAL ISSUES FOUND ✗✗✗\n\n";
     echo "The following issues must be resolved:\n";

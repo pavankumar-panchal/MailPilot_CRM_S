@@ -1,16 +1,16 @@
 # Enable rewrite engine
 RewriteEngine On
 
-# Allow access to public, routes, and storage directories
-RewriteCond %{REQUEST_URI} ^/(public|routes|storage|app)/
+# Allow direct access to api, public, routes, storage, and app directories
+RewriteCond %{REQUEST_URI} ^/(api|public|routes|storage|app)/
 RewriteRule ^ - [L]
 
 # Block direct access to includes, config, scripts, logs, tmp, and vendor
 RewriteCond %{REQUEST_URI} ^/(includes|config|scripts|logs|tmp|vendor|docs)/
 RewriteRule ^ - [F,L]
 
-# Route API requests to routes/api.php
+# Route only /routes/ requests to routes/api.php (not /api/ directory)
 RewriteCond %{REQUEST_URI} !-f
 RewriteCond %{REQUEST_URI} !-d
-RewriteCond %{REQUEST_URI} ^/(routes|api)/
+RewriteCond %{REQUEST_URI} ^/routes/
 RewriteRule ^(.*)$ routes/api.php/$1 [L,QSA]

@@ -23,6 +23,7 @@ const Master = () => {
   const [templatePreviewData, setTemplatePreviewData] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
+  const [pageNumberInput, setPageNumberInput] = useState('');
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -42,14 +43,33 @@ const Master = () => {
   // Fetch CSV lists
   const fetchCsvLists = useCallback(async () => {
     try {
+      console.log('🔄 Fetching CSV lists from:', API_CONFIG.GET_CSV_LIST);
       const res = await axios.get(API_CONFIG.GET_CSV_LIST, {
         params: { limit: 'all' }
       });
-      if (res.data && res.data.data) {
+      console.log('✅ CSV Lists API Response:', res.data);
+      if (res.data?.debug) {
+        console.log('🔍 Debug Info:', res.data.debug);
+      }
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        console.log('📋 Setting CSV lists:', res.data.data.length, 'lists found');
+        if (res.data.data.length > 0) {
+          console.log('📄 First list:', res.data.data[0]);
+        }
         setCsvLists(res.data.data);
+      } else {
+        console.warn('⚠️ Unexpected CSV list response format:', res.data);
+        setCsvLists([]);
       }
     } catch (error) {
-      console.error('Failed to fetch CSV lists:', error);
+      console.error('❌ Failed to fetch CSV lists:', error);
+      console.error('🔍 Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      setCsvLists([]);
     }
   }, []);
 
@@ -231,12 +251,19 @@ const Master = () => {
   // Handle CSV list selection change
   const handleCsvListChange = useCallback(async (campaignId, csvListId) => {
     try {
+      console.log('🔄 Saving CSV list selection:', { campaignId, csvListId });
+      const url = `${API_CONFIG.API_CAMPAIGNS}&id=${campaignId}`;
+      console.log('📡 Request URL:', url);
+      console.log('📦 Request body:', { csv_list_id: csvListId || null });
+      
       // Save CSV list ID to database immediately
-      await axios.post(
-        `${API_CONFIG.API_CAMPAIGNS}?id=${campaignId}`,
+      const response = await axios.post(
+        url,
         { csv_list_id: csvListId || null },
         { headers: { 'Content-Type': 'application/json' } }
       );
+      
+      console.log('✅ CSV list save response:', response.data);
       
       // Update local state
       setCampaignCsvListSelections(prev => ({
@@ -252,9 +279,11 @@ const Master = () => {
       
       setMessage({ type: "success", text: "CSV list selection saved" });
     } catch (error) {
+      console.error('❌ Failed to save CSV list:', error);
+      console.error('🔍 Error response:', error.response?.data);
       setMessage({
         type: "error",
-        text: error.response?.data?.error || "Failed to save CSV list selection"
+        text: error.response?.data?.message || error.response?.data?.error || "Failed to save CSV list selection"
       });
     }
   }, [fetchEmailCounts, fetchData]);
@@ -320,7 +349,43 @@ const Master = () => {
     setShowTemplatePreview(false);
     setTemplatePreviewData(null);
     setCurrentEmailIndex(0);
+    setPageNumberInput('');
   }, []);
+
+  // Handle page number input change
+  const handlePageNumberChange = useCallback((e) => {
+    const value = e.target.value;
+    // Only allow numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      setPageNumberInput(value);
+    }
+  }, []);
+
+  // Go to specific page number
+  const goToPageNumber = useCallback(() => {
+    if (!templatePreviewData || !pageNumberInput) return;
+    
+    const pageNum = parseInt(pageNumberInput);
+    const totalPages = templatePreviewData.total_emails;
+    
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      const newIndex = pageNum - 1; // Convert to 0-based index
+      changePreviewEmail(templatePreviewData.campaign_id, newIndex);
+      setPageNumberInput(''); // Clear input after navigation
+    } else {
+      setMessage({ 
+        type: 'error', 
+        text: `Please enter a valid page number between 1 and ${totalPages.toLocaleString()}` 
+      });
+    }
+  }, [templatePreviewData, pageNumberInput, changePreviewEmail]);
+
+  // Handle Enter key in page number input
+  const handlePageNumberKeyPress = useCallback((e) => {
+    if (e.key === 'Enter') {
+      goToPageNumber();
+    }
+  }, [goToPageNumber]);
 
   // Initialize CSV list selections from campaigns
   useEffect(() => {
@@ -481,21 +546,29 @@ const Master = () => {
                           <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
                             <span className="text-xs text-gray-500">Pending</span>                                                                        
                             <span className="font-bold text-lg text-blue-700">
-                              {counts.pending !== undefined ? counts.pending : (selectedCsvList ? 0 : (campaign.pending_emails || 0))}
+                              {counts.pending !== undefined ? counts.pending : (campaign.pending_emails || 0)}
                             </span>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
                             <span className="text-xs text-gray-500">Sent</span>
                             <span className="font-bold text-lg text-green-700">
-                              {counts.sent !== undefined ? counts.sent : (selectedCsvList ? 0 : (campaign.sent_emails || 0))}
+                              {counts.sent !== undefined ? counts.sent : (campaign.sent_emails || 0)}
                             </span>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
                             <span className="text-xs text-gray-500">Failed</span>
                             <span className="font-bold text-lg text-red-700">
-                              {counts.failed !== undefined ? counts.failed : (selectedCsvList ? 0 : (campaign.failed_emails || 0))}
+                              {counts.failed !== undefined ? counts.failed : (campaign.failed_emails || 0)}
                             </span>
                           </div>
+                          {(campaign.retryable_count > 0 || (counts.retryable !== undefined && counts.retryable > 0)) && (
+                            <div className="bg-orange-50 rounded-lg p-3 flex flex-col items-center min-w-[120px]">
+                              <span className="text-xs text-orange-600">Retryable</span>
+                              <span className="font-bold text-lg text-orange-700">
+                                {counts.retryable !== undefined ? counts.retryable : (campaign.retryable_count || 0)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="mt-4 text-xs text-gray-500">
                           Started: {campaign.start_time ? campaign.start_time : "N/A"}<br />
@@ -650,14 +723,15 @@ const Master = () => {
 
       {/* CSV List Selection Modal with Search */}
       {showCsvModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <i className="fas fa-list-alt text-blue-600 mr-2"></i>
-                  Select CSV List for Campaign
+                <h3 className="text-base sm:text-xl font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-list-alt text-blue-600 mr-2 text-sm sm:text-base"></i>
+                  <span className="hidden sm:inline">Select CSV List for Campaign</span>
+                  <span className="sm:hidden">Select CSV List</span>
                 </h3>
                 <button
                   onClick={() => setShowCsvModal(false)}
@@ -681,11 +755,11 @@ const Master = () => {
             </div>
 
             {/* CSV Lists - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4">
               {/* All Recipients Option */}
               <button
                 onClick={() => confirmCsvSelection('')}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 mb-2 transition-all hover:border-blue-500 hover:bg-blue-50 ${
+                className={`w-full text-left px-3 sm:px-4 py-3 sm:py-4 rounded-lg border-2 mb-2 transition-all hover:border-blue-500 hover:bg-blue-50 touch-manipulation ${
                   !campaignCsvListSelections[selectedCampaignForModal]
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 bg-white'
@@ -755,19 +829,37 @@ const Master = () => {
                   <p>No CSV lists found matching "{csvSearchQuery}"</p>
                 </div>
               )}
+              
+              {/* Empty State - No CSV Lists */}
+              {!csvSearchQuery && csvLists.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <div className="mb-4">
+                    <i className="fas fa-inbox text-6xl text-gray-300"></i>
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">
+                    No CSV Lists Found
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Please check the Email Verification page to see your uploaded lists.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+                <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left order-2 sm:order-1">
                   <i className="fas fa-info-circle mr-1"></i>
-                  {csvLists.length} CSV list{csvLists.length !== 1 ? 's' : ''} available
+                  {csvLists.length > 0 
+                    ? `${csvLists.length} CSV list${csvLists.length !== 1 ? 's' : ''} available`
+                    : 'No CSV lists available'}
                 </div>
                 <button
                   onClick={() => setShowCsvModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-colors font-medium"
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium order-1 sm:order-2"
                 >
+                  <i className="fas fa-times mr-2"></i>
                   Close
                 </button>
               </div>
@@ -778,80 +870,111 @@ const Master = () => {
 
       {/* Template Preview Modal */}
       {showTemplatePreview && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 overflow-auto">
+          <div className="bg-white w-full sm:rounded-xl shadow-2xl sm:max-w-7xl sm:my-4 min-h-screen sm:min-h-0 sm:max-h-[95vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                    <i className="fas fa-envelope-open-text text-indigo-600 mr-3"></i>
-                    Email Template Preview
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex justify-between items-start sm:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-xl font-bold text-gray-900 flex items-center">
+                    <i className="fas fa-envelope-open-text text-indigo-600 mr-2 sm:mr-3 text-sm sm:text-base"></i>
+                    <span className="truncate">Email Template Preview</span>
                   </h3>
                   {templatePreviewData && (
-                    <p className="text-sm text-gray-600 mt-1 flex items-center gap-3">
-                      <span className="font-medium">{templatePreviewData.template_name}</span>
-                      <span className="text-gray-400">•</span>
-                      <span>{templatePreviewData.campaign_name}</span>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <span className="font-medium truncate">{templatePreviewData.template_name}</span>
+                      <span className="text-gray-400 hidden sm:inline">•</span>
+                      <span className="truncate">{templatePreviewData.campaign_name}</span>
                     </p>
                   )}
                 </div>
                 <button
                   onClick={closeTemplatePreview}
-                  className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-white transition-colors ml-4"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 sm:p-2 rounded-lg hover:bg-white transition-colors flex-shrink-0"
                 >
-                  <i className="fas fa-times text-xl"></i>
+                  <i className="fas fa-times text-lg sm:text-xl"></i>
                 </button>
               </div>
 
               {/* Email Navigation */}
               {templatePreviewData && templatePreviewData.has_sample_data && (
-                <div className="mt-4 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="mt-3 sm:mt-4 bg-white rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                     {/* Navigation Controls */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
                       <button
                         onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.max(0, currentEmailIndex - 1))}
                         disabled={currentEmailIndex === 0 || loadingPreview}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                        className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
                       >
-                        <i className="fas fa-chevron-left mr-2"></i>
-                        Previous
+                        <i className="fas fa-chevron-left sm:mr-2"></i>
+                        <span className="hidden sm:inline">Previous</span>
                       </button>
-                      <div className="px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                        <span className="text-sm font-bold text-indigo-900">
-                          Email {currentEmailIndex + 1} <span className="text-indigo-400 mx-1">of</span> {templatePreviewData.total_emails.toLocaleString()}
+                      <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+                        <span className="text-xs sm:text-sm font-bold text-indigo-900 whitespace-nowrap">
+                          <span className="hidden sm:inline">Email </span>{currentEmailIndex + 1} <span className="text-indigo-400 mx-1">of</span> {templatePreviewData.total_emails.toLocaleString()}
                         </span>
                       </div>
                       <button
                         onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.min(templatePreviewData.total_emails - 1, currentEmailIndex + 1))}
                         disabled={currentEmailIndex >= templatePreviewData.total_emails - 1 || loadingPreview}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                        className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
                       >
-                        Next
-                        <i className="fas fa-chevron-right ml-2"></i>
+                        <span className="hidden sm:inline">Next</span>
+                        <i className="fas fa-chevron-right sm:ml-2"></i>
                       </button>
                     </div>
-                    
+
+                    {/* Page Number Input */}
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                      <label htmlFor="pageNumberInput" className="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap">
+                        <i className="fas fa-hashtag text-indigo-600 mr-1"></i>
+                        Go to page:
+                      </label>
+                      <input
+                        id="pageNumberInput"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={pageNumberInput}
+                        onChange={handlePageNumberChange}
+                        onKeyPress={handlePageNumberKeyPress}
+                        placeholder={`1-${templatePreviewData.total_emails.toLocaleString()}`}
+                        disabled={loadingPreview}
+                        className="w-20 sm:w-24 px-2 py-1.5 border border-gray-300 rounded text-xs sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <button
+                        onClick={goToPageNumber}
+                        disabled={!pageNumberInput || loadingPreview}
+                        className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        title="Jump to page"
+                      >
+                        <i className="fas fa-arrow-right"></i>
+                        <span className="hidden sm:inline ml-1">Go</span>
+                      </button>
+                    </div>
+
                     {/* Current Email Info */}
                     {templatePreviewData.current_email && (
-                      <div className="flex-1 ml-4 pl-4 border-l-2 border-indigo-200">
+                      <div className="mt-3 sm:mt-0 sm:flex-1 sm:ml-4 sm:pl-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l-2 border-indigo-200">
                         <div className="flex items-start gap-2">
-                          <i className="fas fa-user-circle text-indigo-600 text-xl mt-0.5"></i>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900 flex items-center gap-2">
-                              {templatePreviewData.current_email.Emails || 
-                               templatePreviewData.current_email.Email || 
-                               templatePreviewData.current_email.email ||
-                               templatePreviewData.current_email.raw_emailid ||
-                               templatePreviewData.recipient_email ||
-                               templatePreviewData.to ||
-                               'Email not available'}
-                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                          <i className="fas fa-user-circle text-indigo-600 text-lg sm:text-xl mt-0.5 flex-shrink-0"></i>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="text-sm sm:text-base truncate">
+                                {templatePreviewData.current_email.Emails || 
+                                 templatePreviewData.current_email.Email || 
+                                 templatePreviewData.current_email.email ||
+                                 templatePreviewData.current_email.raw_emailid ||
+                                 templatePreviewData.recipient_email ||
+                                 templatePreviewData.to ||
+                                 'Email not available'}
+                              </span>
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium inline-flex items-center self-start">
                                 <i className="fas fa-check-circle mr-1"></i>Valid
                               </span>
                             </div>
-                            <div className="text-xs text-gray-600 mt-1 flex flex-wrap items-center gap-3">
+                            <div className="text-xs text-gray-600 mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                               {/* Show only key fields - max 4 */}
                               {(templatePreviewData.current_email['Billed Name'] || 
                                 templatePreviewData.current_email.BilledName || 
@@ -904,11 +1027,11 @@ const Master = () => {
                   </div>
                 </div>
               ) : templatePreviewData ? (
-                <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+                <div className="flex-1 overflow-y-auto bg-gray-100 p-3 sm:p-6">
                   {!templatePreviewData.has_sample_data && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4 mb-6 shadow-sm">
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
                       <div className="flex items-start">
-                        <i className="fas fa-exclamation-triangle text-yellow-600 text-xl mt-0.5 mr-3"></i>
+                        <i className="fas fa-exclamation-triangle text-yellow-600 text-lg sm:text-xl mt-0.5 mr-2 sm:mr-3 flex-shrink-0"></i>
                         <div>
                           <p className="font-semibold text-yellow-800">No Sample Data Available</p>
                           <p className="text-sm text-yellow-700 mt-1">
@@ -920,10 +1043,10 @@ const Master = () => {
                   )}
                   
                   {/* Email Preview Frame */}
-                  <div className="mx-auto" style={{ maxWidth: '800px' }}>
+                  <div className="mx-auto w-full" style={{ maxWidth: '800px' }}>
                     {/* Email Client Mock Header */}
-                    <div className="bg-white rounded-t-xl shadow-lg border border-gray-200 p-4">
-                      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                    <div className="bg-white rounded-t-lg sm:rounded-t-xl shadow-lg border border-gray-200 p-3 sm:p-4">
+                      <div className="flex items-center justify-between mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-500"></div>
                           <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
@@ -985,20 +1108,21 @@ const Master = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600 flex items-center gap-2">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+                <div className="text-xs sm:text-sm text-gray-600 flex items-center gap-2 order-2 sm:order-1">
                   {templatePreviewData && templatePreviewData.has_sample_data && (
                     <>
-                      <i className="fas fa-info-circle text-indigo-600"></i>
-                      <span>Use <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Previous</kbd> / <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Next</kbd> to browse different recipients</span>
+                      <i className="fas fa-info-circle text-indigo-600 flex-shrink-0"></i>
+                      <span className="hidden md:inline">Use <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Previous</kbd> / <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Next</kbd> or jump to specific page</span>
+                      <span className="md:hidden">Navigate with buttons or page number</span>
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 order-1 sm:order-2">
                   <button
                     onClick={closeTemplatePreview}
-                    className="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md"
+                    className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md text-sm"
                   >
                     <i className="fas fa-times mr-2"></i>
                     Close Preview
@@ -1036,25 +1160,31 @@ const StatusMessage = React.memo(({ message, onClose }) => {
 
   return (
     <div className={`fixed top-6 left-1/2 transform -translate-x-1/2
-      px-6 py-3 rounded-xl shadow text-base font-semibold
+      px-6 py-3 rounded-xl shadow-lg text-base font-bold
       flex items-center gap-3
       ${message.type === "error"
-        ? "bg-red-200/60 border border-red-400 text-red-800"
-        : "bg-green-200/60 border border-green-400 text-green-800"
+        ? "bg-red-50 border-2 border-red-500 text-red-700"
+        : "bg-green-50 border-2 border-green-500 text-green-700"
       }`}
       style={{
         minWidth: 250,
-        maxWidth: 400,
+        maxWidth: 600,
         zIndex: 99999,
-        boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.23)",
+        boxShadow: message.type === "error" 
+          ? "0 8px 32px 0 rgba(220, 38, 38, 0.4)"
+          : "0 8px 32px 0 rgba(34, 197, 94, 0.4)",
+        background: message.type === "error"
+          ? "rgba(254, 226, 226, 0.95)"
+          : "rgba(220, 252, 231, 0.95)",
+        borderRadius: "16px",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
       }}
       role="alert"
     >
-      <i className={`fas text-lg ${message.type === "error"
-        ? "fa-exclamation-circle text-red-500"
-        : "fa-check-circle text-green-500"
+      <i className={`fas text-xl ${message.type === "error"
+        ? "fa-exclamation-circle text-red-600"
+        : "fa-check-circle text-green-600"
         }`}></i>
       <span className="flex-1">{message.text}</span>
       <button

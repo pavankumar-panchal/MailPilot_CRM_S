@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CSV Endpoint</title>
+</head>
+<body>
+    <h1>Test CSV List & Campaign Endpoints</h1>
+    <button onclick="testGetCsvLists()">Test GET CSV Lists</button>
+    <button onclick="testUpdateCampaign()">Test Update Campaign CSV</button>
+    <pre id="output"></pre>
+
+    <script>
+        const BASE_URL = 'http://localhost/verify_emails/MailPilot_CRM_S';
+        const token = localStorage.getItem('mailpilot_token');
+        
+        function log(msg) {
+            document.getElementById('output').textContent += msg + '\n';
+            console.log(msg);
+        }
+        
+        async function testGetCsvLists() {
+            log('\n=== Testing GET CSV Lists ===');
+            try {
+                const response = await fetch(`${BASE_URL}/backend/includes/get_csv_list.php?limit=all`, {
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                log('Status: ' + response.status);
+                log('Response: ' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        }
+        
+        async function testUpdateCampaign() {
+            log('\n=== Testing Update Campaign CSV ===');
+            const campaignId = 2; // Change this to a valid campaign ID
+            const csvListId = 1;  // Change this to a valid CSV list ID
+            
+            try {
+                const response = await fetch(`${BASE_URL}/backend/routes/api.php?endpoint=/api/master/campaigns&id=${campaignId}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ csv_list_id: csvListId })
+                });
+                const data = await response.json();
+                log('Status: ' + response.status);
+                log('Response: ' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        }
+        
+        log('Token: ' + (token ? 'Present' : 'Missing'));
+    </script>
+</body>
+</html>

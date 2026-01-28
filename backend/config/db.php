@@ -4,21 +4,47 @@ error_reporting(0);
 // Use Indian Standard Time across all PHP processes
 date_default_timezone_set('Asia/Kolkata');
 
-$dbConfig = [
-    // 'host' => '127.0.0.1',
-    // 'username' => 'email_id',
-    // 'password' => '55y60jgW*',
-    // 'name' => 'email_id',
-    // 'port' => 3306
+// Auto-detect environment based on server name or hostname
+$isProduction = false;
 
+// Check SERVER_NAME (for web requests)
+if (isset($_SERVER['SERVER_NAME']) && strpos($_SERVER['SERVER_NAME'], 'payrollsoft.in') !== false) {
+    $isProduction = true;
+}
 
-    'host' => '127.0.0.1',
-    'username' => 'root',
-    'password' => '',
-    'name' => 'CRM',
-    'port' => 3306
+// Check hostname (for CLI/cron jobs)
+if (!$isProduction && php_sapi_name() === 'cli') {
+    $hostname = gethostname();
+    if ($hostname && strpos($hostname, 'payrollsoft') !== false) {
+        $isProduction = true;
+    }
+    // Also check if we can detect production by file path
+    if (!$isProduction && strpos(__DIR__, 'httpdocs') !== false) {
+        $isProduction = true;
+    }
+}
 
-];
+if ($isProduction) {
+    // Production server (payrollsoft.in)
+    $dbConfig = [
+        'host' => '127.0.0.1',
+        'username' => 'email_id',
+        'password' => '55y60jgW*',
+        'name' => 'email_id',
+        'port' => 3306
+    ];
+} else {
+    // Local development (XAMPP)
+    $dbConfig = [
+        'host' => '127.0.0.1',
+        'username' => 'root',
+        'password' => '',
+        'name' => 'CRM',
+        'port' => 3306
+    ];
+}
+
+error_log("Database config loaded for: " . ($isProduction ? 'PRODUCTION' : 'LOCALHOST') . " - DB: " . $dbConfig['name'] . " (CLI: " . (php_sapi_name() === 'cli' ? 'YES' : 'NO') . ")");
 
 $conn = new mysqli($dbConfig['host'], $dbConfig['username'], $dbConfig['password'], $dbConfig['name'], $dbConfig['port']);
 

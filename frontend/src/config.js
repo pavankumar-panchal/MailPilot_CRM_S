@@ -10,12 +10,18 @@ const isLocalhost = () => {
     return true;
   }
   
-  return host === 'localhost' || host === '127.0.0.1' || host.includes('192.168.');
+  // Check for localhost variations
+  return host === 'localhost' || 
+         host === '127.0.0.1' || 
+         host.includes('192.168.') ||
+         host.includes('10.0.') ||
+         host.endsWith('.local');
 };
 
 const isDevServer = () => {
-  // Check if running on Vite dev server (port 5173)
-  return window.location.port === '5173';
+  // Check if running on Vite dev server (ports 5173-5176)
+  const port = window.location.port;
+  return port === '5173' || port === '5174' || port === '5175' || port === '5176';
 };
 
 // Base URLs
@@ -24,10 +30,21 @@ const PRODUCTION_BASE = 'https://payrollsoft.in/emailvalidation';
 
 export const getBaseUrl = () => {
   // For production server, always use PRODUCTION_BASE unless explicitly on localhost
-  if (isDevServer() || isLocalhost()) {
-    return LOCAL_BASE;
-  }
-  return PRODUCTION_BASE;
+  const isLocal = isDevServer() || isLocalhost();
+  const baseUrl = isLocal ? LOCAL_BASE : PRODUCTION_BASE;
+  
+  // Log environment for debugging
+  console.log('🔧 Environment Detection:', {
+    hostname: window.location.hostname,
+    port: window.location.port,
+    protocol: window.location.protocol,
+    isLocalhost: isLocalhost(),
+    isDevServer: isDevServer(),
+    selectedBase: isLocal ? 'LOCAL' : 'PRODUCTION',
+    baseUrl: baseUrl
+  });
+  
+  return baseUrl;
 };
 
 // API Endpoints
@@ -52,15 +69,28 @@ export const API_CONFIG = {
   GET_RESULTS: `${BASE_URL}/backend/includes/get_results.php`,
   UPLOAD_IMAGE: `${BASE_URL}/backend/includes/upload_image.php`,
   
-  // API Routes
-  API_UPLOAD: `${BASE_URL}/backend/routes/api.php/api/upload`,
-  API_RETRY_FAILED: `${BASE_URL}/backend/routes/api.php/api/retry-failed`,
-  API_RESULTS: `${BASE_URL}/backend/routes/api.php/api/results`,
-  API_WORKERS: `${BASE_URL}/backend/routes/api.php/api/workers`,
-  API_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php/api/master/campaigns`, // CRUD operations
-  API_MASTER_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php/api/master/campaigns_master`, // Status/operations
-  API_MASTER_SMTPS: `${BASE_URL}/backend/routes/api.php/api/master/smtps`,
-  API_MONITOR_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php/api/monitor/campaigns`,
+  // All APIs through router using query parameters (works on all servers)
+  API_LOGIN: `${BASE_URL}/backend/routes/api.php?endpoint=/api/login`,
+  API_REGISTER: `${BASE_URL}/backend/routes/api.php?endpoint=/api/register`,
+  API_LOGOUT: `${BASE_URL}/backend/routes/api.php?endpoint=/api/logout`,
+  API_VERIFY_SESSION: `${BASE_URL}/backend/routes/api.php?endpoint=/api/verify_session`,
+  API_SMTP_SERVERS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/smtps`,
+  API_SMTP_ACCOUNTS: `${BASE_URL}/backend/includes/smtp_accounts.php`,
+  API_WORKERS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/workers`,
+  API_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/campaigns`,
+  API_MAIL_TEMPLATES: `${BASE_URL}/backend/includes/mail_templates.php`,
+  API_IMPORT_DATA: `${BASE_URL}/backend/includes/import_data.php`,
+  API_EMAIL_PROCESSOR: `${BASE_URL}/backend/public/email_processor.php`,
+  API_UPLOAD: `${BASE_URL}/backend/routes/api.php?endpoint=/api/upload`,
+  API_RESULTS: `${BASE_URL}/backend/includes/import_data.php?action=get_batch`,
+  
+  // Aliases for backward compatibility
+  API_MASTER_SMTPS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/smtps`,
+  API_MASTER_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/campaigns_master`,
+  
+  // Legacy endpoints
+  API_RETRY_FAILED: `${BASE_URL}/backend/routes/api.php?endpoint=/api/retry-failed`,
+  API_MONITOR_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/monitor/campaigns`,
   
   // App endpoints
   APP_EMAIL_RESPONSE: `${BASE_URL}/backend/app/email_responce.php`,

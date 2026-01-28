@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import { TableSkeleton } from "../components/SkeletonLoader";
 import { API_CONFIG } from "../config";
+import { authFetch } from "../utils/authFetch";
 
 // Use centralized config for API endpoints
 const API_BASE = API_CONFIG.API_MASTER_SMTPS;
@@ -101,18 +102,34 @@ const Smtp = () => {
   const fetchServers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_BASE);
+      const res = await authFetch(API_BASE);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      if (Array.isArray(data.data)) {
+      
+      // Handle different response formats
+      if (data.success && Array.isArray(data.data)) {
+        setServers(data.data);
+      } else if (Array.isArray(data.data)) {
         setServers(data.data);
       } else if (Array.isArray(data)) {
         setServers(data);
       } else {
         setServers([]);
       }
-    } catch {
-      setStatus({ type: "error", message: "Failed to load SMTP servers." });
+      
+      // Clear any previous errors on successful load
+      if (status?.type === 'error') {
+        setStatus(null);
+      }
+    } catch (error) {
+      console.error("Error fetching SMTP servers:", error);
       setServers([]);
+      setStatus({ type: "error", message: error.message || "Failed to load data. Please try again." });
     }
     setLoading(false);
   };
@@ -151,7 +168,7 @@ const Smtp = () => {
       return;
     }
     try {
-      const res = await fetch(API_BASE, {
+      const res = await authFetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, accounts: filteredAccounts }),
@@ -191,7 +208,7 @@ const Smtp = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_BASE}?id=${editId}`, {
+      const res = await authFetch(`${API_BASE}?id=${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -201,7 +218,7 @@ const Smtp = () => {
             port: form.port,
             encryption: form.encryption,
             is_active: form.is_active,
-            received_email: form.received_email, // <-- Add this line!
+            received_email: form.received_email,
           },
           accounts: form.accounts,
         }),
@@ -232,7 +249,9 @@ const Smtp = () => {
     if (!window.confirm("Are you sure you want to delete this SMTP server?"))
       return;
     try {
-      const res = await fetch(`${API_BASE}?id=${id}`, { method: "DELETE" });
+      const res = await authFetch(`${API_BASE}?id=${id}`, { 
+        method: "DELETE",
+      });
       const data = await res.json();
       if (data.success) {
         setStatus({
@@ -258,7 +277,7 @@ const Smtp = () => {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/${serverId}/accounts`, {
+      const res = await authFetch(`${API_BASE}/${serverId}/accounts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(accountForm),
@@ -293,7 +312,9 @@ const Smtp = () => {
     if (!window.confirm("Are you sure you want to delete this email account?"))
       return;
     try {
-      const res = await fetch(`${API_BASE}/${serverId}/accounts/${accountId}`, { method: "DELETE" });
+      const res = await authFetch(`${API_BASE}/${serverId}/accounts/${accountId}`, { 
+        method: "DELETE",
+      });
       const data = await res.json();
       if (data.success) {
         setStatus({
@@ -333,7 +354,7 @@ const Smtp = () => {
     }
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_BASE}/${editingAccount.serverId}/accounts/${editingAccount.accountId}`,
         {
           method: "PUT",
@@ -498,11 +519,14 @@ const Smtp = () => {
                   </td>
                 </tr>
               ) : (
-                servers.map((server) => (
+                servers.map((server, index) => (
                   <React.Fragment key={server.id}>
                     <tr className="hover:bg-indigo-50/30 transition">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
+                          <div className="text-xs text-gray-400 mr-3">
+                            #{index + 1}
+                          </div>
                           <div>
                             <div className="text-base font-semibold text-gray-900">
                               {server.name}

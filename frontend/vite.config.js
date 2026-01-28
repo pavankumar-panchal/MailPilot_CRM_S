@@ -104,6 +104,7 @@ export default defineConfig({
   
   // Performance optimizations for dev server
   server: {
+    port: 5174, // Fixed port
     hmr: {
       overlay: true,
     },
@@ -111,6 +112,11 @@ export default defineConfig({
     // doesn't try to serve backend PHP files itself. This ensures calls to
     // /verify_emails/* reach the proper PHP backend on port 80.
     proxy: {
+      '/api': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/verify_emails/MailPilot_CRM_S/backend/app')
+      },
       // Proxy any requests that begin with the project path to Apache
       '/verify_emails': {
         target: 'http://localhost',

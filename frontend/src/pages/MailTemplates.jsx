@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { API_CONFIG, getBaseUrl } from '../config';
+import { authFetch } from '../utils/authFetch';
 
 // Glassmorphism Status Message Popup (matching Campaigns page style)
 const StatusMessage = ({ message, onClose }) =>
@@ -86,18 +87,29 @@ const MailTemplates = () => {
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}?action=list`);
+      const response = await authFetch(`${API_URL}?action=list`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setTemplates(data.templates);
+        // Clear any previous errors
+        if (message.type === 'error') {
+          setMessage({ type: '', text: '' });
+        }
       } else {
         console.error('API Error:', data.error);
         setMessage({ type: 'error', text: data.error || 'Failed to load templates' });
       }
     } catch (error) {
       console.error('Load templates error:', error);
-      setMessage({ type: 'error', text: 'Failed to connect to server. Please check if the backend is running.' });
+      setTemplates([]);
+      setMessage({ type: 'error', text: error.message || 'Failed to load templates.' });
     } finally {
       setLoading(false);
     }
@@ -114,7 +126,7 @@ const MailTemplates = () => {
       
       const method = editingTemplate ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -149,7 +161,9 @@ const MailTemplates = () => {
     });
     
     // Load full HTML
-    fetch(`${API_URL}?action=get&template_id=${template.template_id}`)
+    fetch(`${API_URL}?action=get&template_id=${template.template_id}`, {
+      credentials: 'include'
+    })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -164,9 +178,11 @@ const MailTemplates = () => {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${API_URL}?action=delete&template_id=${templateId}`,
-        { method: 'DELETE' }
+        { 
+          method: 'DELETE',
+        }
       );
 
       const data = await response.json();
@@ -188,7 +204,7 @@ const MailTemplates = () => {
       // First, try to get the latest import batch ID
       let import_batch_id = null;
       try {
-        const batchResponse = await fetch(`${BASE_URL}/backend/includes/import_data.php?action=list`);
+        const batchResponse = await authFetch(`${API_CONFIG.API_IMPORT_DATA}?action=list`);
         const batchData = await batchResponse.json();
         if (batchData.success && batchData.batches && batchData.batches.length > 0) {
           import_batch_id = batchData.batches[0].import_batch_id;
@@ -197,7 +213,7 @@ const MailTemplates = () => {
         console.log('No import batches found, using sample data');
       }
 
-      const response = await fetch(`${API_URL}?action=merge_preview`, {
+      const response = await authFetch(`${API_URL}?action=merge_preview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -359,20 +375,20 @@ const MailTemplates = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {templates.map(template => (
+                {templates.map((template, index) => (
                   <tr
                     key={template.template_id}
                     className="hover:bg-gray-50 transition-colors duration-150"
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-500">
-                      {template.template_id}
+                      {index + 1}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-gray-900">
                         {template.template_name}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {(template.html_length / 1024).toFixed(1)} KB • {new Date(template.created_at).toLocaleDateString()}
+                        {template.html_length ? `${(template.html_length / 1024).toFixed(1)} KB` : 'No content'} • {new Date(template.created_at).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="px-4 py-3">

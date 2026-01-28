@@ -1,5 +1,0 @@
-[2025-12-14 05:40:59] INFO: Lock acquired for 'test_job' (PID: 57597)
-[2025-12-14 05:40:59] INFO: Job 'test_job' already running (PID: 57597, age: 0s)
-[2025-12-14 05:40:59] INFO: Lock released for 'test_job' (PID: 57597)
-[2025-12-14 05:40:59] INFO: Lock acquired for 'test_job' (PID: 57597)
-[2025-12-14 05:40:59] INFO: Lock released for 'test_job' (PID: 57597)

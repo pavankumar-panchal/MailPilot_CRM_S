@@ -139,6 +139,7 @@
     $send_count = 0;
     $loop_iter = 0;
     $consecutive_limit_checks = 0;
+    $consecutive_empty_claims = 0; // Track consecutive failed claim attempts to handle locked rows
     while (true) {
         $loop_iter++;
         // Abort immediately if campaign no longer exists (deleted)
@@ -233,13 +234,47 @@
             
             workerLog("Server #$server_id: claimNextEmail returned: " . ($claimed ? "SUCCESS" : "NULL"));
             if (!$claimed) {
-                workerLog("Server #$server_id: No more emails to claim. Queue exhausted.");
+                $consecutive_empty_claims++;
                 
-                // Check if campaign is completed and update status
-                checkCampaignCompletion($conn, $campaign_id);
+                // Check if there are actually emails remaining to process
+                $remainingCheck = null;
+                if ($import_batch_id) {
+                    $batch_escaped = $conn->real_escape_string($import_batch_id);
+                    $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM imported_recipients ir WHERE ir.import_batch_id = '$batch_escaped' AND ir.is_active = 1 AND ir.Emails IS NOT NULL AND ir.Emails <> '' AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails AND mb.status = 'success')");
+                } else {
+                    $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.domain_status = 1 AND e.validation_status = 'valid' AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid AND mb.status = 'success')");
+                }
                 
-                break; // no more emails
+                $remaining = ($remainingCheck && $remainingCheck->num_rows > 0) ? intval($remainingCheck->fetch_assoc()['cnt']) : 0;
+                
+                if ($remaining > 0) {
+                    // There ARE emails remaining, but they're locked by other workers
+                    // Retry with exponential backoff
+                    if ($consecutive_empty_claims <= 10) {
+                        $wait_ms = min(100 * $consecutive_empty_claims, 1000); // 100ms to 1000ms
+                        workerLog("Server #$server_id: $remaining emails still pending but rows locked. Retry attempt #$consecutive_empty_claims/10. Waiting {$wait_ms}ms...");
+                        usleep($wait_ms * 1000);
+                        continue; // Retry claiming
+                    } else {
+                        // After 10 retries, take a longer break and reset counter
+                        workerLog("Server #$server_id: $remaining emails pending but heavily contested. Taking 2s break then resetting retry counter...");
+                        sleep(2);
+                        $consecutive_empty_claims = 0;
+                        continue;
+                    }
+                } else {
+                    // No emails remaining - truly exhausted
+                    workerLog("Server #$server_id: No more emails to process. Queue truly exhausted (verified: $remaining remaining).");
+                    
+                    // Check if campaign is completed and update status
+                    checkCampaignCompletion($conn, $campaign_id);
+                    
+                    break; // Exit worker
+                }
             }
+            
+            // Successfully claimed an email - reset counter
+            $consecutive_empty_claims = 0;
             $to = $claimed['to_mail'];
             $email_csv_list_id = isset($claimed['csv_list_id']) ? intval($claimed['csv_list_id']) : null;
             workerLog("Server #$server_id: Claimed NEW email: $to (csv_list_id=$email_csv_list_id) -> assigned to account #{$selected['id']} ({$selected['email']})");
@@ -253,6 +288,23 @@
             if ($send_count % 10 == 0) { workerLog("Server #$server_id: === Progress: $send_count emails sent ==="); }
             usleep(50000); // OPTIMIZED: Reduced from 100ms to 50ms for faster throughput
         } catch (Exception $e) {
+            // Ensure transaction is rolled back on any exception
+            if ($conn->connect_errno === 0) {
+                $conn->query("ROLLBACK");
+            }
+            
+            // Check if this was a duplicate prevention (not a real error)
+            $isDuplicatePrevention = (strpos($e->getMessage(), 'Duplicate prevented') !== false || 
+                                      strpos($e->getMessage(), 'already sent') !== false ||
+                                      strpos($e->getMessage(), 'Lock timeout') !== false);
+            
+            if ($isDuplicatePrevention) {
+                workerLog("Server #$server_id: Duplicate/Lock prevented for $to - continuing to next email");
+                // Don't record as failed, just continue to next email
+                $consecutive_empty_claims = 0; // Reset since we're making progress
+                continue;
+            }
+            
             // Check current attempt count
             $attemptRes = $conn->query("SELECT attempt_count FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '" . $conn->real_escape_string($to) . "'");
             $currentAttempts = ($attemptRes && $attemptRes->num_rows > 0) ? intval($attemptRes->fetch_assoc()['attempt_count']) : 0;
@@ -271,6 +323,22 @@
 
     // Mark stopped before exiting
     workerLog("Server #$server_id: Worker stopping after sending $send_count emails");
+    
+    // Final verification: Check if there are still emails to process
+    $finalCheck = null;
+    if ($import_batch_id) {
+        $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $finalCheck = $conn->query("SELECT COUNT(*) as cnt FROM imported_recipients ir WHERE ir.import_batch_id = '$batch_escaped' AND ir.is_active = 1 AND ir.Emails IS NOT NULL AND ir.Emails <> '' AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails AND mb.status = 'success')");
+    } else {
+        $finalCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.domain_status = 1 AND e.validation_status = 'valid' AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid AND mb.status = 'success')");
+    }
+    $finalRemaining = ($finalCheck && $finalCheck->num_rows > 0) ? intval($finalCheck->fetch_assoc()['cnt']) : 0;
+    
+    if ($finalRemaining > 0) {
+        workerLog("WARNING: Server #$server_id exiting but $finalRemaining emails still pending! Other workers should handle them.");
+    } else {
+        workerLog("Server #$server_id: Confirmed all emails processed (0 remaining)");
+    }
 
     $conn->close();
     exit(0);
@@ -282,7 +350,26 @@
         $conn->query("START TRANSACTION");
         
         $to_escaped = $conn->real_escape_string($to_email);
-        $checkExisting = $conn->query("SELECT status, smtpid FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
+        
+        // FIRST: Check if email already sent successfully (quick abort without lock)
+        $quickCheck = $conn->query("SELECT status FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' AND status = 'success' LIMIT 1");
+        if ($quickCheck && $quickCheck->num_rows > 0) {
+            $conn->query("ROLLBACK");
+            workerLog("ABORT: Email $to_email already sent successfully for campaign $campaign_id (quick check)");
+            throw new Exception("Duplicate prevented: Email already sent successfully");
+        }
+        
+        // SECOND: Lock the row and check detailed status (with timeout handling)
+        $conn->query("SET SESSION innodb_lock_wait_timeout = 5"); // 5 second lock timeout
+        $checkExisting = $conn->query("SELECT status, smtpid, delivery_time FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
+        $checkExisting = $conn->query("SELECT status, smtpid, delivery_time FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
+        
+        // Handle lock timeout (error 1205)
+        if (!$checkExisting && $conn->errno == 1205) {
+            $conn->query("ROLLBACK");
+            workerLog("LOCK TIMEOUT: Email $to_email locked by another worker, will retry later");
+            throw new Exception("Lock timeout: Email being processed by another worker");
+        }
         
         if ($checkExisting && $checkExisting->num_rows > 0) {
             $existing = $checkExisting->fetch_assoc();
@@ -294,18 +381,27 @@
                 throw new Exception("Duplicate prevented: Email already sent successfully");
             }
             
-            // Being processed by another worker - abort
+            // Being processed by another worker RIGHT NOW - abort
             if ($existing['status'] === 'pending' && $existing['smtpid'] != $account['id']) {
-                $conn->query("ROLLBACK");
-                workerLog("SKIP: Email $to_email is being processed by another worker (SMTP #{$existing['smtpid']})");
-                throw new Exception("Duplicate prevented: Email being processed by another worker");
+                // Check if delivery_time is recent (within last 60 seconds) - means actively being sent
+                $deliveryTime = strtotime($existing['delivery_time']);
+                $timeDiff = time() - $deliveryTime;
+                if ($timeDiff < 60) {
+                    $conn->query("ROLLBACK");
+                    workerLog("SKIP: Email $to_email is being processed by another worker (SMTP #{$existing['smtpid']}, {$timeDiff}s ago)");
+                    throw new Exception("Duplicate prevented: Email being processed by another worker");
+                }
             }
             
             // Update to mark this worker is now sending it
-            $conn->query("UPDATE mail_blaster SET smtpid = {$account['id']}, delivery_date = CURDATE(), delivery_time = CURTIME() WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped'");
+            $conn->query("UPDATE mail_blaster SET smtpid = {$account['id']}, delivery_date = CURDATE(), delivery_time = NOW(), status = 'pending' WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped'");
+        } else {
+            // No existing record - this should not happen as claimNextEmail creates it, but handle it
+            $conn->query("INSERT IGNORE INTO mail_blaster (campaign_id, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, status, attempt_count) VALUES (" . intval($campaign_id) . ", '$to_escaped', " . ($csv_list_id ? intval($csv_list_id) : "NULL") . ", {$account['id']}, CURDATE(), NOW(), 'pending', 0)");
         }
         
-        $conn->query("COMMIT");
+        // DO NOT COMMIT YET - Keep transaction open until after send!
+        // $conn->query("COMMIT"); // REMOVED - commit happens after send
         
         $mail = new PHPMailer(true);
         $mail->isSMTP();
@@ -405,7 +501,16 @@
         
         workerLog("Final ContentType before send: {$mail->ContentType}");
         
-        if (!$mail->send()) throw new Exception($mail->ErrorInfo);
+        // Send the email while transaction is still open (row locked)
+        if (!$mail->send()) {
+            // Send failed - rollback transaction
+            $conn->query("ROLLBACK");
+            throw new Exception($mail->ErrorInfo);
+        }
+        
+        // Send successful - now commit the transaction to release lock
+        $conn->query("COMMIT");
+        
         $srvId = intval($server['server_id'] ?? 0);
         recordDelivery($conn, $account['id'], $srvId, $campaign_id, $to_email, 'success', null, $csv_list_id);
     }
@@ -504,6 +609,7 @@
         // Check if this email was already successfully sent (to avoid double-counting retries)
         $wasAlreadySuccess = false;
         if ($status === 'success') {
+            $to_escaped = $conn->real_escape_string($to_email);
             $checkStmt = $conn->prepare("SELECT status FROM mail_blaster WHERE campaign_id = ? AND to_mail = ? LIMIT 1");
             $checkStmt->bind_param("is", $campaign_id, $to_email);
             $checkStmt->execute();
@@ -513,7 +619,7 @@
                 if ($existing['status'] === 'success') {
                     $wasAlreadySuccess = true;
                     // Email already sent successfully - skip this duplicate attempt
-                    workerLog("Skipping duplicate send for $to_email - already sent successfully");
+                    workerLog("Skipping duplicate recordDelivery for $to_email - already marked success");
                     $checkStmt->close();
                     return;
                 }
@@ -521,7 +627,8 @@
             $checkStmt->close();
         }
         
-        $stmt = $conn->prepare("INSERT INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) VALUES (?,?,?,?,CURDATE(),CURTIME(),?,?,1) ON DUPLICATE KEY UPDATE csv_list_id=VALUES(csv_list_id), smtpid=VALUES(smtpid), delivery_date=VALUES(delivery_date), delivery_time=VALUES(delivery_time), status=IF(mail_blaster.status='success','success',VALUES(status)), error_message=IF(VALUES(status)='failed',VALUES(error_message),NULL), attempt_count=IF(mail_blaster.status='success',mail_blaster.attempt_count,LEAST(mail_blaster.attempt_count+1,5))");
+        // Use NOW() for more precise timestamp including seconds
+        $stmt = $conn->prepare("INSERT INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) VALUES (?,?,?,?,CURDATE(),NOW(),?,?,1) ON DUPLICATE KEY UPDATE csv_list_id=VALUES(csv_list_id), smtpid=VALUES(smtpid), delivery_date=VALUES(delivery_date), delivery_time=VALUES(delivery_time), status=IF(mail_blaster.status='success','success',VALUES(status)), error_message=IF(VALUES(status)='failed',VALUES(error_message),NULL), attempt_count=IF(mail_blaster.status='success',mail_blaster.attempt_count,LEAST(mail_blaster.attempt_count+1,5))");
         // Skip writes if campaign is deleted
         $existsRes = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = " . intval($campaign_id) . " LIMIT 1");
         if (!$existsRes || $existsRes->num_rows === 0) {
@@ -788,7 +895,7 @@
             $conn->query("ROLLBACK");
             workerLog("claimNextEmail: $to already claimed (status={$existing['status']}) - seeking next (depth=$depth)");
             if ($depth > 50) { 
-                workerLog("claimNextEmail: depth limit reached, giving up"); 
+                workerLog("claimNextEmail: depth limit reached (depth=$depth), giving up"); 
                 return null; 
             }
             return claimNextEmail($conn, $campaign_id, $smtp_account_id, $depth + 1);

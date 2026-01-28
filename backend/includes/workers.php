@@ -8,8 +8,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/security_helpers.php';
+require_once __DIR__ . '/auth_helper.php';
+require_once __DIR__ . '/user_filtering.php';
 
 header('Content-Type: application/json');
+
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
+
+// Get current user (supports both session and token auth)
+$currentUser = getAuthenticatedUser();
+
+// Require authentication for all operations except OPTIONS
+if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS' && !$currentUser) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized. Please log in.']);
+    exit;
+}
 
 // ADD worker
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,8 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Support optional is_active parameter (defaults to 1 if not provided)
     $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
     
-    $stmt = $conn->prepare("INSERT INTO workers (workername, ip, is_active) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $workername, $ip, $is_active);
+    // Get current user ID
+    $user_id = $currentUser['id'];
+    
+    $stmt = $conn->prepare("INSERT INTO workers (workername, ip, is_active, user_id) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssii", $workername, $ip, $is_active, $user_id);
 
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Worker added successfully']);
@@ -66,6 +89,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         http_response_code(400);
         echo json_encode(['error' => 'Missing id']);
         exit;
+    }
+    
+    // Check if user can access this worker (admin can access all, user only their own)
+    if (!isAuthenticatedAdmin()) {
+        $checkStmt = $conn->prepare("SELECT user_id FROM workers WHERE id = ?");
+        $checkStmt->bind_param("i", $id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        $worker = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        if (!$worker || (int)$worker['user_id'] !== (int)$currentUser['id']) {
+            http_response_code(403);
+            echo json_encode(['error' => 'You do not have permission to update this worker']);
+            exit;
+        }
     }
 
     // Support partial updates for status toggle
@@ -120,6 +159,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
         echo json_encode(['error' => 'Missing id']);
         exit;
     }
+    
+    // Check if user can access this worker (admin can access all, user only their own)
+    if (!isAuthenticatedAdmin()) {
+        $checkStmt = $conn->prepare("SELECT user_id FROM workers WHERE id = ?");
+        $checkStmt->bind_param("i", $id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        $worker = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        if (!$worker || (int)$worker['user_id'] !== (int)$currentUser['id']) {
+            http_response_code(403);
+            echo json_encode(['error' => 'You do not have permission to delete this worker']);
+            exit;
+        }
+    }
 
     $stmt = $conn->prepare("DELETE FROM workers WHERE id = ?");
     $stmt->bind_param("i", $id);
@@ -136,10 +191,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
 // GET workers
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = $conn->query("SELECT id, workername, ip, is_active FROM workers ORDER BY is_active DESC, id DESC");
+    // Admin can see all workers, regular users only see their own
+    if (isAuthenticatedAdmin()) {
+        // Admin: get all workers
+        $result = $conn->query("SELECT id, workername, ip, is_active, user_id FROM workers ORDER BY is_active DESC, id DESC");
+    } else {
+        // Regular user: get only their workers
+        $user_id = (int)$currentUser['id'];
+        $stmt = $conn->prepare("SELECT id, workername, ip, is_active, user_id FROM workers WHERE user_id = ? ORDER BY is_active DESC, id DESC");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    }
+    
     $workers = [];
     while ($row = $result->fetch_assoc()) {
         $row['is_active'] = (int)$row['is_active'];
+        $row['user_id'] = (int)$row['user_id'];
         $workers[] = $row;
     }
     echo json_encode($workers);

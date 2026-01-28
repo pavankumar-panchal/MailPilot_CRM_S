@@ -1,6 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/security_helpers.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
 
 // Production-safe error handling
 error_reporting(E_ALL);
@@ -10,16 +14,12 @@ ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
 set_time_limit(0);
 
 header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
 
-// Preflight
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-    http_response_code(200);
-    echo json_encode(['status' => 'ok']);
-    exit;
-}
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
 
 // Custom error handler to return JSON
 set_error_handler(function($errno, $errstr, $errfile, $errline) {

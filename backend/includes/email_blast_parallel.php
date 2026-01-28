@@ -235,8 +235,12 @@ function runParallelEmailBlast($conn, $campaign_id) {
         return ["status" => "error", "message" => "Campaign not found"];
     }
     
-    // Step 2: Get all active SMTP servers with their accounts
-    $smtp_servers = getSmtpServersWithAccounts($conn);
+    // Get campaign owner's user_id for SMTP filtering
+    $campaign_user_id = isset($campaign['user_id']) ? (int)$campaign['user_id'] : null;
+    logMessage("Campaign user_id: " . ($campaign_user_id ?? 'NULL'));
+    
+    // Step 2: Get all active SMTP servers with their accounts (filtered by user)
+    $smtp_servers = getSmtpServersWithAccounts($conn, $campaign_user_id);
     if (empty($smtp_servers)) {
         return ["status" => "error", "message" => "No active SMTP servers/accounts found"];
     }
@@ -296,7 +300,7 @@ function runParallelEmailBlast($conn, $campaign_id) {
             }
             
             // Get fresh list of SMTP servers (exclude failed ones)
-            $working_servers = getWorkingSmtpServers($conn);
+            $working_servers = getWorkingSmtpServers($conn, $campaign_user_id);
             if (empty($working_servers)) {
                 logMessage("No working SMTP servers available for retry");
                 break;
@@ -344,25 +348,37 @@ function getCampaignDetails($conn, $campaign_id) {
 /**
  * Get all active SMTP servers with their accounts (respecting daily/hourly limits)
  */
-function getSmtpServersWithAccounts($conn) {
+function getSmtpServersWithAccounts($conn, $user_id = null) {
     $servers = [];
     
     // Reset daily counters if it's a new day
     resetDailyCountersIfNeeded($conn);
     
-    // Get all active servers
+    // User filter for SMTP servers
+    $userServerFilter = $user_id ? "AND ss.user_id = $user_id" : "";
+    
+    // Get all active servers (filtered by user if provided)
     $server_result = $conn->query("
-        SELECT id, name, host, port, encryption, received_email 
-        FROM smtp_servers 
-        WHERE is_active = 1 
-        ORDER BY id ASC
+        SELECT ss.id, ss.name, ss.host, ss.port, ss.encryption, ss.received_email 
+        FROM smtp_servers ss
+        WHERE ss.is_active = 1 
+        $userServerFilter
+        ORDER BY ss.id ASC
     ");
+    
+    if (!$server_result) {
+        logMessage("ERROR fetching SMTP servers: " . $conn->error);
+        return [];
+    }
     
     $today = date('Y-m-d');
     $current_hour = intval(date('G'));
     
+    // User filter for SMTP accounts
+    $userAccountFilter = $user_id ? "AND sa.user_id = $user_id" : "";
+    
     while ($server = $server_result->fetch_assoc()) {
-        // Get accounts that are within their limits using smtp_usage
+        // Get accounts that are within their limits using smtp_usage (filtered by user)
         $account_result = $conn->query("
             SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, 
                    sa.total_sent,
@@ -379,10 +395,16 @@ function getSmtpServersWithAccounts($conn) {
                 AND hourly_usage.date = '$today' AND hourly_usage.hour = $current_hour
             WHERE sa.smtp_server_id = {$server['id']} 
             AND sa.is_active = 1
+            $userAccountFilter
             AND (sa.daily_limit = 0 OR COALESCE(daily_usage.sent_today, 0) < sa.daily_limit)
             AND (sa.hourly_limit = 0 OR COALESCE(hourly_usage.emails_sent, 0) < sa.hourly_limit)
             ORDER BY sa.id ASC
         ");
+        
+        if (!$account_result) {
+            logMessage("ERROR fetching accounts for server {$server['id']}: " . $conn->error);
+            continue;
+        }
         
         $accounts = [];
         while ($account = $account_result->fetch_assoc()) {
@@ -393,10 +415,14 @@ function getSmtpServersWithAccounts($conn) {
         if (!empty($accounts)) {
             $server['accounts'] = $accounts;
             $servers[] = $server;
-            logMessage("Server {$server['name']}: " . count($accounts) . " accounts available (within limits)");
+            logMessage("Server {$server['name']}: " . count($accounts) . " accounts available" . ($user_id ? " (user $user_id)" : ""));
         } else {
-            logMessage("Server {$server['name']}: No accounts available (all at limit)");
+            logMessage("Server {$server['name']}: No accounts available" . ($user_id ? " for user $user_id" : ""));
         }
+    }
+    
+    if (empty($servers) && $user_id) {
+        logMessage("WARNING: No SMTP servers/accounts found for user $user_id");
     }
     
     return $servers;
@@ -434,11 +460,14 @@ function getNextAccountForServer($conn, $server, $accounts) {
 /**
  * Get working SMTP servers (exclude recently failed ones, respect limits)
  */
-function getWorkingSmtpServers($conn) {
+function getWorkingSmtpServers($conn, $user_id = null) {
     $servers = [];
     
     // Reset daily counters if it's a new day
     resetDailyCountersIfNeeded($conn);
+    
+    // Build user filter
+    $userFilter = $user_id ? "AND ss.user_id = $user_id" : "";
     
     // Get servers that have sent successfully in the last 10 minutes
     // OR have no recent failures
@@ -446,6 +475,7 @@ function getWorkingSmtpServers($conn) {
         SELECT DISTINCT ss.id, ss.name, ss.host, ss.port, ss.encryption, ss.received_email
         FROM smtp_servers ss
         WHERE ss.is_active = 1
+        $userFilter
         AND (
             -- Servers with recent successes
             EXISTS (
@@ -490,7 +520,7 @@ function getWorkingSmtpServers($conn) {
             LEFT JOIN smtp_usage hourly_usage ON hourly_usage.smtp_id = sa.id 
                 AND hourly_usage.date = '$today' AND hourly_usage.hour = $current_hour
             WHERE sa.smtp_server_id = {$server['id']} 
-            AND sa.is_active = 1
+            AND sa.is_active = 1" . ($user_id ? " AND sa.user_id = $user_id" : "") . "
             AND (sa.daily_limit = 0 OR COALESCE(daily_usage.sent_today, 0) < sa.daily_limit)
             AND (sa.hourly_limit = 0 OR COALESCE(hourly_usage.emails_sent, 0) < sa.hourly_limit)
             ORDER BY id ASC
@@ -509,7 +539,7 @@ function getWorkingSmtpServers($conn) {
     
     // If no working servers found, fall back to all active servers
     if (empty($servers)) {
-        return getSmtpServersWithAccounts($conn);
+        return getSmtpServersWithAccounts($conn, $user_id);
     }
     
     return $servers;

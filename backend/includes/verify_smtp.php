@@ -5,8 +5,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 set_time_limit(0);
 
-require_once __DIR__ . '/BackgroundProcess.php';
-
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET");
@@ -317,47 +315,76 @@ function get_all_email_ids($conn)
 // --- Split IDs into N workers ---
 function split_ids($ids, $num_workers)
 {
-    $chunks = array_chunk($ids, ceil(count($ids) / $num_workers));
-    return $chunks;
+    $total = count($ids);
+
+    // Prevent divide-by-zero or invalid chunking
+    if ($total === 0 || $num_workers <= 0) {
+        return [];  // Nothing to process
+    }
+
+    $chunk_size = ceil($total / $num_workers);
+    if ($chunk_size <= 0) {
+        return [$ids]; // fallback (shouldn’t happen)
+    }
+
+    return array_chunk($ids, $chunk_size);
 }
 
+
 // --- Parallel SMTP processing ---
-function process_in_parallel($conn, $conn_logs)
+function process_in_parallel($conn)
 {
     $ids = get_all_email_ids($conn);
+    if (empty($ids)) {
+    write_log("No emails found to process.");
+    return 0; // or return early
+}
+
     $num_workers = MAX_WORKERS;
     $chunks = split_ids($ids, $num_workers);
+    $active_procs = [];
     $processed = 0;
 
     write_log("Starting parallel SMTP processing with MAX_WORKERS=" . $num_workers);
 
-    // Prepare for background execution
-    BackgroundProcess::prepareForBackground($conn, $conn_logs);
-
-    $php_bin = defined('PHP_BINARY') ? PHP_BINARY : 'php';
-    $started_workers = 0;
-
     foreach ($chunks as $worker_id => $id_chunk) {
         if (empty($id_chunk)) continue;
         $id_list = implode(',', $id_chunk);
-        
-        // Use BackgroundProcess to spawn workers (non-blocking)
-        $logFile = __DIR__ . '/../logs/smtp_worker_' . $worker_id . '.log';
-        $pid = BackgroundProcess::execute($php_bin, WORKER_SCRIPT, [
-            'id_list' => $id_list,
-            'worker_id' => $worker_id
-        ], $logFile);
-        
-        if ($pid > 0) {
-            write_log("Started worker $worker_id (PID: $pid) for " . count($id_chunk) . " emails");
+        $cmd = "php " . escapeshellarg(WORKER_SCRIPT) . " " . escapeshellarg($id_list) . " $worker_id";
+        $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
+        $proc = proc_open($cmd, $descriptorspec, $pipes);
+        if (is_resource($proc)) {
+            $active_procs[] = [
+                'proc' => $proc,
+                'pipes' => $pipes,
+                'worker_id' => $worker_id,
+                'count' => count($id_chunk)
+            ];
+            write_log("Started worker $worker_id for " . count($id_chunk) . " emails");
             $processed += count($id_chunk);
-            $started_workers++;
-        } else {
-            write_log("Failed to start worker $worker_id");
         }
     }
 
-    write_log("Dispatched $started_workers workers for $processed emails (non-blocking)");
+    // Wait for all workers to finish
+    foreach ($active_procs as $worker) {
+        $status = proc_get_status($worker['proc']);
+        while ($status['running']) {
+            usleep(100000);
+            $status = proc_get_status($worker['proc']);
+        }
+        $stdout = stream_get_contents($worker['pipes'][1]);
+        $stderr = stream_get_contents($worker['pipes'][2]);
+        if (trim($stdout)) write_log("Worker {$worker['worker_id']} OUTPUT: $stdout");
+        if (trim($stderr)) write_log("Worker {$worker['worker_id']} ERROR: $stderr");
+        foreach ($worker['pipes'] as $pipe) fclose($pipe);
+        proc_close($worker['proc']);
+    }
+
+    // Log how many emails remain to process
+    $result = $conn->query("SELECT COUNT(*) as remaining FROM emails WHERE validation_status IS NULL");
+    $row = $result->fetch_assoc();
+    $remaining = $row ? $row['remaining'] : 0;
+    write_log("Processing complete. Remaining unprocessed emails: $remaining");
 
     return $processed;
 }
@@ -384,21 +411,37 @@ try {
     }
 
     $start_time = microtime(true);
-    $processed = process_in_parallel($conn, $conn_logs);
+    $processed = process_in_parallel($conn);
     $total_time = microtime(true) - $start_time;
 
-    // Note: Workers are running in background, results will be updated asynchronously
+    // Check if all emails are processed (domain_processed=1 and domain_status in (1,2))
+    $check = $conn->query("SELECT COUNT(*) as cnt FROM emails WHERE (domain_processed != 1 OR (domain_status NOT IN (1,2)))");
+    $row = $check->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        // All processed and valid/retryable, mark csv_list as completed
+        $conn->query("UPDATE csv_list SET status = 'completed' WHERE status = 'running'");
+    }
+
+    // Get verification stats
+    $total    = $conn->query("SELECT COUNT(*) as total FROM emails")->fetch_row()[0];
+    $verified = $conn->query("SELECT COUNT(*) as valid FROM emails WHERE domain_status = 1")->fetch_row()[0];
+    $invalid  = $conn->query("SELECT COUNT(*) as invalid FROM emails WHERE domain_status = 0")->fetch_row()[0];
+
+    // Update csv_list with valid and invalid counts (safe, as values are integers)
+    $conn->query("UPDATE csv_list SET valid_count = $verified, invalid_count = $invalid WHERE status IN ('running', 'completed')");
+   
+    update_all_csv_list_stats($conn);
+
     echo json_encode([
         "status"           => "success",
         "processed"        => (int) $processed,
-        "message"          => "Parallel SMTP processing started ($processed emails dispatched to background workers)",
-        "time_seconds"     => round($total_time, 2)
+        "total_emails"     => (int) $total,
+        "verified_emails"  => (int) $verified,
+        "invalid_emails"   => (int) $invalid,
+        "time_seconds"     => round($total_time, 2),
+        "rate_per_second"  => $total_time > 0 ? round($processed / $total_time, 2) : 0,
+        "message"          => "Parallel SMTP processing completed"
     ]);
-    
-    // Send response immediately
-    if (function_exists('fastcgi_finish_request')) {
-        fastcgi_finish_request();
-    }
 } catch (Exception $e) {
     echo json_encode([
         "status"  => "error",

@@ -2,12 +2,33 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
-
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/security_helpers.php';
+
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
+require_once __DIR__ . '/../includes/user_filtering.php';
+
+// Ensure user_id columns exist
+ensureUserIdColumns($conn);
+
+// Get current user
+$currentUser = getCurrentUser();
+$user_id = $currentUser ? $currentUser['id'] : null;
+
+error_log("email_processor.php - User: " . ($currentUser ? json_encode($currentUser) : 'NOT LOGGED IN'));
+
+// Require authentication
+if (!$user_id) {
+    error_log("email_processor.php - Authentication failed, no user_id");
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized. Please log in.']);
+    exit;
+}
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -200,7 +221,8 @@ try {
         throw new Exception('No valid emails found in CSV file');
     }
 
-    // Filter out emails that already exist in DB to avoid duplicates across uploads
+    // Filter out emails that already exist for THIS USER to avoid duplicates
+    // Each user can have their own copy of the same email
     $existingSet = [];
     $chunkSize = 1000;
     $allRaw = array_column($emails, 'raw_emailid');
@@ -209,12 +231,19 @@ try {
     foreach ($emailChunks as $chunk) {
         $placeholders = implode(',', array_fill(0, count($chunk), '?'));
         $types = str_repeat('s', count($chunk));
-        $stmt = $conn->prepare("SELECT raw_emailid FROM emails WHERE raw_emailid IN ($placeholders)");
+        $types .= 'i'; // Add type for user_id
+        $chunk[] = $user_id; // Add user_id to params
+        
+        // Check for user's existing emails only
+        $stmt = $conn->prepare("SELECT raw_emailid FROM emails WHERE raw_emailid IN ($placeholders) AND user_id = ?");
+        
         if ($stmt) {
             $stmt->bind_param($types, ...$chunk);
             $stmt->execute();
             $res = $stmt->get_result();
-            while ($r = $res->fetch_assoc()) { $existingSet[strtolower($r['raw_emailid'])] = true; }
+            while ($r = $res->fetch_assoc()) { 
+                $existingSet[strtolower($r['raw_emailid'])] = true; 
+            }
             $stmt->close();
         }
     }
@@ -245,17 +274,21 @@ try {
     $conn->begin_transaction();
 
     try {
+        error_log("email_processor.php - Inserting data for user_id: $user_id, valid emails: $validCount");
+        
         // Insert into csv_list table
         $stmt = $conn->prepare("
-            INSERT INTO csv_list (list_name, file_name, total_emails, valid_count, invalid_count, status, created_at)
-            VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            INSERT INTO csv_list (list_name, file_name, total_emails, valid_count, invalid_count, status, created_at, user_id)
+            VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?)
         ");
         
-    $totalEmails = $validCount + $invalidCount + $duplicateCount;
-        $stmt->bind_param('ssiii', $listName, $fileName, $totalEmails, $validCount, $invalidCount);
+        $totalEmails = $validCount + $invalidCount + $duplicateCount;
+        $stmt->bind_param('ssiiii', $listName, $fileName, $totalEmails, $validCount, $invalidCount, $user_id);
         $stmt->execute();
         $csvListId = $conn->insert_id;
         $stmt->close();
+        
+        error_log("email_processor.php - Created csv_list with ID: $csvListId for user_id: $user_id");
 
         // Prepare bulk insert for emails
         $batchSize = 1000;
@@ -266,22 +299,23 @@ try {
             $params = [];
             
             foreach ($batch as $email) {
-                $values[] = "(?, ?, ?, 0, 0, NULL, 0, ?, 'pending', ?)";
+                $values[] = "(?, ?, ?, 0, 0, NULL, 0, ?, 'pending', ?, ?)";
                 $params[] = $email['raw_emailid'];
                 $params[] = $email['sp_account'];
                 $params[] = $email['sp_domain'];
                 $params[] = $csvListId;
                 $params[] = $email['worker_id'];
+                $params[] = $user_id;
             }
 
             $sql = "INSERT INTO emails 
-                (raw_emailid, sp_account, sp_domain, domain_verified, domain_status, validation_response, domain_processed, csv_list_id, validation_status, worker_id)
+                (raw_emailid, sp_account, sp_domain, domain_verified, domain_status, validation_response, domain_processed, csv_list_id, validation_status, worker_id, user_id)
                 VALUES " . implode(', ', $values);
 
             $stmt = $conn->prepare($sql);
             
-            // Create type string (sssi = 3 strings + 1 int for csv_list_id + 1 int for worker_id)
-            $types = str_repeat('sssii', count($batch));
+            // Create type string (sss = 3 strings, ii = 2 ints for csv_list_id and worker_id, i = 1 int for user_id)
+            $types = str_repeat('sssiii', count($batch));
             $stmt->bind_param($types, ...$params);
             $stmt->execute();
             $stmt->close();
@@ -296,16 +330,21 @@ try {
         // Commit transaction
         $conn->commit();
 
-        // Start domain verification in background
-        $verifyScript = __DIR__ . '/../includes/verify_domain.php';
-        if (file_exists($verifyScript)) {
-            $cmd = 'php ' . escapeshellarg($verifyScript) . ' > /dev/null 2>&1 &';
-            exec($cmd);
-        }
+        // Get server IP address
+        $serverIp = $_SERVER['SERVER_ADDR'] ?? ($_SERVER['LOCAL_ADDR'] ?? gethostbyname(gethostname()));
+
+        // Get newly created csv_list details
+        $listStmt = $conn->prepare("SELECT id, list_name, file_name, total_emails, valid_count, invalid_count, status, created_at FROM csv_list WHERE id = ?");
+        $listStmt->bind_param('i', $csvListId);
+        $listStmt->execute();
+        $listResult = $listStmt->get_result();
+        $listData = $listResult->fetch_assoc();
+        $listStmt->close();
 
         $response = [
             'status' => 'success',
-            'message' => "Successfully uploaded {$validCount} valid emails. Domain verification started.",
+            'success' => true,
+            'message' => "Successfully uploaded {$validCount} valid emails.",
             'data' => [
                 'csv_list_id' => $csvListId,
                 'valid_count' => $validCount,
@@ -313,6 +352,8 @@ try {
                 'duplicate_count' => $duplicateCount,
                 'rejected_count' => count($rejectedEmails),
                 'total_emails' => $totalEmails,
+                'server_ip' => $serverIp,
+                'list_details' => $listData
             ]
         ];
         

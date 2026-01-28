@@ -3,7 +3,276 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TableSkeleton } from "../components/SkeletonLoader";
 import { API_CONFIG } from "../config";
 
+// Login Component
+const Login = ({ onLogin, onSwitchToRegister }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Save to localStorage
+        localStorage.setItem('mailpilot_user', JSON.stringify(data.user));
+        localStorage.setItem('mailpilot_token', data.token);
+        onLogin(data.user, data.token);
+      } else {
+        setError(data.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">📧 Relyon CRM</h2>
+          <p className="text-gray-600">Login to your account</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+        <p className="text-center mt-6 text-gray-600">
+          Don't have an account?{' '}
+          <button onClick={onSwitchToRegister} className="text-purple-600 font-semibold hover:underline">
+            Register here
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Register Component
+const Register = ({ onRegister, onSwitchToLogin }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    if (!name.trim()) {
+      setError('Name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess(data.message || 'Registration successful! Redirecting to login...');
+        setTimeout(() => onRegister(), 2000);
+      } else {
+        setError(data.message || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">📧 Relyon CRM</h2>
+          <p className="text-gray-600">Create your account</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="John Doe"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            />
+          </div>
+          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
+          {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">{success}</div>}
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Creating account...' : 'Register'}
+          </button>
+        </form>
+        <p className="text-center mt-6 text-gray-600">
+          Already have an account?{' '}
+          <button onClick={onSwitchToLogin} className="text-purple-600 font-semibold hover:underline">
+            Login here
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const EmailsList = ({ listId, onClose }) => {
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login' or 'register'
+  const [user, setUser] = useState(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('mailpilot_user');
+    const savedToken = localStorage.getItem('mailpilot_token');
+    if (savedUser && savedToken) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        setIsAuthenticated(true);
+      } catch (e) {
+        localStorage.removeItem('mailpilot_user');
+        localStorage.removeItem('mailpilot_token');
+      }
+    }
+  }, []);
+
+  const handleLogin = (userData, token) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const handleRegister = () => {
+    setAuthView('login');
+  };
+
+  const handleLogout = () => {
+    // Inform backend and then clear local state
+    fetch('/api/logout.php', { method: 'POST', credentials: 'include' })
+      .catch(() => {})
+      .finally(() => {
+        localStorage.removeItem('mailpilot_user');
+        localStorage.removeItem('mailpilot_token');
+        setUser(null);
+        setIsAuthenticated(false);
+      });
+  };
+
+  // Note: render auth UI via conditional in the return to keep hooks order stable
+
   const [listEmails, setListEmails] = useState([]);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,15 +289,22 @@ const EmailsList = ({ listId, onClose }) => {
     try {
       setLoading(true);
       const filterParam = filter !== 'all' ? `&filter=${filter}` : '';
-      const res = await fetch(
-        `${API_CONFIG.API_RESULTS}?csv_list_id=${listId}&page=${pagination.page}&limit=${pagination.rowsPerPage}${filterParam}`
-      );
+      const url = `${API_CONFIG.API_RESULTS}&batch_id=${listId}&page=${pagination.page}&limit=${pagination.rowsPerPage}${filterParam}`;
+      console.log('Fetching emails from:', url);
+      
+      const res = await fetch(url, { credentials: 'include' });
+      
+      console.log('Response status:', res.status);
       
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error('HTTP error:', res.status, errorText);
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
       const data = await res.json();
+      console.log('Emails data received:', data);
+      
       setListEmails(Array.isArray(data.data) ? data.data : []);
       setPagination((prev) => ({
         ...prev,
@@ -37,7 +313,7 @@ const EmailsList = ({ listId, onClose }) => {
     } catch (error) {
       console.error("Failed to fetch emails:", error);
       setListEmails([]);
-      setStatus({ type: "error", message: "Failed to load emails. Please try again." });
+      setStatus({ type: "error", message: "Failed to load emails: " + error.message });
     } finally {
       setLoading(false);
     }
@@ -46,12 +322,12 @@ const EmailsList = ({ listId, onClose }) => {
   // Fetch server-side counts for all filter types
   const fetchCounts = useCallback(async () => {
     try {
-      const urlBase = `${API_CONFIG.API_RESULTS}?csv_list_id=${listId}&limit=1`;
+      const urlBase = `${API_CONFIG.API_RESULTS}&batch_id=${listId}&limit=1`;
       const [allRes, validRes, invalidRes, timeoutRes] = await Promise.all([
-        fetch(urlBase),
-        fetch(`${urlBase}&filter=valid`),
-        fetch(`${urlBase}&filter=invalid`),
-        fetch(`${urlBase}&filter=timeout`),
+        fetch(urlBase, { credentials: 'include' }),
+        fetch(`${urlBase}&filter=valid`, { credentials: 'include' }),
+        fetch(`${urlBase}&filter=invalid`, { credentials: 'include' }),
+        fetch(`${urlBase}&filter=timeout`, { credentials: 'include' }),
       ]);
 
       const [allJson, validJson, invalidJson, timeoutJson] = await Promise.all([
@@ -82,15 +358,17 @@ const EmailsList = ({ listId, onClose }) => {
     []
   );
 
-  // Fetch emails on mount and when dependencies change
+  // Fetch emails on mount and when dependencies change (only when authenticated)
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchListEmails();
-  }, [fetchListEmails]);
+  }, [fetchListEmails, isAuthenticated]);
 
-  // Fetch counts when listId changes
+  // Fetch counts when listId changes (only when authenticated)
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchCounts();
-  }, [fetchCounts]);
+  }, [fetchCounts, isAuthenticated]);
 
   // Reset to page 1 when filter changes
   useEffect(() => {
@@ -108,7 +386,7 @@ const EmailsList = ({ listId, onClose }) => {
       const url = `${API_CONFIG.GET_RESULTS}?export=${exportType}&csv_list_id=${listId}`;
       console.log('Export URL:', url);
       
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       console.log('Export response status:', res.status);
       
       if (!res.ok) {
@@ -167,6 +445,13 @@ const EmailsList = ({ listId, onClose }) => {
   }, [status]);
 
   return (
+    !isAuthenticated
+      ? (
+        authView === 'login'
+          ? <Login onLogin={handleLogin} onSwitchToRegister={() => setAuthView('register')} />
+          : <Register onRegister={handleRegister} onSwitchToLogin={() => setAuthView('login')} />
+      )
+      : (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
         {/* Header */}
@@ -177,13 +462,15 @@ const EmailsList = ({ listId, onClose }) => {
               List ID: {listId} • {counts.all.toLocaleString()} total emails
             </p>
           </div>
-          <button
-            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <i className="fas fa-times text-xl"></i>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
         </div>
 
         <StatusMessage status={status} onClose={() => setStatus(null)} />
@@ -301,7 +588,7 @@ const EmailsList = ({ listId, onClose }) => {
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                     Response
                   </th>
                 </tr>
@@ -350,10 +637,12 @@ const EmailsList = ({ listId, onClose }) => {
                       </span>
                     </td>
                     <td
-                      className="px-4 py-4 text-sm text-gray-500 w-48 truncate max-w-xs"
-                      title={email.validation_response || "N/A"}
+                      className="px-4 py-4 text-xs text-gray-700 w-64 max-w-md"
+                      title={email.validation_response || email.smtp_response || "N/A"}
                     >
-                      {email.validation_response || "N/A"}
+                      <div className="break-words whitespace-normal">
+                        {email.validation_response || email.smtp_response || "N/A"}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -511,6 +800,7 @@ const EmailsList = ({ listId, onClose }) => {
         </div>
       </div>
     </div>
+    )
   );
 };
 

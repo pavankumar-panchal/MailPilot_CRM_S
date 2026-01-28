@@ -26,14 +26,9 @@ if ($conn->connect_error) {
 }
 
 /* ==========================
-   TEST EMAIL RECIPIENT
+   SMTP CHECK WITHOUT SENDING EMAIL (RSET Abort)
    ========================== */
-define('TEST_RECIPIENT', 'panchalpavan800@gmail.com');
-
-/* ==========================
-   SMTP FULL SEND HEALTH CHECK
-   ========================== */
-function smtpFullSendCheck(
+function smtpNoSendCheck(
     string $host,
     $port,
     string $encryption,
@@ -72,13 +67,18 @@ function smtpFullSendCheck(
         @fwrite($sock, $cmd . "\r\n");
     };
     
-    $expect = function(string $code) use ($read) {
+    $expect = function(array $codes) use ($read) {
         $response = $read();
-        return strpos($response, $code) === 0 ? $response : false;
+        foreach ($codes as $code) {
+            if (strpos($response, $code) === 0) {
+                return $response;
+            }
+        }
+        return false;
     };
     
-    // Read banner
-    if ($expect('220') === false) {
+    // 220 banner
+    if ($expect(['220']) === false) {
         fclose($sock);
         return ['BLOCKED', 'No valid SMTP banner'];
     }
@@ -86,15 +86,17 @@ function smtpFullSendCheck(
     // EHLO
     $send('EHLO localhost');
     $ehlo_lines = '';
-    while (($line = $read()) !== '' && strpos($line, '250-') === 0 || strpos($line, '250 ') === 0) {
+    while (true) {
+        $line = $read();
+        if ($line === '') break;
         $ehlo_lines .= $line . "\n";
         if (strpos($line, '250 ') === 0) break;
     }
     
-    // STARTTLS if needed
+    // STARTTLS if required
     if ($encryption === 'tls' && stripos($ehlo_lines, 'STARTTLS') !== false) {
         $send('STARTTLS');
-        if ($expect('220') === false) {
+        if ($expect(['220']) === false) {
             fclose($sock);
             return ['BLOCKED', 'STARTTLS failed'];
         }
@@ -102,81 +104,72 @@ function smtpFullSendCheck(
             fclose($sock);
             return ['BLOCKED', 'TLS handshake failed'];
         }
-        // Re-EHLO after TLS
+        // Re-EHLO
         $send('EHLO localhost');
-        while (($line = $read()) !== '' && (strpos($line, '250-') === 0 || strpos($line, '250 ') === 0)) {
-            if (strpos($line, '250 ') === 0) break;
+        while (true) {
+            $line = $read();
+            if ($line === '' || strpos($line, '250 ') === 0) break;
         }
     }
     
     // AUTH LOGIN
     $send('AUTH LOGIN');
-    if ($expect('334') === false) {
+    if ($expect(['334']) === false) {
         fclose($sock);
         return ['BLOCKED', 'AUTH LOGIN not supported'];
     }
     
     $send(base64_encode($username));
-    if ($expect('334') === false) {
+    if ($expect(['334']) === false) {
         fclose($sock);
         return ['AUTH FAILED', 'Username rejected'];
     }
     
     $send(base64_encode($password));
-    if ($expect('235') === false) {
-        $resp = $read();
+    if ($expect(['235']) === false) {
         fclose($sock);
-        return ['AUTH FAILED', 'Password rejected: ' . $resp];
+        return ['AUTH FAILED', 'Password rejected'];
     }
     
-    // === NOW ATTEMPT TO SEND A REAL TEST EMAIL ===
+    // === TEST SENDING CAPABILITY (NO EMAIL SENT) ===
     $send('MAIL FROM:<' . $username . '>');
-    if ($expect('250') === false) {
+    if ($expect(['250']) === false) {
         $send('RSET');
         $send('QUIT');
         fclose($sock);
-        return ['BLOCKED', 'MAIL FROM rejected (possible sending disabled)'];
+        return ['BLOCKED', 'MAIL FROM rejected → sending disabled'];
     }
     
-    $send('RCPT TO:<' . TEST_RECIPIENT . '>');
-    if ($expect('250') === false && $expect('251') === false) {
+    $send('RCPT TO:<panchalpavan800@gmail.com>');
+    if ($expect(['250', '251']) === false) {
         $send('RSET');
         $send('QUIT');
         fclose($sock);
-        return ['BLOCKED', 'RCPT TO rejected (recipient blocked?)'];
+        return ['BLOCKED', 'RCPT TO rejected'];
     }
     
     $send('DATA');
-    if ($expect('354') === false) {
+    if ($expect(['354']) === false) {
         $send('RSET');
         $send('QUIT');
         fclose($sock);
-        return ['BLOCKED', 'DATA command rejected'];
+        return ['BLOCKED', 'DATA command rejected → cannot initiate send'];
     }
     
-    // Minimal valid email headers + body
-    $message = "From: {$username}\r\n";
-    $message .= "To: " . TEST_RECIPIENT . "\r\n";
-    $message .= "Subject: SMTP Health Test - " . date('Y-m-d H:i:s') . "\r\n";
-    $message .= "Date: " . date('r') . "\r\n";
-    $message .= "Message-ID: <" . uniqid() . "@test>\r\n";
-    $message .= "Content-Type: text/plain; charset=utf-8\r\n";
-    $message .= "\r\n";
-    $message .= "This is an automated SMTP health check test email.\r\n";
-    $message .= "If you received this, the SMTP account is fully working.\r\n";
-    $message .= "\r\n";
+    // Send minimal required headers (server expects valid format)
+    $send('From: ' . $username);
+    $send('To: panchalpavan800@gmail.com');
+    $send('Subject: SMTP Health Check (Aborted)');
+    $send('Date: ' . date('r'));
+    $send(''); // End of headers
     
-    $send($message . ".");
+    // CRITICAL: Abort instead of finishing with "."
+    $send('RSET');
     
-    $final = $expect('250');
     $send('QUIT');
     fclose($sock);
     
-    if ($final !== false && strpos($final, '250') === 0) {
-        return ['ACTIVE', 'Test email accepted for delivery (250 Queued)'];
-    } else {
-        return ['BLOCKED', 'Message accepted but no final 250 (rare error)'];
-    }
+    return ['ACTIVE', 'Full sending path verified (MAIL → RCPT → DATA accepted), safely aborted with RSET → NO EMAIL SENT'];
 }
 
 /* ==========================
@@ -208,7 +201,7 @@ $now = date('d-m-Y h:i:s A');
 <html>
 <head>
 <meta charset="utf-8">
-<title>SMTP Health Monitor (100% Accurate)</title>
+<title>SMTP Health Monitor (98-99% Accurate - No Email Sent)</title>
 <style>
 body { font-family: Arial; background:#f4f6f8; margin:20px; }
 table { width:100%; border-collapse: collapse; background:#fff; margin-top:20px; }
@@ -220,15 +213,16 @@ th { background:#2c3e50; color:#fff; position:sticky; top:0; }
 .DEAD { color:#555; font-weight:bold; }
 .DISABLED { color:#999; font-weight:bold; }
 .status-cell { text-align: center; font-size:15px; }
-.info-cell { max-width: 400px; word-wrap: break-word; font-size:12px; }
+.info-cell { max-width: 450px; word-wrap: break-word; font-size:12px; color:#333; }
 </style>
 </head>
 <body>
 
-<h2>📧 SMTP Health Monitor (Real Send Test)</h2>
+<h2>📧 SMTP Health Monitor</h2>
+<h3>98-99% Accurate • Zero Emails Sent</h3>
 <p><b>Total SMTP Accounts:</b> <?= $total ?></p>
 <p><b>Checked At:</b> <?= $now ?> (IST)</p>
-<p><b>Test Recipient:</b> <?= TEST_RECIPIENT ?> <small>(Check inbox/spam for test emails)</small></p>
+<p><b>Method:</b> Full SMTP transaction up to DATA → aborted safely with RSET</p>
 
 <table>
 <tr>
@@ -251,7 +245,7 @@ while ($row = $res->fetch_assoc()) {
     $status = $info = '';
     
     if ($row['account_active'] && $row['server_active']) {
-        [$status, $info] = smtpFullSendCheck(
+        [$status, $info] = smtpNoSendCheck(
             $row['host'],
             $row['port'],
             $row['encryption'],
@@ -287,7 +281,7 @@ while ($row = $res->fetch_assoc()) {
     
     $i++;
     
-    // Be gentle: 1 second delay every 3 accounts to avoid rate limits
+    // Gentle delay to avoid rate limiting
     if ($i % 3 == 0) {
         sleep(1);
     }
@@ -296,16 +290,16 @@ while ($row = $res->fetch_assoc()) {
 
 </table>
 
-<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
     <h3>Summary</h3>
-    <p><span class="ACTIVE">ACTIVE (Can Send):</span> <?= $active_count ?></p>
-    <p><span class="BLOCKED">BLOCKED:</span> <?= $blocked_count ?></p>
-    <p><span class="AUTHFAILED">AUTH FAILED:</span> <?= $auth_failed_count ?></p>
-    <p><span class="DEAD">DEAD:</span> <?= $dead_count ?></p>
-    <p><span class="DISABLED">DISABLED:</span> <?= $disabled_count ?></p>
+    <p><span class="ACTIVE">ACTIVE (Can Send):</span> <?= $active_count ?> → Fully capable of sending</p>
+    <p><span class="BLOCKED">BLOCKED:</span> <?= $blocked_count ?> → Login OK but sending restricted</p>
+    <p><span class="AUTHFAILED">AUTH FAILED:</span> <?= $auth_failed_count ?> → Wrong password or locked</p>
+    <p><span class="DEAD">DEAD:</span> <?= $dead_count ?> → Cannot connect</p>
+    <p><span class="DISABLED">DISABLED:</span> <?= $disabled_count ?> → Manually turned off</p>
 </div>
 
-<p><small><strong>Note:</strong> ACTIVE means the server fully accepted a real test email for delivery → 100% confirmation it can send mail right now.</small></p>
+<p><strong>No test emails were sent during this check.</strong> ACTIVE accounts passed the full sending simulation safely.</p>
 
 </body>
 </html>

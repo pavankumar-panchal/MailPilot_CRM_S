@@ -1,27 +1,41 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
-const navLinks = [
-  { to: "/", icon: "fa-check-circle", label: "Verification" },
-  { to: "/smtp", icon: "fa-server", label: "SMTP" },
-  { to: "/workers", icon: "fa-users-cog", label: "Workers" },
-  { to: "/campaigns", icon: "fa-bullhorn", label: "Campaigns" },
-  { to: "/mail-templates", icon: "fa-file-code", label: "Mail Templates" },
-  { to: "/master", icon: "fa-crown", label: "Master" },
+const allNavLinks = [
+  { to: "/", icon: "fa-home", label: "Home", roles: ["admin", "user"] },
+  { to: "/email-verification", icon: "fa-check-circle", label: "Verification", roles: ["admin", "user"] },
+  { to: "/smtp", icon: "fa-server", label: "SMTP", roles: ["admin", "user"] },
+  { to: "/workers", icon: "fa-users-cog", label: "Workers", roles: ["admin"] }, // Admin only
+  { to: "/campaigns", icon: "fa-bullhorn", label: "Campaigns", roles: ["admin", "user"] },
+  { to: "/mail-templates", icon: "fa-file-code", label: "Mail Templates", roles: ["admin", "user"] },
+  { to: "/master", icon: "fa-crown", label: "Master", roles: ["admin", "user"] },
 ];
 
+// COMMENTED OUT - Monitor links hidden until needed
+/*
 const monitorLinks = [
   { to: "/monitor/email-sent", icon: "fa-paper-plane", label: "Email Sent" },
   { to: "/monitor/received-response", icon: "fa-reply", label: "Received Response" },
 ];
+*/
 
-export default function Navbar() {
+export default function Navbar({ user, onLogout }) {
+  // Filter navigation links based on user role
+  const navLinks = allNavLinks.filter(link => 
+    link.roles.includes(user?.role || 'user')
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // COMMENTED OUT - Monitor dropdown hidden until needed
+  /*
   const [monitorDropdownOpen, setMonitorDropdownOpen] = useState(false);
   const [monitorMobileOpen, setMonitorMobileOpen] = useState(false);
   const monitorRef = useRef();
+  */
   const location = useLocation();
 
+  // COMMENTED OUT - Monitor dropdown handler hidden until needed
+  /*
   // Handle clicks outside monitor dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -32,11 +46,15 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  */
 
   // Close all dropdowns on route change
   useEffect(() => {
+    // COMMENTED OUT - Monitor dropdown state hidden until needed
+    /*
     setMonitorDropdownOpen(false);
     setMonitorMobileOpen(false);
+    */
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -47,13 +65,18 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <i className="fas fa-envelope text-blue-600 mr-2" aria-hidden="true"></i>
-              <span className="text-gray-800 font-semibold">Email System</span>
+              <img 
+                src="/favicon.svg" 
+                alt="Relyon CRM Logo" 
+                className="h-8 w-8 mr-2"
+              />
+              <span className="text-gray-800 font-semibold text-lg">Relyon CRM</span>
             </div>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-1">
+            {/* Navigation Links */}
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
@@ -69,7 +92,8 @@ export default function Navbar() {
               </NavLink>
             ))}
 
-            {/* Monitor Dropdown */}
+            {/* COMMENTED OUT - Monitor Dropdown hidden until needed */}
+            {/*
             <div className="relative" ref={monitorRef}>
               <button
                 onClick={() => setMonitorDropdownOpen((v) => !v)}
@@ -108,6 +132,30 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            */}
+            
+            {/* User Info - Desktop */}
+            {user && (
+              <div className="ml-4 flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-semibold text-gray-800">{user.name}</div>
+                    <div className="text-xs text-gray-500 capitalize">{user.role}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                  aria-label="Logout"
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i>
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -146,7 +194,8 @@ export default function Navbar() {
               </NavLink>
             ))}
 
-            {/* Mobile Monitor Dropdown */}
+            {/* COMMENTED OUT - Mobile Monitor Dropdown hidden until needed */}
+            {/*
             <div className="border-t border-gray-200 pt-2">
               <button
                 onClick={() => setMonitorMobileOpen((v) => !v)}
@@ -183,7 +232,34 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            */}
           </div>
+          
+          {/* User Info - Mobile */}
+          {user && (
+            <div className="border-t border-gray-200 pt-3 pb-3 px-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-800">{user.name}</div>
+                  <div className="text-sm text-gray-500">{user.email}</div>
+                  <div className="text-xs text-gray-500 capitalize">Role: {user.role}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onLogout();
+                }}
+                className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       )}
     </nav>

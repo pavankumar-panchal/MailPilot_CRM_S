@@ -1,11 +1,23 @@
 <?php
 error_log("=== campaign.php ENTRY === Method: " . $_SERVER['REQUEST_METHOD'] . ", URI: " . $_SERVER['REQUEST_URI']);
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+error_log("campaign.php - GET params: " . json_encode($_GET));
+error_log("campaign.php - POST data size: " . strlen(file_get_contents('php://input')));
 
+// Use centralized session configuration
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/security_helpers.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
+
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
+
+// Ensure user_id columns exist
+ensureUserIdColumns($conn);
 
 // Ensure campaign_master has required columns for templates.
 // If missing, add them with safe defaults. This migration runs on-demand
@@ -67,9 +79,16 @@ function getInputData()
 try {
     // GET /api/master/campaigns or /api/master/campaigns?id=1
     if ($method === 'GET') {
+        // Require authentication
+        $currentUser = requireAuth();
+        error_log("campaign.php GET - User: " . json_encode($currentUser));
+        
         if (isset($_GET['id'])) {
             $id = intval($_GET['id']);
-            $stmt = $conn->prepare("SELECT * FROM campaign_master WHERE campaign_id = ?");
+            
+            // Check user access
+            $userFilter = getAuthFilterAnd();
+            $stmt = $conn->prepare("SELECT * FROM campaign_master WHERE campaign_id = ? $userFilter");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -90,7 +109,10 @@ try {
             }
             exit;
         } else {
-            $result = $conn->query("SELECT * FROM campaign_master ORDER BY campaign_id DESC");
+            $userFilter = getAuthFilterWhere();
+            error_log("campaign.php GET - User filter: $userFilter");
+            
+            $result = $conn->query("SELECT * FROM campaign_master $userFilter ORDER BY campaign_id DESC");
             $campaigns = [];
             while ($row = $result->fetch_assoc()) {
                 // Add preview (first 30 words)
@@ -109,6 +131,9 @@ try {
                 // strip tags to create a plain-text snippet.
                 $campaigns[] = $row;
             }
+            
+            error_log("campaign.php GET - Found " . count($campaigns) . " campaigns");
+            
             echo json_encode($campaigns);
             exit;
         }
@@ -118,10 +143,117 @@ try {
     if ($method === 'POST') {
         $isJson = isset($_SERVER['CONTENT_TYPE']) && stripos($_SERVER['CONTENT_TYPE'], 'application/json') !== false;
         $hasId = isset($_GET['id']);
+        
+        error_log("campaign.php POST - hasId: " . ($hasId ? 'YES' : 'NO') . ", isJson: " . ($isJson ? 'YES' : 'NO'));
+        error_log("campaign.php POST - Query string: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+        error_log("campaign.php POST - GET params: " . json_encode($_GET));
+
+        // PRIORITY: Handle CSV list only update (JSON with id parameter)
+        if ($hasId && $isJson) {
+            $id = intval($_GET['id']);
+            $input_raw = file_get_contents('php://input');
+            $data = json_decode($input_raw, true) ?? [];
+            
+            error_log("campaign.php - JSON Update detected - ID: $id");
+            error_log("campaign.php - JSON Data: $input_raw");
+            error_log("campaign.php - Data keys: " . implode(', ', array_keys($data)));
+            
+            // Check if this is ONLY a CSV list update
+            $keys = array_keys($data);
+            $isOnlyCsvListUpdate = (count($keys) === 1 && $keys[0] === 'csv_list_id');
+            
+            if ($isOnlyCsvListUpdate) {
+                error_log("campaign.php - CSV List ONLY update detected");
+                
+                // Check user access
+                if (!isAuthenticatedAdmin()) {
+                    $checkStmt = $conn->prepare("SELECT user_id FROM campaign_master WHERE campaign_id = ?");
+                    $checkStmt->bind_param("i", $id);
+                    $checkStmt->execute();
+                    $checkResult = $checkStmt->get_result();
+                    $campaignData = $checkResult->fetch_assoc();
+                    $checkStmt->close();
+                    
+                    if (!$campaignData) {
+                        error_log("campaign.php - Campaign #$id not found");
+                        http_response_code(404);
+                        echo json_encode(['success' => false, 'message' => 'Campaign not found']);
+                        exit;
+                    }
+                    
+                    if (!canAccessRecord($campaignData['user_id'])) {
+                        error_log("campaign.php - Access denied for campaign #$id");
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'message' => 'Access denied']);
+                        exit;
+                    }
+                }
+                
+                $csv_list_id = $data['csv_list_id'] !== '' && $data['csv_list_id'] !== null ? (int)$data['csv_list_id'] : null;
+                error_log("Updating csv_list_id to: " . ($csv_list_id === null ? 'NULL' : $csv_list_id));
+                
+                $currentUserData = getAuthenticatedUser();
+                $userId = $currentUserData['id'];
+                $isAdminUser = isAuthenticatedAdmin();
+                
+                if ($csv_list_id === null) {
+                    if ($isAdminUser) {
+                        $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=NULL WHERE campaign_id=?");
+                        $stmt->bind_param('i', $id);
+                    } else {
+                        $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=NULL WHERE campaign_id=? AND user_id=?");
+                        $stmt->bind_param('ii', $id, $userId);
+                    }
+                } else {
+                    if ($isAdminUser) {
+                        $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=? WHERE campaign_id=?");
+                        $stmt->bind_param('ii', $csv_list_id, $id);
+                    } else {
+                        $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=? WHERE campaign_id=? AND user_id=?");
+                        $stmt->bind_param('iii', $csv_list_id, $id, $userId);
+                    }
+                }
+                
+                if ($stmt->execute()) {
+                    $affectedRows = $stmt->affected_rows;
+                    if ($affectedRows > 0) {
+                        error_log("CSV list update SUCCESS for campaign #$id");
+                        echo json_encode(['success' => true, 'message' => 'CSV list updated successfully!']);
+                    } else {
+                        error_log("CSV list update - No rows affected");
+                        echo json_encode(['success' => true, 'message' => 'CSV list value unchanged']);
+                    }
+                } else {
+                    error_log("CSV list update FAILED: " . $conn->error);
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'error' => 'Error updating campaign: ' . $conn->error]);
+                }
+                $stmt->close();
+                exit;
+            }
+            // If not CSV list only, continue to full JSON update below
+        }
 
         // UPDATE via multipart/form-data (or when _method=PUT is provided)
         if ($hasId && ((isset($_POST['_method']) && $_POST['_method'] === 'PUT') || !$isJson)) {
             $id = intval($_GET['id']);
+            
+            // Check user access using authenticated user
+            if (!isAuthenticatedAdmin()) {
+                $checkStmt = $conn->prepare("SELECT user_id FROM campaign_master WHERE campaign_id = ?");
+                $checkStmt->bind_param("i", $id);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                $campaignData = $checkResult->fetch_assoc();
+                $checkStmt->close();
+                
+                if (!$campaignData || !canAccessRecord($campaignData['user_id'])) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Access denied']);
+                    exit;
+                }
+            }
+            
             $description = $conn->real_escape_string($_POST['description'] ?? '');
             $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
             $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
@@ -216,46 +348,30 @@ try {
             }
             exit;
 
-        // UPDATE via JSON POST (no files)
+        // UPDATE via JSON POST (no files) - Full campaign update
         } elseif ($hasId && $isJson) {
             $id = intval($_GET['id']);
+            
+            // Check user access using authenticated user
+            if (!isAuthenticatedAdmin()) {
+                $checkStmt = $conn->prepare("SELECT user_id FROM campaign_master WHERE campaign_id = ?");
+                $checkStmt->bind_param("i", $id);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                $campaignData = $checkResult->fetch_assoc();
+                $checkStmt->close();
+                
+                if (!$campaignData || !canAccessRecord($campaignData['user_id'])) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Access denied']);
+                    exit;
+                }
+            }
+            
             $input_raw = file_get_contents('php://input');
             $data = json_decode($input_raw, true) ?? [];
             
-            // Debug: Log received data
-            error_log("Campaign Update - ID: $id, Raw Input: $input_raw");
-            error_log("Campaign Update - Decoded Data: " . json_encode($data));
-            error_log("Data keys: " . implode(', ', array_keys($data)));
-            
-            // Check if this is a CSV list only update
-            $keys = array_keys($data);
-            $isOnlyCsvListUpdate = (count($keys) === 1 && $keys[0] === 'csv_list_id');
-            
-            error_log("Is Only CSV List Update: " . ($isOnlyCsvListUpdate ? 'YES' : 'NO'));
-            
-            if ($isOnlyCsvListUpdate) {
-                // Only update csv_list_id
-                $csv_list_id = $data['csv_list_id'] !== '' && $data['csv_list_id'] !== null ? (int)$data['csv_list_id'] : null;
-                error_log("Updating csv_list_id to: " . ($csv_list_id === null ? 'NULL' : $csv_list_id));
-                
-                if ($csv_list_id === null) {
-                    $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=NULL WHERE campaign_id=?");
-                    $stmt->bind_param('i', $id);
-                } else {
-                    $stmt = $conn->prepare("UPDATE campaign_master SET csv_list_id=? WHERE campaign_id=?");
-                    $stmt->bind_param('ii', $csv_list_id, $id);
-                }
-                
-                if ($stmt->execute()) {
-                    error_log("CSV list update SUCCESS for campaign #$id");
-                    echo json_encode(['success' => true, 'message' => 'CSV list updated successfully!']);
-                } else {
-                    error_log("CSV list update FAILED: " . $conn->error);
-                    http_response_code(500);
-                    echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
-                }
-                exit;
-            }
+            error_log("Campaign Full Update - ID: $id, Data keys: " . implode(', ', array_keys($data)));
             
             // Full update with all fields
             $description = $conn->real_escape_string($data['description'] ?? '');
@@ -288,13 +404,29 @@ try {
             }
 
             $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
-            $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=?, csv_list_id=? WHERE campaign_id=?");
-            $stmt->bind_param('sssssii', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $csv_list_id, $id);
+            
+            // Get current user for filtering
+            $currentUserData = getAuthenticatedUser();
+            $userId = $currentUserData['id'];
+            $isAdminUser = isAuthenticatedAdmin();
+            
+            if ($isAdminUser) {
+                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=?, csv_list_id=? WHERE campaign_id=?");
+                $stmt->bind_param('sssssii', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $csv_list_id, $id);
+            } else {
+                $stmt = $conn->prepare("UPDATE campaign_master SET description=?, mail_subject=?, mail_body=?, send_as_html=?, images_paths=?, csv_list_id=? WHERE campaign_id=? AND user_id=?");
+                $stmt->bind_param('sssssiii', $description, $mail_subject, $mail_body, $send_as_html, $images_json, $csv_list_id, $id, $userId);
+            }
             if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!']);
+                if ($stmt->affected_rows > 0) {
+                    echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!']);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'error' => 'Campaign not found or no permission']);
+                }
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
+                echo json_encode(['success' => false, 'error' => 'Error updating campaign: ' . $conn->error]);
             }
             exit;
         }
@@ -370,23 +502,32 @@ try {
         // Store images as JSON (null if empty array)
         $images_json = !empty($images_paths) ? json_encode($images_paths) : null;
         
+        // Require authentication
+        $currentUser = getAuthenticatedUser();
+        if (!$currentUser) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in.']);
+            exit;
+        }
+        $user_id = $currentUser['id'];
+        
         // Check if template_id and import_batch_id columns exist
         try {
-            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id, template_id, import_batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id, template_id, import_batch_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 throw new Exception("Prepare failed: " . $conn->error);
             }
-            $stmt->bind_param("sssssiiss", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id, $template_id, $import_batch_id);
+            $stmt->bind_param("sssssiissi", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id, $template_id, $import_batch_id, $user_id);
         } catch (Exception $e) {
             // Fallback: columns might not exist on server
             error_log("Template columns missing, using fallback INSERT: " . $e->getMessage());
-            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO campaign_master (description, mail_subject, mail_body, attachment_path, images_paths, send_as_html, csv_list_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Database error: ' . $conn->error]);
                 exit;
             }
-            $stmt->bind_param("sssssis", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id);
+            $stmt->bind_param("sssssisi", $description, $mail_subject, $mail_body, $attachment_path, $images_json, $send_as_html, $csv_list_id, $user_id);
         }
 
         if ($stmt->execute()) {
@@ -482,13 +623,38 @@ try {
             exit;
         }
         $id = intval($_GET['id']);
-        $sql = "DELETE FROM campaign_master WHERE campaign_id=$id";
-        if ($conn->query($sql)) {
-            echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully!']);
+        
+        // Check user access using authenticated user
+        if (!isAuthenticatedAdmin()) {
+            $checkStmt = $conn->prepare("SELECT user_id FROM campaign_master WHERE campaign_id = ?");
+            $checkStmt->bind_param("i", $id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $campaignData = $checkResult->fetch_assoc();
+            $checkStmt->close();
+            
+            if (!$campaignData || !canAccessRecord($campaignData['user_id'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Access denied']);
+                exit;
+            }
+        }
+        
+        // Use prepared statement for security
+        $stmt = $conn->prepare("DELETE FROM campaign_master WHERE campaign_id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            if ($stmt->affected_rows > 0) {
+                echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully!']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Campaign not found or already deleted']);
+            }
         } else {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error deleting campaign: ' . $conn->error]);
         }
+        $stmt->close();
         exit;
     }
 

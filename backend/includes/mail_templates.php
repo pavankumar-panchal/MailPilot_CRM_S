@@ -4,17 +4,21 @@
  * Manages HTML email templates with merge fields
  */
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
+// Use centralized session configuration
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/security_helpers.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/auth_helper.php';
+
+// Set security headers
+setSecurityHeaders();
+
+// Handle CORS securely
+handleCors();
+
+// Ensure user_id columns exist
+ensureUserIdColumns($conn);
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -73,10 +77,15 @@ $conn->close();
  * List all templates
  */
 function listTemplates($conn) {
+    // Use unified auth
+    $currentUser = requireAuth();
+    $userFilter = getAuthFilterWhere('mail_templates');
+    
     $query = "SELECT template_id, template_name, template_description, merge_fields, 
               is_active, created_at, updated_at, 
               LENGTH(template_html) as html_length
               FROM mail_templates 
+              $userFilter
               ORDER BY is_active DESC, template_name ASC";
     
     $result = $conn->query($query);
@@ -104,13 +113,18 @@ function getTemplate($conn) {
         throw new Exception('Invalid template ID');
     }
     
-    $stmt = $conn->prepare("SELECT * FROM mail_templates WHERE template_id = ?");
+    // Add user filtering for security
+    $currentUser = requireAuth();
+    $isAdmin = isAuthenticatedAdmin();
+    $userFilter = $isAdmin ? '' : ' AND user_id = ' . intval($currentUser['id']);
+    
+    $stmt = $conn->prepare("SELECT * FROM mail_templates WHERE template_id = ?" . $userFilter);
     $stmt->bind_param("i", $template_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
-        throw new Exception('Template not found');
+        throw new Exception('Template not found or access denied');
     }
     
     $template = $result->fetch_assoc();
@@ -144,6 +158,10 @@ function fixImagePaths($html) {
  * Create new template
  */
 function createTemplate($conn) {
+    // Use unified auth
+    $currentUser = requireAuth();
+    error_log("mail_templates.php createTemplate - User: " . json_encode($currentUser));
+    
     $data = json_decode(file_get_contents('php://input'), true);
     
     $template_name = isset($data['template_name']) ? trim($data['template_name']) : '';
@@ -165,8 +183,11 @@ function createTemplate($conn) {
     
     $merge_fields_json = json_encode($merge_fields);
     
-    $stmt = $conn->prepare("INSERT INTO mail_templates (template_name, template_description, template_html, merge_fields) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $template_name, $template_description, $template_html, $merge_fields_json);
+    // Get user ID (already verified above)
+    $user_id = $currentUser['id'];
+    
+    $stmt = $conn->prepare("INSERT INTO mail_templates (template_name, template_description, template_html, merge_fields, user_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssi", $template_name, $template_description, $template_html, $merge_fields_json, $user_id);
     
     if (!$stmt->execute()) {
         throw new Exception('Failed to create template: ' . $stmt->error);
@@ -189,6 +210,25 @@ function updateTemplate($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     $template_id = isset($data['template_id']) ? intval($data['template_id']) : 0;
+    
+    if ($template_id === 0) {
+        throw new Exception('Template ID is required');
+    }
+    
+    // Check user access
+    if (!isAdmin()) {
+        $checkStmt = $conn->prepare("SELECT user_id FROM mail_templates WHERE template_id = ?");
+        $checkStmt->bind_param("i", $template_id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        $templateData = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        if (!$templateData || !canAccessRecord($templateData['user_id'])) {
+            throw new Exception('Access denied');
+        }
+    }
+    
     $template_name = isset($data['template_name']) ? trim($data['template_name']) : '';
     $template_description = isset($data['template_description']) ? trim($data['template_description']) : '';
     $template_html = isset($data['template_html']) ? $data['template_html'] : '';
@@ -231,6 +271,20 @@ function deleteTemplate($conn) {
     
     if ($template_id === 0) {
         throw new Exception('Invalid template ID');
+    }
+    
+    // Check user access
+    if (!isAdmin()) {
+        $checkStmt = $conn->prepare("SELECT user_id FROM mail_templates WHERE template_id = ?");
+        $checkStmt->bind_param("i", $template_id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        $templateData = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        if (!$templateData || !canAccessRecord($templateData['user_id'])) {
+            throw new Exception('Access denied');
+        }
     }
     
     // Check if template is used in any campaigns
