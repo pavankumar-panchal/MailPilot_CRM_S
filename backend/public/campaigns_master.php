@@ -466,21 +466,64 @@ function startCampaign($conn, $campaign_id)
             
             // Check if campaign exists and user has permission
             $userCheck = $isAdmin ? "" : " AND user_id = $userId";
-            $check = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = $campaign_id $userCheck");
+            $check = $conn->query("SELECT cm.campaign_id, cm.user_id FROM campaign_master cm WHERE cm.campaign_id = $campaign_id $userCheck");
             if ($check->num_rows == 0) {
                 $conn->commit();
                 throw new Exception($isAdmin ? "Campaign #$campaign_id does not exist" : "Campaign #$campaign_id not found or you don't have permission");
             }
-            $status_check = $conn->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
-            if ($status_check->num_rows > 0 && $status_check->fetch_assoc()['status'] === 'completed') {
-                $conn->commit();
-                throw new Exception("Campaign #$campaign_id is already completed");
+            
+            $campaignData = $check->fetch_assoc();
+            $campaignUserId = $campaignData['user_id'];
+            
+            // Verify user has active SMTP accounts before starting
+            $smtpCheck = $conn->query("
+                SELECT COUNT(*) as smtp_count 
+                FROM smtp_accounts sa
+                JOIN smtp_servers ss ON sa.smtp_server_id = ss.id
+                WHERE sa.user_id = $campaignUserId
+                AND sa.is_active = 1 
+                AND ss.is_active = 1
+            ");
+            
+            if ($smtpCheck) {
+                $smtpRow = $smtpCheck->fetch_assoc();
+                if ($smtpRow['smtp_count'] == 0) {
+                    $conn->commit();
+                    throw new Exception("Cannot start campaign: No active SMTP accounts found for this user");
+                }
             }
+            
+            $status_check = $conn->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
+            if ($status_check->num_rows > 0) {
+                $currentStatus = $status_check->fetch_assoc()['status'];
+                if ($currentStatus === 'completed') {
+                    $conn->commit();
+                    throw new Exception("Campaign #$campaign_id is already completed");
+                }
+                if ($currentStatus === 'running') {
+                    $conn->commit();
+                    throw new Exception("Campaign #$campaign_id is already running");
+                }
+            }
+            
             $counts = getEmailCounts($conn, $campaign_id, $userId, $isAdmin);
+            
+            // Validate there are emails to send
+            if ($counts['total_valid'] == 0) {
+                $conn->commit();
+                throw new Exception("Cannot start campaign: No valid emails found");
+            }
+            
+            if ($counts['pending'] == 0) {
+                $conn->commit();
+                throw new Exception("Cannot start campaign: No pending emails to send");
+            }
+            
             // Use INSERT...ON DUPLICATE KEY to prevent duplicates and ensure single row per campaign
+            // Set status to 'running' and let campaign_cron.php pick it up and launch the process
             $conn->query("INSERT INTO campaign_status 
-                    (campaign_id, total_emails, pending_emails, sent_emails, failed_emails, status, start_time)
-                    VALUES ($campaign_id, {$counts['total_valid']}, {$counts['pending']}, {$counts['sent']}, {$counts['failed']}, 'running', NOW())
+                    (campaign_id, total_emails, pending_emails, sent_emails, failed_emails, status, start_time, user_id)
+                    VALUES ($campaign_id, {$counts['total_valid']}, {$counts['pending']}, {$counts['sent']}, {$counts['failed']}, 'running', NOW(), $campaignUserId)
                     ON DUPLICATE KEY UPDATE
                     status = 'running',
                     total_emails = {$counts['total_valid']},
@@ -488,11 +531,18 @@ function startCampaign($conn, $campaign_id)
                     sent_emails = {$counts['sent']},
                     failed_emails = {$counts['failed']},
                     start_time = IFNULL(start_time, NOW()),
-                    end_time = NULL");
+                    end_time = NULL,
+                    user_id = $campaignUserId,
+                    process_pid = NULL");
+            
             $conn->commit();
             $success = true;
-            // Start process IMMEDIATELY after commit
-            startEmailBlasterProcess($campaign_id);
+            
+            error_log("Campaign #$campaign_id set to 'running' status. Cron job will pick it up within 2 minutes.");
+            
+            // DO NOT start the process directly - let campaign_cron.php handle it
+            // This allows proper environment detection and user-based SMTP filtering
+            
         } catch (mysqli_sql_exception $e) {
             $conn->rollback();
             if (strpos($e->getMessage(), 'Lock wait timeout exceeded') !== false) {
