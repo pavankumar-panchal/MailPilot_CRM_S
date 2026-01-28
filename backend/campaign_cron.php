@@ -88,13 +88,24 @@ function isPidRunning($pid) {
     return file_exists('/proc/' . intval($pid));
 }
 
-// Get all running campaigns (exclude paused/stopped)
+// Get all running campaigns (exclude paused/stopped) with user_id
 logCron("Querying for running campaigns...");
 $result = $conn->query("
-    SELECT cs.campaign_id, cs.status, cm.description
+    SELECT 
+        cs.campaign_id, 
+        cs.status, 
+        cs.total_emails,
+        cs.sent_emails,
+        cs.failed_emails,
+        cm.description,
+        cm.user_id,
+        u.name as user_name,
+        u.email as user_email
     FROM campaign_status cs
     JOIN campaign_master cm ON cs.campaign_id = cm.campaign_id
+    LEFT JOIN users u ON cm.user_id = u.id
     WHERE cs.status = 'running'
+    ORDER BY cs.campaign_id
 ");
 
 if (!$result) {
@@ -152,14 +163,48 @@ logCron("PID directory: $pid_dir");
 // Launch parallel email blaster for each running campaign (if not already running)
 foreach ($campaigns as $campaign) {
     $campaign_id = $campaign['campaign_id'];
+    $user_id = isset($campaign['user_id']) ? intval($campaign['user_id']) : 0;
+    $user_name = isset($campaign['user_name']) ? $campaign['user_name'] : 'Unknown';
+    $total_emails = isset($campaign['total_emails']) ? intval($campaign['total_emails']) : 0;
+    $sent_emails = isset($campaign['sent_emails']) ? intval($campaign['sent_emails']) : 0;
+    
     logCron("Processing campaign #{$campaign_id}: {$campaign['description']}");
+    logCron("  User: {$user_name} (ID: {$user_id})");
+    logCron("  Progress: {$sent_emails}/{$total_emails} emails sent");
+    
+    // Verify user has active SMTP accounts
+    if ($user_id > 0) {
+        $smtpCheck = $conn->query("
+            SELECT COUNT(*) as smtp_count 
+            FROM smtp_accounts sa
+            JOIN smtp_servers ss ON sa.smtp_server_id = ss.id
+            WHERE sa.user_id = $user_id 
+            AND sa.is_active = 1 
+            AND ss.is_active = 1
+        ");
+        
+        if ($smtpCheck && $smtpCheck->num_rows > 0) {
+            $smtpData = $smtpCheck->fetch_assoc();
+            $smtp_count = $smtpData['smtp_count'];
+            
+            if ($smtp_count == 0) {
+                logCron("  WARNING: User #{$user_id} has NO active SMTP accounts!");
+                logCron("  Skipping campaign #{$campaign_id} - cannot send without SMTP");
+                continue;
+            } else {
+                logCron("  User has {$smtp_count} active SMTP account(s) available");
+            }
+        }
+    } else {
+        logCron("  WARNING: Campaign has no user_id assigned!");
+    }
     
     // Double-check campaign status (might have been paused/stopped since query)
     $statusCheck = $conn->query("SELECT status FROM campaign_status WHERE campaign_id = $campaign_id");
     if ($statusCheck && $statusCheck->num_rows > 0) {
         $currentStatus = $statusCheck->fetch_assoc()['status'];
         if ($currentStatus !== 'running') {
-            logCron("Campaign #{$campaign_id} - Status changed to '$currentStatus', skipping orchestrator launch");
+            logCron("  Status changed to '$currentStatus', skipping orchestrator launch");
             continue;
         }
     }
@@ -171,12 +216,12 @@ foreach ($campaigns as $campaign) {
         $existing_pid = intval(@file_get_contents($pid_file));
         
         if (isPidRunning($existing_pid)) {
-            logCron("Campaign #{$campaign_id} - Parallel blaster already running (PID: $existing_pid)");
+            logCron("  Parallel blaster already running (PID: $existing_pid)");
             continue; // Already running, skip
         } else {
             // Process died - remove stale PID file
             @unlink($pid_file);
-            logCron("Campaign #{$campaign_id} - Removed stale PID file, will restart orchestrator");
+            logCron("  Removed stale PID file, will restart orchestrator");
         }
     }
     
@@ -187,16 +232,26 @@ foreach ($campaigns as $campaign) {
         escapeshellarg($parallel_script),
         $campaign_id
     );
-    logCron("Launching: $cmd");
+    logCron("  Launching: $cmd");
     
     exec($cmd, $output, $ret);
     $new_pid = isset($output[0]) ? intval($output[0]) : 0;
     
     if ($new_pid > 0) {
         file_put_contents($pid_file, $new_pid);
-        logCron("✓ Campaign #{$campaign_id} - Started round-robin orchestrator (PID: $new_pid)");
+        
+        // Update campaign_status with process PID
+        $conn->query("
+            UPDATE campaign_status 
+            SET process_pid = $new_pid, 
+                start_time = COALESCE(start_time, NOW())
+            WHERE campaign_id = $campaign_id
+        ");
+        
+        logCron("  ✓ Started orchestrator (PID: $new_pid)");
+        logCron("  ✓ Campaign will use user #{$user_id}'s SMTP accounts only");
     } else {
-        logCron("✗ Campaign #{$campaign_id} - Failed to start orchestrator");
+        logCron("  ✗ Failed to start orchestrator");
     }
     
     unset($output);

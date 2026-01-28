@@ -237,7 +237,21 @@ function runParallelEmailBlast($conn, $campaign_id) {
     
     // Get campaign owner's user_id for SMTP filtering
     $campaign_user_id = isset($campaign['user_id']) ? (int)$campaign['user_id'] : null;
-    logMessage("Campaign user_id: " . ($campaign_user_id ?? 'NULL'));
+    logMessage("==========================================");
+    logMessage("Campaign user_id: " . ($campaign_user_id ?? 'NULL (ALL USERS)'));
+    
+    if ($campaign_user_id) {
+        // Get user details for logging
+        $userQuery = $conn->query("SELECT name, email FROM users WHERE id = $campaign_user_id LIMIT 1");
+        if ($userQuery && $userQuery->num_rows > 0) {
+            $userData = $userQuery->fetch_assoc();
+            logMessage("Campaign owner: {$userData['name']} ({$userData['email']})");
+            logMessage("Using ONLY SMTP accounts belonging to user #{$campaign_user_id}");
+        }
+    } else {
+        logMessage("WARNING: No user_id found - will use ALL SMTP accounts");
+    }
+    logMessage("==========================================");
     
     // Step 2: Get all active SMTP servers with their accounts (filtered by user)
     $smtp_servers = getSmtpServersWithAccounts($conn, $campaign_user_id);

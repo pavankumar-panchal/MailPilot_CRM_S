@@ -39347,3 +39347,816 @@
 [28-Jan-2026 15:16:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
 [28-Jan-2026 15:16:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
 [28-Jan-2026 15:16:15 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:56:04 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:26:04 Asia/Kolkata] session_config.php - Session ID: lutqmm3v2hsl9kdb1j7f4a9l88 | Has user_id: NO
+[28-Jan-2026 15:26:04 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:56:04 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:26:04 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:26:04 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:26:04 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:26:04 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:26:04 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:26:04 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:26:04 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:26:04 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:26:04 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:26:04 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:26:04 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:26:04 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:26:04 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:26:04 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:26:04 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:59:43 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:43 Asia/Kolkata] session_config.php - Session ID: pbppnfpfpob4v16tfe48ccb8p7 | Has user_id: NO
+[28-Jan-2026 15:29:43 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:43 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:43 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:43 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:43 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:43 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:43 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:43 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:43 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:43 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:43 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:43 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:43 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:43 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:43 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:43 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:43 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:59:48 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:48 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:48 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:48 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:48 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:48 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:48 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:48 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:48 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:48 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:48 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:48 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:48 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:48 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:48 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:48 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:59:49 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] session_config.php - Session ID: iid0nqht03ut07t4aj6see891f | Has user_id: NO
+[28-Jan-2026 15:29:49 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:49 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:49 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 10:59:49 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:49 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:59:49 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:49 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:49 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:49 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:49 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:49 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 10:59:54 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:54 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:54 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:54 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:54 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:54 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:29:54 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:54 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:54 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:29:54 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:54 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:54 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:29:54 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:54 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:54 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:54 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:54 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:29:54 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:54 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:29:54 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:29:54 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:29:54 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 10:59:54 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:55 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:55 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:55 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:55 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:55 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:29:55 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:55 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:55 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:29:55 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:55 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:55 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:29:55 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:55 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:55 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:55 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:55 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:29:55 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:55 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:29:55 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:29:55 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:29:55 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 10:59:56 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] session_config.php - Session ID: pp2ib08j52je8ovs2ie58bhjni | Has user_id: NO
+[28-Jan-2026 15:29:56 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:56 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] session_config.php - Session ID: e02u7lema6ps318tvud57p8fcu | Has user_id: NO
+[28-Jan-2026 15:29:56 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:56 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:56 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:56 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:56 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:56 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:56 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 10:59:56 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:56 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:56 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:56 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:29:56 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:56 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:56 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:56 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 10:59:57 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:57 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:57 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:57 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:29:57 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:57 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:57 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:29:57 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 10:59:57 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:57 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:57 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:57 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:29:57 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:57 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:57 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:29:57 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:57 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:29:57 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:29:57 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 10:59:59 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] session_config.php - Session ID: 9q6d1q9d261mo0n4tv5hpb31ml | Has user_id: NO
+[28-Jan-2026 15:29:59 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:59 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] session_config.php - Session ID: fodi0vkgj1oubt6lp23p5l04vv | Has user_id: NO
+[28-Jan-2026 15:29:59 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 10:59:59 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 10:59:59 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:59 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:59 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:59 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 15:29:59 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:29:59 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:29:59 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:29:59 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:29:59 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:29:59 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:29:59 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 11:00:00 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:00 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:00 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:00 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:00 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:00 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:30:00 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:00 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:30:00 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:30:00 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:00 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:30:00 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:30:00 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:00 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:00 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:00 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:00 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:30:00 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:00 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:30:00 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:30:00 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:30:00 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:00:00 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:01 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:01 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:01 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:01 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:01 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:30:01 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:01 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:30:01 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:30:01 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:30:01 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:30:01 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:30:01 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:01 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:01 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:01 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:01 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:30:01 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:01 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:30:01 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:30:01 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:30:01 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: 08grfp15edudt52me0dnpm2qge | Has user_id: NO
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: edd2sj96v33ogk54apa7ieiqpu | Has user_id: NO
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: nhi2gturstnke85782agrpm295 | Has user_id: NO
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: uig2p7tetia6hre62v3sq6ed45 | Has user_id: NO
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:30:02 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:30:02 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:30:02 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:00:02 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:30:02 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:30:02 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:30:02 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:30:02 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:30:02 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:30:02 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:30:02 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:30:02 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:30:02 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:13 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] session_config.php - Session ID: 3vu2uuafbdqi2nej9p04p46fvu | Has user_id: NO
+[28-Jan-2026 15:33:13 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:13 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] session_config.php - Session ID: m30sub3kmd7rdcbkpnmirnnsul | Has user_id: NO
+[28-Jan-2026 15:33:13 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:13 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 11:03:13 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:13 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:13 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:13 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 15:33:13 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:13 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:13 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:13 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:13 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:13 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:13 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 11:03:15 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:15 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 11:03:15 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 11:03:15 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - campaign_id: 3, csv_list_id: NULL, import_batch_id: BATCH_20260128_124434_cc3d514a
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - Results: total=1572, sent=0, failed=0, retryable=0, pending=1572
+[28-Jan-2026 15:33:15 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:15 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - campaign_id: 3, csv_list_id: NULL, import_batch_id: BATCH_20260128_124434_cc3d514a
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - Results: total=1572, sent=0, failed=0, retryable=0, pending=1572
+[28-Jan-2026 15:33:15 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:15 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:15 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:15 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:15 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - campaign_id: 3, csv_list_id: NULL, import_batch_id: BATCH_20260128_124434_cc3d514a
+[28-Jan-2026 15:33:15 Asia/Kolkata] getEmailCounts - Results: total=1572, sent=0, failed=0, retryable=0, pending=1572
+[28-Jan-2026 11:03:18 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:18 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:18 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:18 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:33:18 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:18 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:18 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:18 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:03:18 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:18 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:18 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:18 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:33:18 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:18 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:18 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:18 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:18 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:18 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:33:18 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:03:21 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] session_config.php - Session ID: jm09ok3jl1iha1ateueq5vqqn3 | Has user_id: NO
+[28-Jan-2026 15:33:21 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:21 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] session_config.php - Session ID: gen6dvukc36220m6jbv9k50scq | Has user_id: NO
+[28-Jan-2026 15:33:21 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:21 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:21 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:21 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:21 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:21 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:21 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:21 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:21 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:21 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:21 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Query string: endpoint=/api/workers
+[28-Jan-2026 15:33:21 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/workers"}
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:21 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:21 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:21 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:22 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] session_config.php - Session ID: 5k0oosg5gbdggi1ig3l6e8sfl1 | Has user_id: NO
+[28-Jan-2026 15:33:22 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:22 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] session_config.php - Session ID: tj359rdej42r8o6isklucquqal | Has user_id: NO
+[28-Jan-2026 15:33:22 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:22 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:22 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:22 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:33:22 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:22 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:22 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:33:22 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:22 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:22 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:22 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:33:22 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:22 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:33:22 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:22 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:22 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:22 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:33:22 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:22 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:23 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:23 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:23 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:33:23 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:23 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:23 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:33:23 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:23 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:23 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:23 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Query string: endpoint=/api/master/smtps
+[28-Jan-2026 15:33:23 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/smtps"}
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:23 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] === SMTP GET REQUEST ===
+[28-Jan-2026 15:33:23 Asia/Kolkata] User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:23 Asia/Kolkata] Is Admin: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:23 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:23 Asia/Kolkata] User Filter: ''
+[28-Jan-2026 15:33:23 Asia/Kolkata] Query: SELECT * FROM smtp_servers  ORDER BY id DESC
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 11:03:26 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:26 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:26 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:26 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:33:26 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:26 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:26 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:26 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:03:26 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:26 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:26 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:26 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Method: GET, Endpoint: /api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] API Router: Routing to campaign.php
+[28-Jan-2026 15:33:26 Asia/Kolkata] === campaign.php ENTRY === Method: GET, URI: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php - GET params: {"endpoint":"\/api\/master\/campaigns"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php - POST data size: 0
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:26 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:26 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - User: {"id":1,"email":"panchalpavan800@gmail.com","name":"Pavankumar","role":"admin"}
+[28-Jan-2026 15:33:26 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:26 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 15:33:26 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - User filter: 
+[28-Jan-2026 15:33:26 Asia/Kolkata] campaign.php GET - Found 1 campaigns
+[28-Jan-2026 11:03:27 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 11:03:27 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] session_config.php - Session ID: oo72cv0i1rtt0cpa68uto5uf3m | Has user_id: NO
+[28-Jan-2026 15:33:27 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:27 Asia/Kolkata] session_config.php - Session ID: 5ks8rpsgju4avg8b6ap1tqspc8 | Has user_id: NO
+[28-Jan-2026 15:33:27 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:27 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 11:03:27 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:27 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:27 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:27 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 15:33:27 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:27 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:27 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:27 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:27 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:27 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:27 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 11:03:29 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:29 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:29 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:29 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:29 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:29 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:29 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:29 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:29 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:29 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:29 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:29 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:29 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:29 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:29 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:29 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 11:03:34 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:34 Asia/Kolkata] session_config.php - Session ID: 8v1kco4g8mo04e5jr1orknjfi8 | Has user_id: NO
+[28-Jan-2026 15:33:34 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 11:03:34 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:34 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:34 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:34 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:34 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:34 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/master/campaigns_master
+[28-Jan-2026 15:33:34 Asia/Kolkata] API Router - Query string: endpoint=/api/master/campaigns_master
+[28-Jan-2026 15:33:34 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/master\/campaigns_master"}
+[28-Jan-2026 15:33:34 Asia/Kolkata] API Router: Routing to campaigns_master.php
+[28-Jan-2026 15:33:34 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 15:33:34 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 15:33:34 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 15:33:34 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:34 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:34 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 15:33:34 Asia/Kolkata] getCampaignsWithStats - userId: 1, isAdmin: YES
+[28-Jan-2026 11:03:39 Europe/Berlin] === API Router Start === Request: /verify_emails/MailPilot_CRM_S/backend/routes/api.php?endpoint=/api/logout
+[28-Jan-2026 15:33:39 Asia/Kolkata] session_config.php - Session ID: r68c4c0heeen43t55vppcikctt | Has user_id: YES
+[28-Jan-2026 15:33:39 Asia/Kolkata] Session config loaded successfully
+[28-Jan-2026 15:33:39 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 15:33:39 Asia/Kolkata] Database config loaded successfully
+[28-Jan-2026 15:33:39 Asia/Kolkata] API Router - Method: POST, Endpoint: /api/logout
+[28-Jan-2026 15:33:39 Asia/Kolkata] API Router - Query string: endpoint=/api/logout
+[28-Jan-2026 15:33:39 Asia/Kolkata] API Router - Full _GET: {"endpoint":"\/api\/logout"}
