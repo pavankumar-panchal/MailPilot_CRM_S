@@ -94,6 +94,10 @@
     $import_batch_id = isset($campaign['import_batch_id']) ? $campaign['import_batch_id'] : null;
     $csv_list_filter = $csv_list_id > 0 ? " AND e.csv_list_id = $csv_list_id" : "";
     
+    // Store campaign user_id in global for use in recordDelivery
+    $GLOBALS['campaign_user_id'] = isset($campaign['user_id']) ? intval($campaign['user_id']) : 0;
+    workerLog("Campaign user_id: " . $GLOBALS['campaign_user_id']);
+    
     if ($import_batch_id) {
         workerLog("Worker for server #$server_id starting with Import Batch ID: $import_batch_id");
     } else {
@@ -628,13 +632,45 @@
         }
         
         // Use NOW() for more precise timestamp including seconds
-        $stmt = $conn->prepare("INSERT INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) VALUES (?,?,?,?,CURDATE(),NOW(),?,?,1) ON DUPLICATE KEY UPDATE csv_list_id=VALUES(csv_list_id), smtpid=VALUES(smtpid), delivery_date=VALUES(delivery_date), delivery_time=VALUES(delivery_time), status=IF(mail_blaster.status='success','success',VALUES(status)), error_message=IF(VALUES(status)='failed',VALUES(error_message),NULL), attempt_count=IF(mail_blaster.status='success',mail_blaster.attempt_count,LEAST(mail_blaster.attempt_count+1,5))");
+        $stmt = $conn->prepare("
+            INSERT INTO mail_blaster 
+                (campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, status, error_message, attempt_count, user_id) 
+            VALUES 
+                (?, ?, ?, ?, ?, ?, CURDATE(), NOW(), ?, ?, 1, ?) 
+            ON DUPLICATE KEY UPDATE 
+                smtp_account_id = VALUES(smtp_account_id),
+                smtp_email = VALUES(smtp_email),
+                csv_list_id = VALUES(csv_list_id), 
+                smtpid = VALUES(smtpid), 
+                delivery_date = VALUES(delivery_date), 
+                delivery_time = VALUES(delivery_time), 
+                status = IF(mail_blaster.status='success', 'success', VALUES(status)), 
+                error_message = IF(VALUES(status)='failed', VALUES(error_message), NULL), 
+                attempt_count = IF(mail_blaster.status='success', mail_blaster.attempt_count, LEAST(mail_blaster.attempt_count+1, 5)),
+                user_id = VALUES(user_id)
+        ");
+        
         // Skip writes if campaign is deleted
         $existsRes = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = " . intval($campaign_id) . " LIMIT 1");
         if (!$existsRes || $existsRes->num_rows === 0) {
             return;
         }
-        $stmt->bind_param("isiiss", $campaign_id, $to_email, $csv_list_id, $smtp_account_id, $status, $error);
+        
+        // Get campaign user_id for tracking
+        $campaign_user_id = isset($GLOBALS['campaign_user_id']) ? intval($GLOBALS['campaign_user_id']) : 0;
+        
+        // Bind parameters: campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, status, error_message, user_id
+        $stmt->bind_param("iissiissi", 
+            $campaign_id, 
+            $smtp_account_id, 
+            $smtp_email, 
+            $to_email, 
+            $csv_list_id, 
+            $smtp_account_id, 
+            $status, 
+            $error, 
+            $campaign_user_id
+        );
         $stmt->execute();
         $stmt->close();
         
