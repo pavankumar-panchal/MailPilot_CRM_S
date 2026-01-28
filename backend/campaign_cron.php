@@ -53,20 +53,19 @@ if (!$lock->acquire()) {
     exit(0);
 }
 
-// Start logging immediately - DISABLED
-// $log_file = __DIR__ . '/logs/campaign_cron.log'; // Commented - log disabled
-// $log_dir = dirname($log_file);
-// if (!is_dir($log_dir)) {
-//     @mkdir($log_dir, 0777, true);
-// }
+// Start logging immediately
+$log_file = __DIR__ . '/logs/campaign_cron.log';
+$log_dir = dirname($log_file);
+if (!is_dir($log_dir)) {
+    @mkdir($log_dir, 0777, true);
+}
 
 function logCron($message) {
-    // Log file disabled - function kept for compatibility
-    // global $log_file;
-    // $timestamp = date('Y-m-d H:i:s');
-    // $log_msg = "[$timestamp] $message\n";
-    // file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
-    // echo $log_msg; // Keep echo for cron output if needed
+    global $log_file;
+    $timestamp = date('Y-m-d H:i:s');
+    $log_msg = "[$timestamp] $message\n";
+    @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
+    echo $log_msg; // Also output to console for cron email/output
 }
 
 logCron("=== CRON JOB START ===");

@@ -16,7 +16,7 @@
 
     // Worker debug logging (enable/disable here)
     if (!defined('WORKER_LOG_ENABLED')) {
-        define('WORKER_LOG_ENABLED', false); // DISABLED - re-enable for debugging
+        define('WORKER_LOG_ENABLED', true); // ENABLED - for tracking email sending
     }
     if (!defined('WORKER_LOG_FILE')) {
         define('WORKER_LOG_FILE', __DIR__ . '/../logs/email_worker_' . date('Y-m-d') . '.log');

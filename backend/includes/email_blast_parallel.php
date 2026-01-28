@@ -836,18 +836,20 @@ function updateFinalCampaignStats($conn, $campaign_id) {
  * Log message to file
  */
 function logMessage($message) {
-    // Log file disabled - function kept for compatibility
-    // Temporary: echo to console for debugging
+    global $campaign_id;
     $timestamp = date('Y-m-d H:i:s');
-    echo "[$timestamp] $message\n";
-    // $logDir = dirname(LOG_FILE);
-    // if (!is_dir($logDir)) {
-    //     mkdir($logDir, 0777, true);
-    // }
-    // 
-    // $timestamp = date('Y-m-d H:i:s');
-    // $logEntry = "[$timestamp] $message" . PHP_EOL;
-    // file_put_contents(LOG_FILE, $logEntry, FILE_APPEND);
+    $pid = getmypid();
+    $log_msg = "[$timestamp][PID:$pid] $message\n";
+    echo $log_msg;
+    
+    // Log to file for tracking
+    $cid = isset($campaign_id) ? $campaign_id : 'unknown';
+    $log_file = __DIR__ . '/../logs/orchestrator_campaign_' . $cid . '.log';
+    $log_dir = dirname($log_file);
+    if (!is_dir($log_dir)) {
+        @mkdir($log_dir, 0777, true);
+    }
+    @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
 }
 
 // Helper: remaining emails count
