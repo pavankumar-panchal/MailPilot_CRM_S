@@ -61,19 +61,42 @@ const EmailVerification = () => {
     try {
       setListsLoading(true);
       
+      console.log('🔍 Fetching lists from:', `${API_CONFIG.GET_CSV_LIST}?limit=-1`);
+      
       // Use get_csv_list.php endpoint to get validation lists from csv_list table
       const res = await authFetch(`${API_CONFIG.GET_CSV_LIST}?limit=-1`);
       
+      console.log('📡 Response status:', res.status, res.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
+      
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ HTTP error response:', errorText);
         throw new Error(`HTTP error! status: ${res.status}`);
       }
       
-      const data = await res.json();
-      console.log('CSV list API response:', data);
+      // Get raw response text first to see what we're receiving
+      const responseText = await res.text();
+      console.log('📥 Raw response (first 500 chars):', responseText.substring(0, 500));
+      
+      // Try to parse as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        console.error('❌ Response was:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      console.log('✅ Parsed JSON data:', data);
+      console.log('✅ data.success:', data.success);
+      console.log('✅ data.data type:', typeof data.data, 'isArray:', Array.isArray(data.data));
+      console.log('✅ data.data length:', data.data?.length);
 
       // Check if response is successful
       if (data.success === false) {
-        console.error('CSV list API returned error:', data.message || data.error);
+        console.error('❌ CSV list API returned error:', data.message || data.error);
         throw new Error(data.message || data.error || 'Failed to load lists');
       }
 
@@ -91,23 +114,30 @@ const EmailVerification = () => {
         is_verification_list: true
       })) : [];
 
-      console.log('Email verification lists loaded:', lists.length, lists);
+      console.log('✅ Transformed lists:', lists);
+      console.log('✅ Setting state with', lists.length, 'lists');
       setLists(lists);
       setListPagination((prev) => ({ ...prev, total: data.total || lists.length }));
+      console.log('✅ State updated successfully');
     } catch (error) {
-      console.error("Error fetching lists:", error);
+      console.error("❌ ERROR in fetchLists:", error);
+      console.error("❌ Error name:", error.name);
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error stack:", error.stack);
       setLists([]);
       setListPagination((prev) => ({ ...prev, total: 0 }));
       // Only set error status once to avoid infinite loop
       if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        console.warn('⚠️ Unauthorized - redirecting to login');
         // Redirect to login on auth failure
         window.location.href = '/login';
       } else {
         // Silent fail - don't set status to avoid infinite loop
-        console.error("Failed to load lists:", error.message);
+        console.error("❌ Failed to load lists:", error.message);
       }
     } finally {
       setListsLoading(false);
+      console.log('✅ fetchLists complete, listsLoading set to false');
     }
   }, []);
 

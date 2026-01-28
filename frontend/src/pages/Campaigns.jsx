@@ -407,7 +407,8 @@ const Campaigns = () => {
   const handleEdit = async (campaign) => {
     try {
       // Fetch full campaign data including complete mail_body
-      const res = await fetch(`${API_URL_CRUD}?id=${campaign.campaign_id}`, {
+      const fetchUrl = `${API_URL_CRUD}&id=${campaign.campaign_id}`;
+      const res = await fetch(fetchUrl, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -481,7 +482,8 @@ const Campaigns = () => {
     formData.append("_method", "PUT");
 
     try {
-      const res = await fetch(`${API_URL_CRUD}?id=${editId}`, {
+      const updateUrl = `${API_URL_CRUD}&id=${editId}`;
+      const res = await fetch(updateUrl, {
         method: "POST", // Still POST for file upload, backend checks _method
         body: formData,
         credentials: 'include'
@@ -515,7 +517,9 @@ const Campaigns = () => {
     }));
 
     try {
-      const res = await fetch(`${API_URL_CRUD}?id=${id}`, { 
+      // Properly append id parameter (use & since API_URL_CRUD already has ?)
+      const deleteUrl = `${API_URL_CRUD}&id=${id}`;
+      const res = await fetch(deleteUrl, { 
         method: "DELETE",
         credentials: 'include'
       });
@@ -543,7 +547,8 @@ const Campaigns = () => {
   // Reuse campaign
   const handleReuse = async (id) => {
     try {
-      const res = await fetch(`${API_URL_CRUD}?id=${id}`, {
+      const fetchUrl = `${API_URL_CRUD}&id=${id}`;
+      const res = await fetch(fetchUrl, {
         credentials: 'include'
       });
       const data = await res.json();

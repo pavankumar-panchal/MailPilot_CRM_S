@@ -236,7 +236,7 @@ function getCampaignsWithStats()
                         AND NOT EXISTS (
                             SELECT 1 FROM mail_blaster mb
                             WHERE mb.campaign_id = $campaign_id
-                            AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
+                            AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails COLLATE utf8mb4_unicode_ci
                         )
                     ");
                     if ($unclaimedRes) {
@@ -559,14 +559,17 @@ function getEmailCounts($conn, $campaign_id, $userId = null, $isAdmin = false)
         $totalResult = $conn->query($totalQuery);
         $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
         
-        // Count sent and failed
+        // Count sent and failed - JOIN with imported_recipients to filter by import_batch_id
+        // Use COLLATE to fix collation mismatch between tables
         $countQuery = "SELECT 
                     COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
                     COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
                     COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
                 FROM mail_blaster mb
+                INNER JOIN imported_recipients ir ON mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails COLLATE utf8mb4_unicode_ci
                 WHERE mb.campaign_id = $campaign_id
-                AND mb.import_batch_id = '$batch_escaped'";
+                AND ir.import_batch_id = '$batch_escaped'";
+        
         
     } elseif ($csvListId) {
         // Count from emails table (CSV upload) - FILTERED BY CSV LIST

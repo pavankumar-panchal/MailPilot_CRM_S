@@ -58,6 +58,8 @@ $request = '/' . ltrim($request, '/'); // Ensure leading slash
 $method = $_SERVER['REQUEST_METHOD'];
 
 error_log("API Router - Method: $method, Endpoint: $request");
+error_log("API Router - Query string: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+error_log("API Router - Full _GET: " . json_encode($_GET));
 
 try {
     switch (true) {

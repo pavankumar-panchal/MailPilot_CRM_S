@@ -11,9 +11,9 @@ file_put_contents('/tmp/get_csv_list_debug.log', "Method: " . ($_SERVER['REQUEST
 error_log(">>> get_csv_list.php REQUEST START - Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'));
 error_log(">>> get_csv_list.php - Origin: " . ($_SERVER['HTTP_ORIGIN'] ?? 'none'));
 
-// Enable error output to see what's happening
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+// Enable error logging but disable display to prevent HTML in JSON response
+ini_set('display_errors', 0);  // CRITICAL: Don't display errors in response
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 ini_set('log_errors', 1);
 // Use /tmp for error log - compatible with both local and production open_basedir restrictions

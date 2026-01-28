@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { getBaseUrl } from "../config";
+
+const BASE_URL = getBaseUrl();
 
 const allNavLinks = [
   { to: "/", icon: "fa-home", label: "Home", roles: ["admin", "user"] },
@@ -66,9 +69,13 @@ export default function Navbar({ user, onLogout }) {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <img 
-                src="/favicon.svg" 
+                src="./favicon.svg"
                 alt="Relyon CRM Logo" 
                 className="h-8 w-8 mr-2"
+                onError={(e) => {
+                  console.error('Logo failed to load from:', e.target.src);
+                  e.target.style.display = 'none';
+                }}
               />
               <span className="text-gray-800 font-semibold text-lg">Relyon CRM</span>
             </div>

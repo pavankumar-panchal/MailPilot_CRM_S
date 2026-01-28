@@ -238,6 +238,8 @@ try {
         if ($hasId && ((isset($_POST['_method']) && $_POST['_method'] === 'PUT') || !$isJson)) {
             $id = intval($_GET['id']);
             
+            error_log("Campaign UPDATE - ID: $id, _method: " . ($_POST['_method'] ?? 'not set') . ", isJson: " . ($isJson ? 'true' : 'false'));
+            
             // Check user access using authenticated user
             if (!isAuthenticatedAdmin()) {
                 $checkStmt = $conn->prepare("SELECT user_id FROM campaign_master WHERE campaign_id = ?");
@@ -248,6 +250,7 @@ try {
                 $checkStmt->close();
                 
                 if (!$campaignData || !canAccessRecord($campaignData['user_id'])) {
+                    error_log("Campaign UPDATE - Access denied for campaign #$id");
                     http_response_code(403);
                     echo json_encode(['success' => false, 'message' => 'Access denied']);
                     exit;
@@ -341,11 +344,14 @@ try {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param($types, ...$params);
             if ($stmt->execute()) {
+                error_log("Campaign UPDATE - Successfully updated campaign #$id, affected_rows: " . $stmt->affected_rows);
                 echo json_encode(['success' => true, 'message' => 'Campaign updated successfully!', 'attachment_updated' => ($attachment_path !== null), 'images_updated' => true, 'images_count' => count($images_paths)]);
             } else {
+                error_log("Campaign UPDATE - Failed to update campaign #$id: " . $conn->error);
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Error updating campaign: ' . $conn->error]);
             }
+            $stmt->close();
             exit;
 
         // UPDATE via JSON POST (no files) - Full campaign update
@@ -432,6 +438,8 @@ try {
         }
 
         // CREATE (no id)
+        error_log("Campaign CREATE - hasId: " . ($hasId ? 'true' : 'false') . ", id param: " . ($_GET['id'] ?? 'not set') . ", _method: " . ($_POST['_method'] ?? 'not set'));
+        
         $description = $conn->real_escape_string($_POST['description'] ?? '');
         $mail_subject = $conn->real_escape_string($_POST['mail_subject'] ?? '');
         $mail_body = $conn->real_escape_string($_POST['mail_body'] ?? '');
@@ -617,9 +625,14 @@ try {
 
     // DELETE /api/master/campaigns?id=1
     if ($method === 'DELETE') {
+        error_log("campaign.php DELETE - GET params: " . json_encode($_GET));
+        error_log("campaign.php DELETE - Query string: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+        error_log("campaign.php DELETE - Request URI: " . ($_SERVER['REQUEST_URI'] ?? 'none'));
+        
         if (!isset($_GET['id'])) {
+            error_log("campaign.php DELETE - ERROR: id parameter not found in GET");
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Campaign ID is required.']);
+            echo json_encode(['success' => false, 'message' => 'Campaign ID is required.', 'debug' => $_GET]);
             exit;
         }
         $id = intval($_GET['id']);
@@ -645,12 +658,21 @@ try {
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
+                // Also delete from campaign_status if exists
+                $statusStmt = $conn->prepare("DELETE FROM campaign_status WHERE campaign_id = ?");
+                $statusStmt->bind_param("i", $id);
+                $statusStmt->execute();
+                $statusStmt->close();
+                
+                error_log("Campaign #$id deleted successfully. Also cleaned up campaign_status.");
                 echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully!']);
             } else {
+                error_log("Campaign #$id not found or already deleted");
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Campaign not found or already deleted']);
             }
         } else {
+            error_log("Error deleting campaign #$id: " . $conn->error);
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error deleting campaign: ' . $conn->error]);
         }

@@ -330,7 +330,7 @@ function runParallelEmailBlast($conn, $campaign_id) {
  */
 function getCampaignDetails($conn, $campaign_id) {
     $result = $conn->query("
-        SELECT * FROM campaign_master 
+        SELECT *, user_id FROM campaign_master 
         WHERE campaign_id = $campaign_id
     ");
     
@@ -550,7 +550,7 @@ function getWorkingSmtpServers($conn, $user_id = null) {
  */
 function getEmailsToSend($conn, $campaign_id) {
     // Check campaign source: import_batch_id or csv_list_id
-    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
+    $campaignResult = $conn->query("SELECT import_batch_id, csv_list_id, user_id FROM campaign_master WHERE campaign_id = $campaign_id");
     
     if (!$campaignResult || $campaignResult->num_rows === 0) {
         logMessage("ERROR: Campaign #$campaign_id not found");
@@ -560,12 +560,14 @@ function getEmailsToSend($conn, $campaign_id) {
     $campaignData = $campaignResult->fetch_assoc();
     $import_batch_id = $campaignData['import_batch_id'];
     $csv_list_id = intval($campaignData['csv_list_id']);
+    $campaign_user_id = isset($campaignData['user_id']) ? intval($campaignData['user_id']) : 0;
     
     $emails = [];
     
     if ($import_batch_id) {
-        // Fetch from imported_recipients table
+        // Fetch from imported_recipients table with user filter
         $batch_escaped = $conn->real_escape_string($import_batch_id);
+        $userFilter = $campaign_user_id > 0 ? " AND ir.user_id = $campaign_user_id" : "";
         $result = $conn->query("
             SELECT ir.id, ir.Emails as raw_emailid
             FROM imported_recipients ir
@@ -573,9 +575,10 @@ function getEmailsToSend($conn, $campaign_id) {
             AND ir.is_active = 1
             AND ir.Emails IS NOT NULL
             AND ir.Emails <> ''
+            $userFilter
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
-                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
+                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails COLLATE utf8mb4_unicode_ci
                 AND mb.campaign_id = $campaign_id
             )
             ORDER BY ir.id ASC
@@ -857,7 +860,7 @@ function getEmailsRemainingCount($conn, $campaign_id, $csv_list_id = 0) {
             AND ir.Emails <> ''
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
-                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails 
+                WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails COLLATE utf8mb4_unicode_ci
                 AND mb.campaign_id = $campaign_id
                 AND mb.status = 'success'
             )
