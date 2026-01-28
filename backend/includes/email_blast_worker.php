@@ -610,6 +610,13 @@
     }
 
     function recordDelivery($conn, $smtp_account_id, $server_id, $campaign_id, $to_email, $status, $error = null, $csv_list_id = null) {
+        // Fetch the SMTP email address from smtp_account_id
+        $smtp_email = '';
+        $emailQuery = $conn->query("SELECT email FROM smtp_accounts WHERE id = " . intval($smtp_account_id) . " LIMIT 1");
+        if ($emailQuery && $emailQuery->num_rows > 0) {
+            $smtp_email = $emailQuery->fetch_assoc()['email'];
+        }
+        
         // Check if this email was already successfully sent (to avoid double-counting retries)
         $wasAlreadySuccess = false;
         if ($status === 'success') {
