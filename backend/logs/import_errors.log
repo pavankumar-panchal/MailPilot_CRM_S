@@ -31734,3 +31734,61 @@
     ORDER BY MIN(imported_at) DESC
 [28-Jan-2026 15:33:26 Asia/Kolkata] Batch found: BATCH_20260128_124434_cc3d514a - File: Final -naveen.xlsx - User: 2 - Count: 1572 - Valid: 1572 - Status: completed
 [28-Jan-2026 15:33:26 Asia/Kolkata] Import list - Total batches returned: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 16:41:23 Asia/Kolkata] session_config.php - Session ID: eajo1off4s5ivq36hdq8228nev | Has user_id: YES
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 16:41:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] import_data.php - Current user: {"id":1,"email":"panchalpavan800@gmail.com","role":"admin"}
+[28-Jan-2026 16:41:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 16:41:23 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - User ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Filter: 
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Where clause: WHERE 1=1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list SQL: SELECT 
+        import_batch_id,
+        import_filename,
+        COUNT(*) as record_count,
+        COUNT(CASE WHEN is_active = 1 THEN 1 END) as valid_count,
+        COUNT(CASE WHEN is_active = 0 THEN 1 END) as invalid_count,
+        MIN(imported_at) as imported_at,
+        user_id as batch_user_id,
+        GROUP_CONCAT(DISTINCT Emails ORDER BY Emails SEPARATOR ', ') as sample_emails,
+        'completed' as status
+    FROM imported_recipients
+    WHERE 1=1
+    GROUP BY import_batch_id, import_filename, user_id
+    ORDER BY MIN(imported_at) DESC
+[28-Jan-2026 16:41:23 Asia/Kolkata] Batch found: BATCH_20260128_124434_cc3d514a - File: Final -naveen.xlsx - User: 2 - Count: 1572 - Valid: 1572 - Status: completed
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Total batches returned: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Database config loaded for: LOCALHOST - DB: CRM (CLI: NO)
+[28-Jan-2026 16:41:23 Asia/Kolkata] session_config.php - Session ID: eajo1off4s5ivq36hdq8228nev | Has user_id: YES
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: File started loading
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: About to define getAuthenticatedUser
+[28-Jan-2026 16:41:23 Asia/Kolkata] >>> auth_helper.php: File loaded successfully - all functions defined
+[28-Jan-2026 16:41:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] import_data.php - Current user: {"id":1,"email":"panchalpavan800@gmail.com","role":"admin"}
+[28-Jan-2026 16:41:23 Asia/Kolkata] Auth: Session auth successful for user ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] getUserFilterWhere called - isAdmin: YES
+[28-Jan-2026 16:41:23 Asia/Kolkata] getUserFilterWhere - Returning EMPTY (admin mode)
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - User ID: 1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Filter: 
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Where clause: WHERE 1=1
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list SQL: SELECT 
+        import_batch_id,
+        import_filename,
+        COUNT(*) as record_count,
+        COUNT(CASE WHEN is_active = 1 THEN 1 END) as valid_count,
+        COUNT(CASE WHEN is_active = 0 THEN 1 END) as invalid_count,
+        MIN(imported_at) as imported_at,
+        user_id as batch_user_id,
+        GROUP_CONCAT(DISTINCT Emails ORDER BY Emails SEPARATOR ', ') as sample_emails,
+        'completed' as status
+    FROM imported_recipients
+    WHERE 1=1
+    GROUP BY import_batch_id, import_filename, user_id
+    ORDER BY MIN(imported_at) DESC
+[28-Jan-2026 16:41:23 Asia/Kolkata] Batch found: BATCH_20260128_124434_cc3d514a - File: Final -naveen.xlsx - User: 2 - Count: 1572 - Valid: 1572 - Status: completed
+[28-Jan-2026 16:41:23 Asia/Kolkata] Import list - Total batches returned: 1
