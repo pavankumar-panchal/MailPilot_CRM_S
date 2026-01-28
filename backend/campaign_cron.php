@@ -61,11 +61,12 @@ if (!is_dir($log_dir)) {
 }
 
 function logCron($message) {
-    global $log_file;
-    $timestamp = date('Y-m-d H:i:s');
-    $log_msg = "[$timestamp] $message\n";
-    @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
-    echo $log_msg; // Also output to console for cron email/output
+    // LOGGING DISABLED
+    // global $log_file;
+    // $timestamp = date('Y-m-d H:i:s');
+    // $log_msg = "[$timestamp] $message\n";
+    // @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
+    // echo $log_msg; // Also output to console for cron email/output
 }
 
 logCron("=== CRON JOB START ===");

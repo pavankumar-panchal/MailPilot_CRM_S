@@ -302,6 +302,75 @@ function runParallelEmailBlast($conn, $campaign_id) {
     // - Claim emails atomically to avoid duplicates across servers
     $result = launchPerServerWorkers($conn, $campaign_id, $smtp_servers, $campaign);
     
+    // Step 6.5: Monitor workers progress
+    logMessage("Monitoring workers progress...");
+    $monitoring_start = time();
+    $max_monitoring_time = 1800; // 30 minutes maximum
+    $last_progress_check = 0;
+    $consecutive_no_progress = 0;
+    
+    while (time() - $monitoring_start < $max_monitoring_time) {
+        sleep(10); // Check every 10 seconds
+        
+        // Get current progress
+        $progress = $conn->query("
+            SELECT 
+                total_emails,
+                sent_emails,
+                failed_emails,
+                pending_emails,
+                status
+            FROM campaign_status
+            WHERE campaign_id = $campaign_id
+        ")->fetch_assoc();
+        
+        if (!$progress) break;
+        
+        $total = intval($progress['total_emails']);
+        $sent = intval($progress['sent_emails']);
+        $failed = intval($progress['failed_emails']);
+        $pending = intval($progress['pending_emails']);
+        $currentStatus = $progress['status'];
+        
+        logMessage("Progress: Sent=$sent/$total, Failed=$failed, Pending=$pending, Status=$currentStatus");
+        
+        // Check if campaign was paused or stopped
+        if ($currentStatus !== 'running') {
+            logMessage("Campaign status changed to '$currentStatus'. Stopping monitoring.");
+            break;
+        }
+        
+        // Check if we made progress
+        if ($sent > $last_progress_check) {
+            $last_progress_check = $sent;
+            $consecutive_no_progress = 0;
+        } else {
+            $consecutive_no_progress++;
+        }
+        
+        // If no progress for 5 checks (50 seconds) and still have pending, something is wrong
+        if ($consecutive_no_progress >= 5 && $pending > 0) {
+            logMessage("WARNING: No progress detected for 50 seconds with $pending pending emails");
+            logMessage("Workers may have crashed. Will try retry logic.");
+            break;
+        }
+        
+        // Check if campaign is complete
+        if ($pending == 0 && ($sent + $failed) >= $total) {
+            logMessage("Campaign completed! All emails processed.");
+            break;
+        }
+        
+        // If we've sent most emails and only have a few pending, probably waiting on retries
+        if ($pending <= 5 && $pending > 0) {
+            logMessage("Only $pending pending emails remaining. Moving to retry phase.");
+            break;
+        }
+    }
+    
+    $monitoring_duration = time() - $monitoring_start;
+    logMessage("Monitoring completed after $monitoring_duration seconds");
+    
     // Step 7: Multiple retry cycles for failed emails
     if (RETRY_FAILED_AFTER_CYCLE) {
         $retry_attempt = 1;
@@ -836,20 +905,15 @@ function updateFinalCampaignStats($conn, $campaign_id) {
  * Log message to file
  */
 function logMessage($message) {
-    global $campaign_id;
-    $timestamp = date('Y-m-d H:i:s');
-    $pid = getmypid();
-    $log_msg = "[$timestamp][PID:$pid] $message\n";
-    echo $log_msg;
-    
-    // Log to file for tracking
-    $cid = isset($campaign_id) ? $campaign_id : 'unknown';
-    $log_file = __DIR__ . '/../logs/orchestrator_campaign_' . $cid . '.log';
-    $log_dir = dirname($log_file);
-    if (!is_dir($log_dir)) {
-        @mkdir($log_dir, 0777, true);
-    }
-    @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
+    // LOGGING DISABLED
+    // global $campaign_id;
+    // $timestamp = date('Y-m-d H:i:s');
+    // $pid = getmypid();
+    // $log_msg = "[$timestamp][PID:$pid] $message\n";
+    // echo $log_msg;
+    // $cid = isset($campaign_id) ? $campaign_id : 'unknown';
+    // $log_file = __DIR__ . '/../logs/orchestrator_campaign_' . $cid . '.log';
+    // @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
 }
 
 // Helper: remaining emails count

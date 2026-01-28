@@ -16,7 +16,7 @@
 
     // Worker debug logging (enable/disable here)
     if (!defined('WORKER_LOG_ENABLED')) {
-        define('WORKER_LOG_ENABLED', true); // ENABLED - for tracking email sending
+        define('WORKER_LOG_ENABLED', false); // DISABLED
     }
     if (!defined('WORKER_LOG_FILE')) {
         define('WORKER_LOG_FILE', __DIR__ . '/../logs/email_worker_' . date('Y-m-d') . '.log');
@@ -1028,33 +1028,39 @@
             return null;
         }
         
-        // Use transaction with FOR UPDATE to atomically claim next pending email
+        // CRITICAL: Use transaction with FOR UPDATE and immediate status change to prevent race conditions
+        // Compatible with older MariaDB versions (pre-10.6) that don't support SKIP LOCKED
         $conn->query("START TRANSACTION");
         
-        // Fetch next pending/failed email that hasn't exceeded 5 retry attempts
-        // Use FOR UPDATE to lock the row and prevent other workers from grabbing it
-        $query = "SELECT to_mail, attempt_count, smtpid, csv_list_id FROM mail_blaster ";
+        // Fetch next pending/failed/stuck-processing email that hasn't exceeded 5 retry attempts
+        // Include 'processing' status if delivery_time is old (crashed worker recovery)
+        $query = "SELECT id, to_mail, attempt_count, smtpid, csv_list_id FROM mail_blaster ";
         $query .= "WHERE campaign_id = $campaign_id ";
-        $query .= "AND status IN ('pending', 'failed') ";
-        $query .= "AND attempt_count < 5 ";
+        $query .= "AND (";
+        $query .= "  (status IN ('pending', 'failed') AND attempt_count < 5) ";
+        $query .= "  OR (status = 'processing' AND delivery_time < DATE_SUB(NOW(), INTERVAL 60 SECOND) AND attempt_count < 5)";
+        $query .= ") ";
         $query .= "ORDER BY attempt_count ASC, delivery_date ASC, id ASC LIMIT 1 ";
-        $query .= "FOR UPDATE";
+        $query .= "FOR UPDATE"; // Lock the row
         
         $res = $conn->query($query);
         if ($res && $res->num_rows > 0) {
             $row = $res->fetch_assoc();
             
-            // Mark it with a temporary update to signal it's being processed
-            $to_escaped = $conn->real_escape_string($row['to_mail']);
-            $conn->query("UPDATE mail_blaster SET delivery_time = CURTIME() WHERE campaign_id = $campaign_id AND to_mail = '$to_escaped'");
+            // IMMEDIATE UPDATE: Change status to 'processing' to prevent other workers from selecting it
+            // Also update delivery_time and smtpid to track which worker/server is handling it
+            $email_id = (int)$row['id'];
+            $updateQuery = "UPDATE mail_blaster SET status = 'processing', delivery_time = NOW(), smtpid = $server_id ";
+            $updateQuery .= "WHERE id = $email_id AND campaign_id = $campaign_id";
+            $conn->query($updateQuery);
             
             $conn->query("COMMIT");
-            workerLog("fetchNextPending: Found pending email {$row['to_mail']} (attempt #{$row['attempt_count']}, csv_list_id={$row['csv_list_id']})");
+            workerLog("fetchNextPending: Claimed email {$row['to_mail']} (ID: {$email_id}, attempt #{$row['attempt_count']}, csv_list_id={$row['csv_list_id']})");
             return ['to_mail' => $row['to_mail'], 'attempt_count' => $row['attempt_count'], 'csv_list_id' => $row['csv_list_id']];
         }
         
         $conn->query("COMMIT");
-        workerLog("fetchNextPending: No pending emails found");
+        workerLog("fetchNextPending: No pending emails available");
         return null;
     }
 
