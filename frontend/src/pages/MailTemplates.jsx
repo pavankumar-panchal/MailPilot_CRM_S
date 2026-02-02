@@ -62,6 +62,10 @@ const MailTemplates = () => {
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [imageFiles, setImageFiles] = useState({});
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    rowsPerPage: 10,
+  });
 
   const BASE_URL = getBaseUrl();
   const API_URL = `${BASE_URL}/backend/includes/mail_templates.php`;
@@ -448,6 +452,22 @@ const MailTemplates = () => {
     }
   };
 
+  // Pagination helpers
+  const paginatedTemplates = templates.slice(
+    (pagination.page - 1) * pagination.rowsPerPage,
+    pagination.page * pagination.rowsPerPage
+  );
+
+  const totalPages = Math.ceil(templates.length / pagination.rowsPerPage);
+
+  const handlePageChange = (newPage) => {
+    setPagination({ ...pagination, page: newPage });
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setPagination({ page: 1, rowsPerPage: parseInt(e.target.value) });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">
@@ -464,6 +484,9 @@ const MailTemplates = () => {
                 </svg>
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Mail Templates</h2>
+              {templates.length > 0 && (
+                <span className="text-sm text-gray-600 ml-2">({templates.length} total)</span>
+              )}
             </div>
             <button
               onClick={() => setShowModal(true)}
@@ -530,13 +553,13 @@ const MailTemplates = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {templates.map((template, index) => (
+                    {paginatedTemplates.map((template, index) => (
                       <tr
                         key={template.template_id}
                         className="hover:bg-gray-50 transition-colors duration-150"
                       >
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-500">
-                          {index + 1}
+                          {(pagination.page - 1) * pagination.rowsPerPage + index + 1}
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm font-medium text-gray-900">
@@ -605,6 +628,125 @@ const MailTemplates = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {templates.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-700">Rows per page:</span>
+                    <select
+                      value={pagination.rowsPerPage}
+                      onChange={handleRowsPerPageChange}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-sm text-gray-500">
+                      Showing{" "}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.rowsPerPage + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.rowsPerPage, templates.length)}
+                      </span>{" "}
+                      of <span className="font-medium">{templates.length}</span> templates
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        disabled={pagination.page === 1}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+                        title="First page"
+                      >
+                        <svg
+                          className="w-5 h-5 text-gray-900"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 1}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+                        title="Previous page"
+                      >
+                        <svg
+                          className="w-5 h-5 text-gray-900"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-bold text-gray-900">
+                        Page {pagination.page} of {Math.max(1, totalPages)}
+                      </span>
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={pagination.page >= totalPages}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+                        title="Next page"
+                      >
+                        <svg
+                          className="w-5 h-5 text-gray-900"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handlePageChange(totalPages)}
+                        disabled={pagination.page >= totalPages}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+                        title="Last page"
+                      >
+                        <svg
+                          className="w-5 h-5 text-gray-900"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
