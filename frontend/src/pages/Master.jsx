@@ -903,11 +903,16 @@ const Master = () => {
                     {/* Navigation Controls */}
                     <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
                       <button
-                        onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.max(0, currentEmailIndex - 1))}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          changePreviewEmail(templatePreviewData.campaign_id, Math.max(0, currentEmailIndex - 1));
+                        }}
                         disabled={currentEmailIndex === 0 || loadingPreview}
                         className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
                       >
-                        <i className="fas fa-chevron-left sm:mr-2"></i>
+                        {loadingPreview ? <i className="fas fa-spinner fa-spin sm:mr-2"></i> : <i className="fas fa-chevron-left sm:mr-2"></i>}
                         <span className="hidden sm:inline">Previous</span>
                       </button>
                       <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
@@ -916,12 +921,17 @@ const Master = () => {
                         </span>
                       </div>
                       <button
-                        onClick={() => changePreviewEmail(templatePreviewData.campaign_id, Math.min(templatePreviewData.total_emails - 1, currentEmailIndex + 1))}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          changePreviewEmail(templatePreviewData.campaign_id, Math.min(templatePreviewData.total_emails - 1, currentEmailIndex + 1));
+                        }}
                         disabled={currentEmailIndex >= templatePreviewData.total_emails - 1 || loadingPreview}
                         className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
                       >
                         <span className="hidden sm:inline">Next</span>
-                        <i className="fas fa-chevron-right sm:ml-2"></i>
+                        {loadingPreview ? <i className="fas fa-spinner fa-spin sm:ml-2"></i> : <i className="fas fa-chevron-right sm:ml-2"></i>}
                       </button>
                     </div>
 
@@ -944,12 +954,17 @@ const Master = () => {
                         className="w-20 sm:w-24 px-2 py-1.5 border border-gray-300 rounded text-xs sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <button
-                        onClick={goToPageNumber}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          goToPageNumber();
+                        }}
                         disabled={!pageNumberInput || loadingPreview}
                         className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                         title="Jump to page"
                       >
-                        <i className="fas fa-arrow-right"></i>
+                        {loadingPreview ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-arrow-right"></i>}
                         <span className="hidden sm:inline ml-1">Go</span>
                       </button>
                     </div>
@@ -1017,8 +1032,19 @@ const Master = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-hidden flex">
-              {loadingPreview ? (
+            <div className="flex-1 overflow-hidden flex relative">
+              {/* Loading Overlay - Only shown during navigation */}
+              {loadingPreview && templatePreviewData && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center transition-opacity duration-200">
+                  <div className="text-center">
+                    <i className="fas fa-spinner fa-spin text-4xl text-indigo-600 mb-3"></i>
+                    <p className="text-gray-700 font-medium">Loading email...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Initial Loading State - Only shown on first load */}
+              {loadingPreview && !templatePreviewData ? (
                 <div className="flex-1 flex items-center justify-center bg-gray-50">
                   <div className="text-center">
                     <i className="fas fa-spinner fa-spin text-5xl text-indigo-600 mb-4"></i>
@@ -1091,6 +1117,13 @@ const Master = () => {
                         style={{
                           minHeight: '400px',
                           fontFamily: 'system-ui, -apple-system, sans-serif'
+                        }}
+                        onClick={(e) => {
+                          // Prevent link clicks from navigating
+                          if (e.target.tagName === 'A') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
                         }}
                         dangerouslySetInnerHTML={{ __html: templatePreviewData.template_html }}
                       />

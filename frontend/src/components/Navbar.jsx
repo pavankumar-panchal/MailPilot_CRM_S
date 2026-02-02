@@ -69,13 +69,10 @@ export default function Navbar({ user, onLogout }) {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <img 
-                src="./favicon.svg"
+                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjM0I4MkY2Ii8+CiAgPHBhdGggZD0iTTI1IDM1IEw1MCA1NSBMNzUgMzUgTDc1IDY1IEwyNSA2NSBaIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzMCIgcj0iOCIgZmlsbD0iIzEwQjk4MSIvPgo8L3N2Zz4="
                 alt="Relyon CRM Logo" 
                 className="h-8 w-8 mr-2"
-                onError={(e) => {
-                  console.error('Logo failed to load from:', e.target.src);
-                  e.target.style.display = 'none';
-                }}
+                style={{ imageRendering: 'crisp-edges' }}
               />
               <span className="text-gray-800 font-semibold text-lg">Relyon CRM</span>
             </div>

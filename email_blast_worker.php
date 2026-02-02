@@ -9,26 +9,13 @@
     ini_set('display_errors', 0);
     set_time_limit(0);
 
-    // Log all errors to file
-    ini_set('log_errors', 1);
-    ini_set('error_log', __DIR__ . '/../logs/php_worker_errors.log');
-
     // Ensure consistent timezone for hour-based limits
     date_default_timezone_set('Asia/Kolkata');
 
-    // Worker debug logging (enable/disable here)
-    if (!defined('WORKER_LOG_ENABLED')) {
-        define('WORKER_LOG_ENABLED', true);
-    }
-    if (!defined('WORKER_LOG_FILE')) {
-        define('WORKER_LOG_FILE', __DIR__ . '/../logs/email_worker_' . date('Y-m-d') . '.log');
-    }
+    // Worker debug logging
     function workerLog($msg) {
-        if (!WORKER_LOG_ENABLED) return;
-        $dir = dirname(WORKER_LOG_FILE);
-        if (!is_dir($dir)) {@mkdir($dir, 0777, true);}    
         $ts = date('Y-m-d H:i:s');
-        @file_put_contents(WORKER_LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
+        echo "[$ts] $msg\n"; // Console only
     }
 
     // Catch fatal errors

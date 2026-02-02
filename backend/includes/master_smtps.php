@@ -1,5 +1,7 @@
 <?php
 
+error_log("=== MASTER_SMTPS.PHP CALLED === Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'unknown') . ", Query: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+
 // Use centralized session configuration
 require_once __DIR__ . '/session_config.php';
 require_once __DIR__ . '/security_helpers.php';
@@ -195,6 +197,7 @@ if ($method === 'PUT') {
 
         // Update accounts
         if (!empty($data['accounts']) && is_array($data['accounts'])) {
+            $accountErrors = [];
             foreach ($data['accounts'] as $acc) {
                 try {
                     if (!empty($acc['id'])) {
@@ -205,21 +208,54 @@ if ($method === 'PUT') {
                         $daily_limit = validateInteger($acc['daily_limit'] ?? 500, 0, 10000);
                         $hourly_limit = validateInteger($acc['hourly_limit'] ?? 100, 0, 1000);
                         $acc_active = validateBoolean($acc['is_active'] ?? 1);
+                        
+                        // Build update query dynamically based on what's provided
+                        $updateFields = ["email = ?", "daily_limit = ?", "hourly_limit = ?", "is_active = ?"];
+                        $types = "siii";
+                        $params = [$email, $daily_limit, $hourly_limit, $acc_active];
+                        
+                        // Only update from_name if provided
+                        if (isset($acc['from_name'])) {
+                            $from_name = sanitizeString($acc['from_name'], 255);
+                            $updateFields[] = "from_name = ?";
+                            $types .= "s";
+                            $params[] = $from_name;
+                        }
+                        
+                        // Only update password if provided
+                        if (!empty($password)) {
+                            $updateFields[] = "password = ?";
+                            $types .= "s";
+                            $params[] = $password;
+                        }
+                        
+                        $updateSQL = "UPDATE smtp_accounts SET " . implode(", ", $updateFields) . " WHERE id = ? AND smtp_server_id = ?";
+                        $types .= "ii";
+                        $params[] = $accId;
+                        $params[] = $id;
+                        
+                        error_log("SMTP UPDATE - Updating account ID $accId: email=$email, daily=$daily_limit, hourly=$hourly_limit, active=$acc_active, has_password=" . (!empty($password) ? 'yes' : 'no'));
 
-                        $stmt = $conn->prepare("UPDATE smtp_accounts SET email = ?, password = ?, daily_limit = ?, hourly_limit = ?, is_active = ? WHERE id = ? AND smtp_server_id = ?");
+                        $stmt = $conn->prepare($updateSQL);
                         if (!$stmt) {
                             throw new Exception("Prepare account update failed: " . $conn->error);
                         }
-                        $stmt->bind_param("ssiiiii", $email, $password, $daily_limit, $hourly_limit, $acc_active, $accId, $id);
+                        $stmt->bind_param($types, ...$params);
                         if (!$stmt->execute()) {
                             throw new Exception("Execute account update failed: " . $stmt->error);
                         }
-                        error_log("SMTP UPDATE - Account $email updated successfully");
+                        
+                        if ($stmt->affected_rows === 0) {
+                            error_log("SMTP UPDATE - Warning: Account $accId not found or no changes made");
+                        } else {
+                            error_log("SMTP UPDATE - Account $email (ID: $accId) updated successfully");
+                        }
                         $stmt->close();
                     } else {
                         // Insert new account
                         $email = validateEmail($acc['email'] ?? '');
                         $password = sanitizeString($acc['password'] ?? '', 500);
+                        $from_name = sanitizeString($acc['from_name'] ?? '', 255);
                         $daily_limit = validateInteger($acc['daily_limit'] ?? 500, 0, 10000);
                         $hourly_limit = validateInteger($acc['hourly_limit'] ?? 100, 0, 1000);
                         $acc_active = validateBoolean($acc['is_active'] ?? 1);
@@ -227,11 +263,11 @@ if ($method === 'PUT') {
                         // Use current user from requireAuth() above
                         $user_id = $currentUser['id'];
 
-                        $stmt = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, password, daily_limit, hourly_limit, is_active, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmt = $conn->prepare("INSERT INTO smtp_accounts (smtp_server_id, email, from_name, password, daily_limit, hourly_limit, is_active, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                         if (!$stmt) {
                             throw new Exception("Prepare account insert failed: " . $conn->error);
                         }
-                        $stmt->bind_param("issiiii", $id, $email, $password, $daily_limit, $hourly_limit, $acc_active, $user_id);
+                        $stmt->bind_param("isssiiii", $id, $email, $from_name, $password, $daily_limit, $hourly_limit, $acc_active, $user_id);
                         if (!$stmt->execute()) {
                             throw new Exception("Execute account insert failed: " . $stmt->error);
                         }
@@ -240,10 +276,14 @@ if ($method === 'PUT') {
                     }
                 } catch (Exception $e) {
                     error_log("SMTP UPDATE - Account operation failed: " . $e->getMessage());
-                    // Continue to next account instead of failing entire operation
+                    $accountErrors[] = $e->getMessage();
                     logSecurityEvent('Account update failed', ['error' => $e->getMessage()]);
-                    continue;
                 }
+            }
+            
+            // If there were account errors, throw exception with details
+            if (!empty($accountErrors)) {
+                throw new Exception('Account update errors: ' . implode('; ', $accountErrors));
             }
         }
 

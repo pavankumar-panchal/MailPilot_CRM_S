@@ -64,28 +64,25 @@ try {
     $import_batch_id = isset($campaign['import_batch_id']) ? $campaign['import_batch_id'] : null;
     $csvListFilter = $csv_list_id ? " AND csv_list_id = " . (int)$csv_list_id : "";
 
-    // Determine total valid emails eligible for sending.
-    // Prefer existing `mail_blaster` entries for this campaign (authoritative recipients list).
+    // CRITICAL: Initialize email queue to ensure NO emails are missed
+    require_once __DIR__ . '/campaign_email_verification.php';
+    $queueStats = initializeEmailQueue($conn, $campaign_id);
+    
+    // Log queue initialization results
+    error_log("[CAMPAIGN $campaign_id] Queue initialized: {$queueStats['total_recipients']} recipients, {$queueStats['queued']} new, {$queueStats['already_queued']} existing");
+    
+    // PRODUCTION SAFETY: Verify queue was properly initialized
+    if ($queueStats['total_recipients'] > 0 && ($queueStats['queued'] + $queueStats['already_queued']) === 0) {
+        error_log("[CAMPAIGN $campaign_id] ERROR: Queue initialization failed - no emails were queued!");
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to initialize email queue. Please try again.']);
+        exit();
+    }
+    
+    // Determine total valid emails from queue
     $mbRes = $conn->query("SELECT COUNT(*) AS mb_total FROM mail_blaster WHERE campaign_id = " . (int)$campaign_id);
     $mbRow = $mbRes ? $mbRes->fetch_assoc() : ['mb_total' => 0];
-    $mbTotal = (int)($mbRow['mb_total'] ?? 0);
-    if ($mbTotal > 0) {
-        $totalEmails = $mbTotal;
-    } else {
-        // Check if using imported_recipients or emails table
-        if ($import_batch_id) {
-            // Count from imported_recipients table
-            $batch_escaped = $conn->real_escape_string($import_batch_id);
-            $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM imported_recipients WHERE import_batch_id = '$batch_escaped' AND is_active = 1 AND Emails IS NOT NULL AND Emails <> ''");
-            $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
-            $totalEmails = (int)($totalRow['total_valid'] ?? 0);
-        } else {
-            // Fallback to emails table (filtered by csv_list_id if specified)
-            $totalRes = $conn->query("SELECT COUNT(*) AS total_valid FROM emails WHERE domain_status = 1" . $csvListFilter);
-            $totalRow = $totalRes ? $totalRes->fetch_assoc() : ['total_valid' => 0];
-            $totalEmails = (int)($totalRow['total_valid'] ?? 0);
-        }
-    }
+    $totalEmails = (int)($mbRow['mb_total'] ?? 0);
 
     if ($totalEmails === 0) {
         http_response_code(400);
@@ -235,12 +232,12 @@ try {
     }
 
     // Log the start
-    error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid\n", 3, $logsDir . '/campaign_starts.log');
+    error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid - IMMEDIATE worker launch\n", 3, $logsDir . '/campaign_starts.log');
 
     // Return immediately to frontend
     echo json_encode([
         'status' => 'started',
-        'message' => 'Campaign sending started in background',
+        'message' => 'Campaign started - workers launching immediately (no cron wait)',
         'campaign_id' => $campaign_id,
         'total_emails' => $totalEmails,
         'pending_emails' => $pending,

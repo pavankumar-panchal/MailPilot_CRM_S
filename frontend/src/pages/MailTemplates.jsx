@@ -58,9 +58,14 @@ const MailTemplates = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [previewHtml, setPreviewHtml] = useState('');
+  const [detectedImages, setDetectedImages] = useState([]);
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [imageFiles, setImageFiles] = useState({});
+  const [uploadingImages, setUploadingImages] = useState(false);
   
   const BASE_URL = getBaseUrl();
   const API_URL = `${BASE_URL}/backend/includes/mail_templates.php`;
+  const UPLOAD_IMAGE_URL = `${BASE_URL}/backend/includes/upload_image.php`;
   
   const [formData, setFormData] = useState({
     template_name: '',
@@ -300,6 +305,149 @@ const MailTemplates = () => {
     }
   };
 
+  // Detect images in HTML
+  const detectImages = (html) => {
+    const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+    const images = [];
+    let match;
+    
+    while ((match = imgRegex.exec(html)) !== null) {
+      const src = match[1];
+      // Check if it's a local/external path (not already uploaded to our server)
+      if (!src.startsWith(BASE_URL) && !src.startsWith('data:')) {
+        images.push(src);
+      }
+    }
+    
+    return [...new Set(images)]; // Remove duplicates
+  };
+
+  // Handle HTML file upload
+  const handleHtmlFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const htmlContent = event.target.result;
+      setFormData(prev => ({ ...prev, template_html: htmlContent }));
+      
+      // Auto-detect merge fields and images
+      detectMergeFields();
+      const images = detectImages(htmlContent);
+      if (images.length > 0) {
+        setDetectedImages(images);
+        setMessage({ 
+          type: 'error', 
+          text: `Found ${images.length} external/local images. Please upload them to ensure emails display correctly.` 
+        });
+        setShowImageUploadModal(true);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Handle image upload for detected images
+  const handleImageFileSelect = (imageSrc, file) => {
+    setImageFiles(prev => ({ ...prev, [imageSrc]: file }));
+  };
+
+  // Upload all images and replace URLs in HTML
+  const uploadImagesAndReplaceUrls = async () => {
+    setUploadingImages(true);
+    try {
+      let updatedHtml = formData.template_html;
+      const urlMap = {};
+      
+      console.log('Starting image upload for', Object.keys(imageFiles).length, 'images');
+      console.log('Upload URL:', UPLOAD_IMAGE_URL);
+      
+      for (const [originalSrc, file] of Object.entries(imageFiles)) {
+        if (!file) continue;
+        
+        console.log(`Uploading: ${file.name} for source: ${originalSrc}`);
+        
+        const imageFormData = new FormData();
+        imageFormData.append('image', file);
+        
+        try {
+          // Use fetch with credentials for session-based auth
+          const response = await fetch(UPLOAD_IMAGE_URL, {
+            method: 'POST',
+            credentials: 'include', // Include cookies for session
+            body: imageFormData
+          });
+          
+          console.log('Upload response status:', response.status);
+          console.log('Upload response ok:', response.ok);
+          
+          // Get response text first to debug
+          const responseText = await response.text();
+          console.log('Upload response text:', responseText);
+          
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            throw new Error(`Invalid JSON response for ${file.name}: ${responseText.substring(0, 100)}`);
+          }
+          
+          console.log('Upload response data:', data);
+          
+          if (data.success) {
+            // Use the server path directly
+            const serverPath = `${BASE_URL}/backend/${data.path}`;
+            urlMap[originalSrc] = serverPath;
+            console.log(`✓ Uploaded ${file.name} -> ${serverPath}`);
+          } else {
+            throw new Error(data.message || `Failed to upload ${file.name}`);
+          }
+        } catch (uploadError) {
+          console.error(`Failed to upload ${file.name}:`, uploadError);
+          throw uploadError;
+        }
+      }
+      
+      console.log('All uploads complete. URL mapping:', urlMap);
+      
+      // Replace all image URLs in HTML
+      for (const [oldSrc, newSrc] of Object.entries(urlMap)) {
+        const escapedSrc = oldSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedSrc, 'g');
+        updatedHtml = updatedHtml.replace(regex, newSrc);
+        console.log(`Replaced: ${oldSrc} -> ${newSrc}`);
+      }
+      
+      console.log('Final HTML length:', updatedHtml.length);
+      
+      setFormData(prev => ({ ...prev, template_html: updatedHtml }));
+      setDetectedImages([]);
+      setImageFiles({});
+      setShowImageUploadModal(false);
+      setMessage({ type: 'success', text: `Successfully uploaded and replaced ${Object.keys(urlMap).length} images` });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setMessage({ type: 'error', text: error.message || 'Failed to upload images' });
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const detectImagesInCurrentHtml = () => {
+    const images = detectImages(formData.template_html);
+    if (images.length > 0) {
+      setDetectedImages(images);
+      setShowImageUploadModal(true);
+      setMessage({ 
+        type: 'error', 
+        text: `Found ${images.length} external/local images that need to be uploaded` 
+      });
+    } else {
+      setMessage({ type: 'success', text: 'All images are already hosted correctly!' });
+    }
+  };
+
   return (
     <div className="container mx-auto mt-12 px-2 sm:px-4 py-8 max-w-7xl">
       {/* Status Message */}
@@ -388,7 +536,7 @@ const MailTemplates = () => {
                         {template.template_name}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {template.html_length ? `${(template.html_length / 1024).toFixed(1)} KB` : 'No content'} • {new Date(template.created_at).toLocaleDateString()}
+                        {template.html_length ? `${(template.html_length / 1024).toFixed(1)} KB` : 'No content'}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -523,6 +671,25 @@ const MailTemplates = () => {
                       HTML Template <span className="text-red-500">*</span>
                     </label>
                     <div className="flex gap-2">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all text-sm font-medium border border-purple-200 cursor-pointer">
+                        <i className="fas fa-file-upload"></i>
+                        Upload HTML File
+                        <input
+                          type="file"
+                          accept=".html,.htm"
+                          onChange={handleHtmlFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all text-sm font-medium border border-orange-200"
+                        onClick={detectImagesInCurrentHtml}
+                        disabled={!formData.template_html}
+                      >
+                        <i className="fas fa-images"></i>
+                        Check Images
+                      </button>
                       <button
                         type="button"
                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 rounded-lg hover:from-cyan-100 hover:to-cyan-200 transition-all text-sm font-medium border border-cyan-200"
@@ -534,7 +701,11 @@ const MailTemplates = () => {
                       <button
                         type="button"
                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all text-sm font-medium border border-green-200"
-                        onClick={handlePreview}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handlePreview();
+                        }}
                         disabled={!formData.template_html}
                       >
                         <i className="fas fa-eye"></i>
@@ -548,13 +719,13 @@ const MailTemplates = () => {
                     value={formData.template_html}
                     onChange={e => setFormData({ ...formData, template_html: e.target.value })}
                     required
-                    placeholder="Paste your HTML template here. Use [[FieldName]] for merge fields (e.g., [[Amount]], [[Days]], [[BilledName]])"
+                    placeholder="Paste your HTML template here OR use 'Upload HTML File' button above. Use [[FieldName]] for merge fields."
                   ></textarea>
                   <p className="mt-2 text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <i className="fas fa-info-circle text-blue-600 mr-2"></i>
                     <strong>Tip:</strong> Use double brackets for merge fields: <code className="bg-white px-2 py-1 rounded text-blue-700">[[FieldName]]</code>
                     <br />
-                    <span className="ml-5">Examples: [[Amount]], [[BilledName]], [[BillDate]], [[ExecutiveName]]</span>
+                    <span className="ml-5">Upload HTML file or paste directly. Click "Check Images" to upload any local/external images.</span>
                   </p>
                 </div>
 
@@ -617,8 +788,24 @@ const MailTemplates = () => {
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => {
+            // Close modal when clicking on backdrop
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowPreview(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => {
+              // Prevent clicks inside modal from closing it
+              e.stopPropagation();
+            }}
+          >
             {/* Preview Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-teal-50">
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
@@ -629,7 +816,11 @@ const MailTemplates = () => {
               <button
                 type="button"
                 className="text-gray-400 hover:text-gray-600 transition-colors p-2"
-                onClick={() => setShowPreview(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPreview(false);
+                }}
               >
                 <i className="fas fa-times text-xl"></i>
               </button>
@@ -640,6 +831,7 @@ const MailTemplates = () => {
               <div className="p-8">
                 <iframe
                   srcDoc={previewHtml}
+                  sandbox="allow-same-origin"
                   style={{
                     width: '100%',
                     minHeight: '600px',
@@ -657,9 +849,115 @@ const MailTemplates = () => {
               <button
                 type="button"
                 className="px-6 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all font-medium"
-                onClick={() => setShowPreview(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPreview(false);
+                }}
               >
                 Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Upload Modal */}
+      {showImageUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-red-50">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                <i className="fas fa-images text-orange-600"></i>
+                Upload External/Local Images
+                <span className="text-sm font-normal text-gray-600">({detectedImages.length} found)</span>
+              </h2>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2"
+                onClick={() => setShowImageUploadModal(false)}
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  <i className="fas fa-exclamation-triangle text-orange-600 mr-2"></i>
+                  <strong>Important:</strong> Your HTML contains images with external or local paths. Upload them here so they display correctly in emails.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {detectedImages.map((imgSrc, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-image text-orange-600 text-xl"></i>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 mb-1">Image {index + 1}</div>
+                        <div className="text-xs text-gray-600 font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all mb-2">
+                          {imgSrc}
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileSelect(imgSrc, e.target.files[0])}
+                            className="hidden"
+                          />
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                            <i className="fas fa-upload"></i>
+                            {imageFiles[imgSrc] ? 'Change File' : 'Select File'}
+                          </span>
+                          {imageFiles[imgSrc] && (
+                            <span className="text-sm text-green-600 font-medium">
+                              <i className="fas fa-check-circle mr-1"></i>
+                              {imageFiles[imgSrc].name}
+                            </span>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <button
+                type="button"
+                className="px-6 py-2.5 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all font-medium"
+                onClick={() => {
+                  setShowImageUploadModal(false);
+                  setDetectedImages([]);
+                  setImageFiles({});
+                }}
+              >
+                Skip for Now
+              </button>
+              <button
+                type="button"
+                className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={uploadImagesAndReplaceUrls}
+                disabled={uploadingImages || Object.keys(imageFiles).length === 0}
+              >
+                {uploadingImages ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-cloud-upload-alt mr-2"></i>
+                    Upload & Replace URLs ({Object.keys(imageFiles).length}/{detectedImages.length})
+                  </>
+                )}
               </button>
             </div>
           </div>

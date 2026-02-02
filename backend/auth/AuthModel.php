@@ -132,15 +132,19 @@ class AuthModel {
     }
     
     /**
-     * Create session token
+     * Create session token - supports multiple device logins
+     * Each device gets its own session token
      */
     public function createSession($userId, $ipAddress, $userAgent, $duration = 86400) {
+        // Clean up expired sessions first
+        $this->cleanupExpiredSessions($userId);
+        
         $token = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', time() + $duration);
         
         $stmt = $this->db->prepare("
-            INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at, created_at, last_activity) 
+            VALUES (?, ?, ?, ?, ?, NOW(), NOW())
         ");
         $stmt->bind_param('issss', $userId, $token, $ipAddress, $userAgent, $expiresAt);
         
@@ -208,6 +212,34 @@ class AuthModel {
         ");
         $stmt->bind_param('i', $userId);
         return $stmt->execute();
+    }
+    
+    /**
+     * Clean up expired sessions for a user
+     */
+    public function cleanupExpiredSessions($userId) {
+        $stmt = $this->db->prepare("
+            DELETE FROM user_sessions 
+            WHERE user_id = ? AND expires_at < NOW()
+        ");
+        $stmt->bind_param('i', $userId);
+        return $stmt->execute();
+    }
+    
+    /**
+     * Get active sessions count for a user
+     */
+    public function getActiveSessionsCount($userId) {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) as count 
+            FROM user_sessions 
+            WHERE user_id = ? AND expires_at > NOW()
+        ");
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return $row['count'] ?? 0;
     }
     
     /**

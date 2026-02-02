@@ -29,7 +29,7 @@ const StatusMessage = ({ status, onClose }) =>
   status && (
     <div
       className={`
-        fixed top-6 left-1/2 transform -translate-x-1/2 z-50
+        fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999]
         px-6 py-3 rounded-xl shadow text-base font-semibold
         flex items-center gap-3
         transition-all duration-300
@@ -92,6 +92,7 @@ const Smtp = () => {
   const [editingAccount, setEditingAccount] = useState(null);
   const [editAccountForm, setEditAccountForm] = useState({
     email: "",
+    from_name: "",
     password: "",
     daily_limit: 500,
     hourly_limit: 50,
@@ -195,11 +196,23 @@ const Smtp = () => {
 
   // Edit SMTP server
   const handleEdit = (server) => {
+    console.log('Editing server:', server);
     setEditId(server.id);
+    
+    // Ensure accounts have all required fields and preserve IDs
+    const accounts = (server.accounts || []).map(acc => ({
+      id: acc.id,
+      email: acc.email,
+      password: '', // Don't prefill password
+      daily_limit: acc.daily_limit,
+      hourly_limit: acc.hourly_limit,
+      is_active: !!acc.is_active
+    }));
+    
     setForm({
       ...server,
       is_active: !!server.is_active,
-      accounts: server.accounts || [],
+      accounts: accounts,
     });
     setEditModalOpen(true);
   };
@@ -207,23 +220,43 @@ const Smtp = () => {
   // Update SMTP server
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    console.log('=== UPDATE STARTED ===');
+    console.log('Edit ID:', editId);
+    console.log('Form data:', form);
+    console.log('Form accounts:', form.accounts);
+    
+    if (!editId) {
+      setStatus({ type: "error", message: "No server ID for update" });
+      return;
+    }
+    
     try {
-      const res = await authFetch(`${API_BASE}?id=${editId}`, {
+      const requestData = {
+        server: {
+          name: form.name,
+          host: form.host,
+          port: form.port,
+          encryption: form.encryption,
+          is_active: form.is_active,
+          received_email: form.received_email,
+        },
+        accounts: form.accounts,
+      };
+      
+      console.log('Request URL:', `${API_BASE}&id=${editId}`);
+      console.log('Request data:', JSON.stringify(requestData, null, 2));
+      
+      const res = await authFetch(`${API_BASE}&id=${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          server: {
-            name: form.name,
-            host: form.host,
-            port: form.port,
-            encryption: form.encryption,
-            is_active: form.is_active,
-            received_email: form.received_email,
-          },
-          accounts: form.accounts,
-        }),
+        body: JSON.stringify(requestData),
       });
+      
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
+      
       if (data.success) {
         setStatus({
           type: "success",
@@ -234,13 +267,15 @@ const Smtp = () => {
         setEditId(null);
         fetchServers();
       } else {
+        console.error('Update failed with message:', data.message);
         setStatus({
           type: "error",
           message: data.message || "Failed to update server.",
         });
       }
-    } catch {
-      setStatus({ type: "error", message: "Failed to update server." });
+    } catch (error) {
+      console.error('Update error:', error);
+      setStatus({ type: "error", message: `Failed to update server: ${error.message}` });
     }
   };
 
@@ -249,7 +284,7 @@ const Smtp = () => {
     if (!window.confirm("Are you sure you want to delete this SMTP server?"))
       return;
     try {
-      const res = await authFetch(`${API_BASE}?id=${id}`, { 
+      const res = await authFetch(`${API_BASE}&id=${id}`, { 
         method: "DELETE",
       });
       const data = await res.json();
@@ -338,6 +373,7 @@ const Smtp = () => {
     setEditingAccount({ serverId, accountId: account.id });
     setEditAccountForm({
       email: account.email,
+      from_name: account.from_name || "",
       password: "", // Don't prefill password for security
       daily_limit: account.daily_limit,
       hourly_limit: account.hourly_limit,
@@ -353,6 +389,8 @@ const Smtp = () => {
       return;
     }
 
+    console.log('Updating account:', editingAccount, editAccountForm);
+
     try {
       const res = await authFetch(
         `${API_BASE}/${editingAccount.serverId}/accounts/${editingAccount.accountId}`,
@@ -362,7 +400,10 @@ const Smtp = () => {
           body: JSON.stringify(editAccountForm),
         }
       );
+      
+      console.log('Update response status:', res.status);
       const data = await res.json();
+      console.log('Update response data:', data);
       if (data.success) {
         setStatus({
           type: "success",
@@ -372,6 +413,7 @@ const Smtp = () => {
         setEditingAccount(null);
         setEditAccountForm({
           email: "",
+          from_name: "",
           password: "",
           daily_limit: 500,
           hourly_limit: 50,
@@ -384,7 +426,8 @@ const Smtp = () => {
           message: data.message || "Failed to update email account.",
         });
       }
-    } catch {
+    } catch (error) {
+      console.error('Update account error:', error);
       setStatus({ type: "error", message: "Failed to update email account." });
     }
   };
@@ -596,66 +639,67 @@ const Smtp = () => {
                       </td>
                     </tr>
                     {expandedServer === server.id && (
-                      <tr className="bg-indigo-50/40">
+                      <tr className="bg-gray-50">
                         <td colSpan={5} className="px-6 py-6">
-                          <div className="mb-4">
-                            <h4 className="text-base font-semibold text-indigo-700 mb-2 flex items-center">
-                              <i className="fas fa-users mr-2"></i> Email Accounts
-                            </h4>
-                            {/* Reply-To shown above in server row; no duplicate here */}
-                            <div className="space-y-2">
+                          <div className="mb-6">
+                            <div className="flex items-center space-x-2 mb-4">
+                              <div className="bg-indigo-100 p-2 rounded-lg">
+                                <i className="fas fa-users text-indigo-600"></i>
+                              </div>
+                              <h4 className="text-lg font-semibold text-gray-800">Email Accounts</h4>
+                            </div>
+                            <div className="space-y-3">
                               {server.accounts?.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                   {server.accounts.map((account) => (
                                     <div
                                       key={account.id}
-                                      className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white border rounded-lg shadow-sm p-4"
+                                      className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-3"
                                     >
-                                      <div>
-                                        <div className="font-semibold text-gray-800 flex items-center">
-                                          <i className="fas fa-envelope mr-2 text-indigo-500"></i>
-                                          {account.email}
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <div className="bg-indigo-50 p-1.5 rounded-md">
+                                          <i className="fas fa-envelope text-indigo-600 text-xs"></i>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-800 text-xs truncate">{account.email}</div>
                                           {account.is_active ? (
-                                            <span className="ml-3 px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-medium">
-                                              Active
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                                              <i className="fas fa-check-circle mr-1"></i> Active
                                             </span>
                                           ) : (
-                                            <span className="ml-3 px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-medium">
-                                              Inactive
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+                                              <i className="fas fa-times-circle mr-1"></i> Inactive
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Hourly:{" "}
-                                          <span className="font-medium">
-                                            {account.hourly_limit}
-                                          </span>{" "}
-                                          &nbsp;|&nbsp; Daily:{" "}
-                                          <span className="font-medium">
-                                            {account.daily_limit}
-                                          </span>
-                                          {/* Reply-To is displayed once in the server row above */}
-                                        </div>
                                       </div>
-                                      <div className="flex gap-2">
-                                        <button
-                                          onClick={() =>
-                                            handleEditAccount(server.id, account)
-                                          }
-                                          className="mt-2 md:mt-0 text-indigo-600 hover:text-indigo-800 text-sm flex items-center"
-                                          title="Edit account"
-                                        >
-                                          <i className="fas fa-edit mr-1"></i> Edit
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            handleDeleteAccount(server.id, account.id)
-                                          }
-                                          className="mt-2 md:mt-0 text-red-500 hover:text-red-700 text-sm flex items-center"
-                                          title="Delete account"
-                                        >
-                                          <i className="fas fa-trash-alt mr-1"></i> Delete
-                                        </button>
+                                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                        <div className="flex items-center space-x-2 text-xs text-gray-600">
+                                          <div className="flex items-center space-x-1">
+                                            <i className="fas fa-clock text-orange-500 text-xs"></i>
+                                            <span className="font-medium">{account.hourly_limit}</span>
+                                          </div>
+                                          <div className="flex items-center space-x-1">
+                                            <i className="fas fa-calendar-day text-blue-500 text-xs"></i>
+                                            <span className="font-medium">{account.daily_limit}</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => handleEditAccount(server.id, account)}
+                                            className="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                            title="Edit account"
+                                          >
+                                            <i className="fas fa-edit"></i>
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteAccount(server.id, account.id)}
+                                            className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors"
+                                            title="Delete account"
+                                          >
+                                            <i className="fas fa-trash-alt"></i>
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   ))}
@@ -667,13 +711,17 @@ const Smtp = () => {
                               )}
                             </div>
                           </div>
-                          <div className="border-t pt-4 mt-4">
-                            <h4 className="text-base font-semibold text-indigo-700 mb-2 flex items-center">
-                              <i className="fas fa-plus mr-2"></i> Add New Account
-                            </h4>
+                          <div className="border-t border-gray-200 pt-5 mt-5">
+                            <div className="flex items-center space-x-2 mb-4">
+                              <div className="bg-green-100 p-2 rounded-lg">
+                                <i className="fas fa-plus text-green-600"></i>
+                              </div>
+                              <h4 className="text-lg font-semibold text-gray-800">Add New Account</h4>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-lg p-4">
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                   Email
                                 </label>
                                 <input
@@ -681,12 +729,12 @@ const Smtp = () => {
                                   name="email"
                                   value={accountForm.email}
                                   onChange={handleAccountFormChange}
-                                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                   placeholder="user@example.com"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                   Password
                                 </label>
                                 <input
@@ -694,12 +742,12 @@ const Smtp = () => {
                                   name="password"
                                   value={accountForm.password}
                                   onChange={handleAccountFormChange}
-                                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                   placeholder="Password"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                   Hourly Limit
                                 </label>
                                 <input
@@ -707,11 +755,11 @@ const Smtp = () => {
                                   name="hourly_limit"
                                   value={accountForm.hourly_limit}
                                   onChange={handleAccountFormChange}
-                                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                   Daily Limit
                                 </label>
                                 <input
@@ -719,22 +767,23 @@ const Smtp = () => {
                                   name="daily_limit"
                                   value={accountForm.daily_limit}
                                   onChange={handleAccountFormChange}
-                                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                 />
                               </div>
                               <div className="flex items-end">
                                 <button
                                   onClick={() => handleAddAccount(server.id)}
                                   disabled={!accountForm.email || !accountForm.password}
-                                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white ${
+                                  className={`w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md text-white transition-colors ${
                                     !accountForm.email || !accountForm.password
                                       ? "bg-gray-300 cursor-not-allowed"
                                       : "bg-indigo-600 hover:bg-indigo-700"
                                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
                                 >
-                                  <i className="fas fa-plus mr-1"></i> Add
+                                  <i className="fas fa-plus mr-2"></i> Add
                                 </button>
                               </div>
+                            </div>
                             </div>
                           </div>
                         </td>
@@ -870,24 +919,25 @@ const Smtp = () => {
               </div>
               {/* Section: Email Accounts */}
               <div>
-                <h4 className="text-md font-semibold text-indigo-700 mb-3 flex items-center">
-                  <i className="fas fa-users mr-2"></i> Email Accounts
+                <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center">
+                  <i className="fas fa-users text-indigo-600 mr-2"></i>
+                  Email Accounts
                 </h4>
                 {form.accounts.map((acc, idx) => (
                   <div
                     key={idx}
-                    className="border rounded p-3 mb-2 bg-gray-50 relative"
+                    className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50 relative"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Email
                         </label>
                         <input
                           type="email"
                           name="email"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           placeholder="user@example.com"
                           value={acc.email}
                           onChange={e =>
@@ -896,14 +946,14 @@ const Smtp = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Password
                         </label>
                         <input
                           type="password"
                           name="password"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.password}
                           onChange={e =>
                             handleAccountChange(idx, "password", e.target.value)
@@ -930,16 +980,16 @@ const Smtp = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="grid grid-cols-2 gap-4 mt-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Hourly Limit
                         </label>
                         <input
                           type="number"
                           name="hourly_limit"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.hourly_limit}
                           onChange={e =>
                             handleAccountChange(idx, "hourly_limit", e.target.value)
@@ -947,14 +997,14 @@ const Smtp = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Daily Limit
                         </label>
                         <input
                           type="number"
                           name="daily_limit"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.daily_limit}
                           onChange={e =>
                             handleAccountChange(idx, "daily_limit", e.target.value)
@@ -965,21 +1015,22 @@ const Smtp = () => {
                     {form.accounts.length > 1 && (
                       <button
                         type="button"
-                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
+                        className="absolute top-3 right-3 text-red-500 hover:text-red-700"
                         onClick={() => removeAccount(idx)}
                         title="Remove this account"
                       >
-                        <i className="fas fa-times-circle"></i>
+                        <i className="fas fa-times-circle text-lg"></i>
                       </button>
                     )}
                   </div>
                 ))}
                 <button
                   type="button"
-                  className="mt-2 text-indigo-600 text-xs"
+                  className="mt-2 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
                   onClick={addAccount}
                 >
-                  <i className="fas fa-plus mr-1"></i> Add Another Account
+                  <i className="fas fa-plus mr-2"></i>
+                  Add Another Account
                 </button>
               </div>
               {/* Actions */}
@@ -1005,275 +1056,277 @@ const Smtp = () => {
 
       {/* Edit Server Modal */}
       {editModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-md">
-          <div className="relative w-full max-w-xl mx-auto bg-white rounded-lg shadow-lg flex flex-col"
-               style={{ maxHeight: "90vh" }}>
-            {/* Sticky header */}
-            <div className="sticky top-0 z-10 bg-white border-b flex justify-between items-center px-5 py-3 rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                <i className="fas fa-edit mr-2 text-indigo-600"></i>
-                Edit SMTP Server
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-2xl mx-auto bg-white rounded-lg shadow-xl flex flex-col" style={{ maxHeight: "90vh" }}>
+            {/* Header */}
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-lg">
+                  <i className="fas fa-server text-blue-600 text-lg"></i>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Edit SMTP Server</h3>
+                  <p className="text-gray-500 text-sm">Update server configuration and accounts</p>
+                </div>
+              </div>
               <button
                 onClick={() => setEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md p-2 transition-colors"
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            {/* Scrollable content */}
-            <form
-              className="overflow-y-auto px-5 py-4"
-              style={{ maxHeight: "75vh" }}
-              onSubmit={handleUpdate}
-            >
+
+            {/* Scrollable Body */}
+            <form className="overflow-y-auto px-6 py-6" style={{ maxHeight: "calc(90vh - 140px)" }} onSubmit={handleUpdate}>
               <input type="hidden" name="id" value={editId} />
-              {/* Name + Host + Received Email */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                    value={form.name}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Host
-                  </label>
-                  <input
-                    type="text"
-                    name="host"
-                    required
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                    value={form.host}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Port
-                  </label>
-                  <input
-                    type="number"
-                    name="port"
-                    required
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                    value={form.port}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Encryption
-                  </label>
-                  <select
-                    name="encryption"
-                    required
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                    value={form.encryption}
-                    onChange={handleChange}
-                  >
-                    <option value="ssl">SSL</option>
-                    <option value="tls">TLS</option>
-                    <option value="">None</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Received Email
-                  </label>
-                  <input
-                    type="email"
-                    name="received_email"
-                    required
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                    placeholder="inbox@example.com"
-                    value={form.received_email}
-                    onChange={handleChange}
-                  />
+              
+              {/* Server Configuration Section */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center">
+                  <i className="fas fa-cog text-indigo-600 mr-2"></i>
+                  Server Configuration
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      value={form.name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Host
+                    </label>
+                    <input
+                      type="text"
+                      name="host"
+                      required
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      value={form.host}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Port
+                    </label>
+                    <input
+                      type="number"
+                      name="port"
+                      required
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      value={form.port}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Encryption
+                    </label>
+                    <select
+                      name="encryption"
+                      required
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      value={form.encryption}
+                      onChange={handleChange}
+                    >
+                      <option value="ssl">SSL</option>
+                      <option value="tls">TLS</option>
+                      <option value="">None</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Received Email
+                    </label>
+                    <input
+                      type="email"
+                      name="received_email"
+                      required
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="inbox@example.com"
+                      value={form.received_email}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
-              {/* Accounts Section */}
-              <div className="mt-6">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">
+
+              {/* Email Accounts Section */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center">
+                  <i className="fas fa-envelope text-indigo-600 mr-2"></i>
                   Email Accounts
                 </h4>
-                {form.accounts.map((acc, idx) => (
-                  <div
-                    key={idx}
-                    className="border rounded p-3 mb-2 bg-gray-50"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {form.accounts && form.accounts.map((acc, idx) => (
+                  <div key={acc.id || idx} className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Email
                         </label>
                         <input
                           type="email"
                           name="email"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.email}
-                          onChange={(e) =>
-                            handleAccountChange(idx, "email", e.target.value)
-                          }
+                          onChange={(e) => handleAccountChange(idx, "email", e.target.value)}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Password
+                          <span className="ml-2 text-xs text-gray-500">(leave blank to keep)</span>
                         </label>
                         <input
                           type="password"
                           name="password"
-                          required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                          value={acc.password}
-                          onChange={(e) =>
-                            handleAccountChange(idx, "password", e.target.value)
-                          }
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="Leave blank to keep current"
+                          value={acc.password || ''}
+                          onChange={(e) => handleAccountChange(idx, "password", e.target.value)}
                         />
                       </div>
-                      <div className="flex items-end">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={acc.is_active}
-                            onChange={(e) =>
-                              handleAccountChange(
-                                idx,
-                                "is_active",
-                                e.target.checked
-                              )
-                            }
-                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                          />
-                          <label className="ml-2 block text-sm text-gray-700">
-                            Active
-                          </label>
-                        </div>
-                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Hourly Limit
                         </label>
                         <input
                           type="number"
                           name="hourly_limit"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.hourly_limit}
-                          onChange={(e) =>
-                            handleAccountChange(
-                              idx,
-                              "hourly_limit",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleAccountChange(idx, "hourly_limit", e.target.value)}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Daily Limit
                         </label>
                         <input
                           type="number"
                           name="daily_limit"
                           required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           value={acc.daily_limit}
-                          onChange={(e) =>
-                            handleAccountChange(
-                              idx,
-                              "daily_limit",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleAccountChange(idx, "daily_limit", e.target.value)}
                         />
                       </div>
                     </div>
-                    {form.accounts.length > 1 && (
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={acc.is_active}
+                          onChange={(e) => handleAccountChange(idx, "is_active", e.target.checked)}
+                          className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                        <label className="ml-2 text-sm font-medium text-gray-700">
+                          Active
+                        </label>
+                      </div>
                       <button
                         type="button"
-                        className="mt-2 text-red-600 text-xs"
+                        className="inline-flex items-center text-sm text-red-600 hover:text-red-700 font-medium"
                         onClick={() => removeAccount(idx)}
                       >
+                        <i className="fas fa-trash-alt mr-1"></i>
                         Remove Account
                       </button>
-                    )}
+                    </div>
                   </div>
                 ))}
-                {/* <button
-                  type="button"
-                  className="mt-2 text-indigo-600 text-xs"
-                  onClick={addAccount}
-                >
-                  + Add Another Account
-                </button> */}
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  id="edit_is_active"
-                  checked={form.is_active}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="edit_is_active"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  Active
-                </label>
-              </div>
-              <div className="flex justify-end pt-4 space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <i className="fas fa-save mr-2"></i> Update Server
-                </button>
+              {/* Server Status */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <i className={`fas fa-${form.is_active ? 'check-circle' : 'times-circle'} text-lg ${form.is_active ? 'text-green-600' : 'text-gray-400'}`}></i>
+                    <div>
+                      <label htmlFor="edit_is_active" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        Server Status
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        {form.is_active ? 'Server is active and can send emails' : 'Server is disabled'}
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      id="edit_is_active"
+                      checked={form.is_active}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
               </div>
             </form>
+
+            {/* Footer */}
+            <div className="flex justify-end px-6 py-4 space-x-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(false)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <i className="fas fa-times mr-2"></i>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <i className="fas fa-save mr-2"></i>
+                Update Server
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Account Modal */}
       {editAccountModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-md">
-          <div className="relative w-full max-w-lg mx-auto bg-white rounded-lg shadow-lg">
-            <div className="bg-white border-b flex justify-between items-center px-5 py-3 rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                <i className="fas fa-edit mr-2 text-indigo-600"></i>
-                Edit Email Account
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg mx-auto bg-white rounded-lg shadow-xl">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-lg">
+                  <i className="fas fa-edit text-blue-600 text-lg"></i>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Edit Email Account</h3>
+                  <p className="text-gray-500 text-sm">Update account settings and limits</p>
+                </div>
+              </div>
               <button
                 onClick={() => setEditAccountModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md p-2 transition-colors"
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            <div className="px-5 py-4">
+            <div className="px-6 py-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1349,22 +1402,24 @@ const Smtp = () => {
                   </label>
                 </div>
               </div>
-              <div className="flex justify-end pt-4 space-x-3 mt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setEditAccountModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpdateAccount}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <i className="fas fa-save mr-2"></i> Update Account
-                </button>
-              </div>
+            </div>
+            <div className="flex justify-end px-6 py-4 space-x-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setEditAccountModalOpen(false)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <i className="fas fa-times mr-2"></i>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUpdateAccount}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <i className="fas fa-save mr-2"></i>
+                Update Account
+              </button>
             </div>
           </div>
         </div>

@@ -89,11 +89,18 @@ if ($row = $result->fetch_assoc()) {
         $expiryTime = time() + (24 * 60 * 60); // 24 hours from now
         $expiryDateTime = date('Y-m-d H:i:s', $expiryTime);
         
-        // Store token in database
+        // Store token in database - supports multiple device logins
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
         
-        $tokenStmt = $conn->prepare('INSERT INTO user_tokens (user_id, token, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)');
+        // Clean up expired tokens first
+        $cleanupStmt = $conn->prepare('DELETE FROM user_tokens WHERE user_id = ? AND expires_at < NOW()');
+        $cleanupStmt->bind_param('i', $row['id']);
+        $cleanupStmt->execute();
+        $cleanupStmt->close();
+        
+        // Insert new token for this device
+        $tokenStmt = $conn->prepare('INSERT INTO user_tokens (user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
         $tokenStmt->bind_param('issss', $row['id'], $token, $expiryDateTime, $ipAddress, $userAgent);
         $tokenStmt->execute();
         $tokenStmt->close();

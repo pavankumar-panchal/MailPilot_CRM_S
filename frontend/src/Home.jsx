@@ -10,7 +10,13 @@ const Home = ({ user }) => {
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                  <img 
+                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjM0I4MkY2Ii8+CiAgPHBhdGggZD0iTTI1IDM1IEw1MCA1NSBMNzUgMzUgTDc1IDY1IEwyNSA2NSBaIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzMCIgcj0iOCIgZmlsbD0iIzEwQjk4MSIvPgo8L3N2Zz4=" 
+                    alt="Relyon CRM Logo" 
+                    className="h-10 w-10"
+                    style={{ imageRendering: 'crisp-edges' }}
+                  />
                   Welcome to Relyon CRM
                 </h1>
                 <p className="text-gray-600 text-lg">

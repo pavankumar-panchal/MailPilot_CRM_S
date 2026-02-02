@@ -135,13 +135,14 @@ function getCampaignsWithStats()
     
     // FIRST: Ensure every campaign has a campaign_status row
     // a) from mail_blaster (already sent)
+    // NOTE: Handle empty status ('') with attempt_count > 0 as successfully sent (campaign init bug)
     $conn->query("
         INSERT INTO campaign_status (campaign_id, status, total_emails, sent_emails, failed_emails, pending_emails, start_time)
         SELECT 
             mb.campaign_id,
             'running' as status,
             0 as total_emails,
-            COUNT(DISTINCT CASE WHEN mb.status = 'success' THEN mb.to_mail END) as sent_emails,
+            COUNT(DISTINCT CASE WHEN mb.status = 'success' OR (mb.status = '' AND mb.attempt_count > 0) THEN mb.to_mail END) as sent_emails,
             COUNT(DISTINCT CASE WHEN mb.status = 'failed' THEN mb.to_mail END) as failed_emails,
             0 as pending_emails,
             MIN(mb.delivery_time) as start_time
@@ -208,10 +209,11 @@ function getCampaignsWithStats()
             $csv_list_id = intval($campaign['csv_list_id']);
             
             // Get actual counts from mail_blaster
+            // NOTE: Handle empty status ('') with attempt_count > 0 as successfully sent (campaign init bug)
             $blasterStats = $conn->query("
                 SELECT 
                     COUNT(DISTINCT to_mail) as total_in_blaster,
-                    COUNT(DISTINCT CASE WHEN status = 'success' THEN to_mail END) as actual_sent,
+                    COUNT(DISTINCT CASE WHEN status = 'success' OR (status = '' AND attempt_count > 0) THEN to_mail END) as actual_sent,
                     COUNT(DISTINCT CASE WHEN status = 'failed' AND attempt_count >= 5 THEN to_mail END) as actual_failed
                 FROM mail_blaster
                 WHERE campaign_id = $campaign_id
@@ -611,10 +613,11 @@ function getEmailCounts($conn, $campaign_id, $userId = null, $isAdmin = false)
         
         // Count sent and failed - JOIN with imported_recipients to filter by import_batch_id
         // Use COLLATE to fix collation mismatch between tables
+        // NOTE: Handle empty status ('') for compatibility with campaign init bug
         $countQuery = "SELECT 
                     COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
                     COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
-                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                    COALESCE(SUM(CASE WHEN (mb.status = 'failed' OR mb.status = '' OR mb.status IS NULL) AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
                 FROM mail_blaster mb
                 INNER JOIN imported_recipients ir ON mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails COLLATE utf8mb4_unicode_ci
                 WHERE mb.campaign_id = $campaign_id
@@ -637,10 +640,11 @@ function getEmailCounts($conn, $campaign_id, $userId = null, $isAdmin = false)
         error_log("getEmailCounts - Total valid emails in CSV list $csvListId: $totalValid");
         
         // Count sent and failed from mail_blaster for this CSV list
+        // NOTE: Handle empty status ('') for compatibility with campaign init bug
         $countQuery = "SELECT 
                     COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
                     COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
-                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                    COALESCE(SUM(CASE WHEN (mb.status = 'failed' OR mb.status = '' OR mb.status IS NULL) AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
                 FROM mail_blaster mb
                 INNER JOIN emails e ON mb.to_mail = e.raw_emailid
                 WHERE mb.campaign_id = $campaign_id
@@ -659,10 +663,11 @@ function getEmailCounts($conn, $campaign_id, $userId = null, $isAdmin = false)
         $totalValid = ($totalResult && $totalResult->num_rows > 0) ? (int)$totalResult->fetch_assoc()['total_valid'] : 0;
         
         // Count sent and failed
+        // NOTE: Handle empty status ('') for compatibility with campaign init bug
         $countQuery = "SELECT 
                     COALESCE(SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END), 0) as sent,
                     COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN 1 ELSE 0 END), 0) as failed,
-                    COALESCE(SUM(CASE WHEN mb.status = 'failed' AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
+                    COALESCE(SUM(CASE WHEN (mb.status = 'failed' OR mb.status = '' OR mb.status IS NULL) AND mb.attempt_count < 5 THEN 1 ELSE 0 END), 0) as retryable
                 FROM mail_blaster mb
                 WHERE mb.campaign_id = $campaign_id";
     }
