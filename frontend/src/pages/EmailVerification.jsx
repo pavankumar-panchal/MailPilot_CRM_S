@@ -494,15 +494,16 @@ const EmailVerification = () => {
   const _failedCount = lists.filter((list) => list.domain_status === 2).length;
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
-      <StatusMessage status={status} onClose={() => setStatus(null)} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">
+        <StatusMessage status={status} onClose={() => setStatus(null)} />
 
-      {/* Upload Section */}
-      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8 mt-14 sm:mt-12">
-        <div className="flex items-center mb-4 sm:mb-6">
-          <div className="bg-blue-100 p-2 rounded-lg mr-3 sm:mr-4">
+        {/* Upload Section */}
+        <div className="glass-effect rounded-xl shadow-xl border border-white/20 p-5 sm:p-6 lg:p-8 mb-5 sm:mb-6 hover:shadow-2xl transition-all duration-300">
+        <div className="flex items-center gap-3 mb-5 sm:mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg">
             <svg
-              className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -515,15 +516,15 @@ const EmailVerification = () => {
               />
             </svg>
           </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800">
             Upload Email List
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 List Name
                 <span className="text-red-500 ml-1">*</span>
               </label>
@@ -532,14 +533,14 @@ const EmailVerification = () => {
                 name="listName"
                 value={formData.listName}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="e.g. My Email List"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 File Name
                 <span className="text-red-500 ml-1">*</span>
               </label>
@@ -548,7 +549,7 @@ const EmailVerification = () => {
                 name="fileName"
                 value={formData.fileName}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="e.g. emails_jan_2025.csv"
                 required
               />
@@ -556,17 +557,18 @@ const EmailVerification = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               CSV File
               <span className="text-red-500 ml-1">*</span>
             </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
-              <div className="space-y-1 text-center">
-                {formData.csvFile ? (
-                  <div className="flex items-center justify-center">
-                    <div className="bg-green-100 p-2 rounded-lg mr-4">
+            
+            {formData.csvFile ? (
+              <div className="mt-1 px-6 py-5 border-2 border-green-300 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50/50 backdrop-blur-sm shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl shadow-lg">
                       <svg
-                        className="w-6 h-6 text-green-600"
+                        className="w-6 h-6 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -575,23 +577,26 @@ const EmailVerification = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
                     </div>
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-gray-700">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
                         {formData.csvFile.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-600 mt-0.5">
                         {(formData.csvFile.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, csvFile: null })}
+                    className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-300 flex items-center gap-2"
+                  >
                     <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -600,35 +605,54 @@ const EmailVerification = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                    <div className="flex text-sm text-gray-600 justify-center">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                        <span>Upload a file</span>
-                        <input
-                          type="file"
-                          name="csvFile"
-                          className="sr-only"
-                          accept=".csv"
-                          onChange={handleFileChange}
-                          required
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">Only 5MB CSV files</p>
-                  </>
-                )}
+                    Remove
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-1 flex justify-center px-6 pt-6 pb-6 border-2 border-blue-300 border-dashed rounded-xl bg-blue-50/50 backdrop-blur-sm hover:border-blue-500 hover:bg-blue-50/80 transition-all duration-300 shadow-inner">
+                <div className="space-y-1 text-center">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <div className="flex text-sm text-gray-600 justify-center">
+                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none px-2 py-1">
+                      <span>Upload a file</span>
+                      <input
+                        type="file"
+                        name="csvFile"
+                        className="sr-only"
+                        accept=".csv"
+                        onChange={handleFileChange}
+                        required
+                      />
+                    </label>
+                    <p className="pl-1">or drag and drop</p>
+                  </div>
+                  <p className="text-xs text-gray-500">Only 5MB CSV files</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-center">
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center disabled:opacity-70"
+              className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -677,13 +701,13 @@ const EmailVerification = () => {
         </form>
       </div>
 
-      {/* Lists Section */}
-      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
-          <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-lg mr-3 sm:mr-4">
+        {/* Lists Section */}
+        <div className="glass-effect rounded-xl shadow-xl border border-white/20 p-5 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg">
               <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600"
+                className="w-6 h-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -696,7 +720,7 @@ const EmailVerification = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Email Lists</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Email Lists</h2>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div className="relative flex-grow max-w-md">
@@ -718,7 +742,7 @@ const EmailVerification = () => {
               <input
                 type="text"
                 placeholder="Search lists..."
-                className="pl-10 w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="pl-10 w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md"
                 value={searchInput}
                 onChange={handleSearchChange}
               />
@@ -788,31 +812,32 @@ const EmailVerification = () => {
         </div>
 
         {/* Lists Table */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0 sm:rounded-lg border-t sm:border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  List Name
-                </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Emails
-                </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Valid/Invalid
-                </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+        <div className="overflow-hidden rounded-xl border-2 border-gray-200/50 shadow-inner bg-white/50 backdrop-blur-sm mt-5">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    List Name
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Emails
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Valid/Invalid
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white/60 backdrop-blur-sm divide-y divide-gray-200">
               {listsLoading ? (
                 // Skeleton loading rows
                 Array.from({ length: listPagination.rowsPerPage }).map((_, idx) => (
@@ -886,10 +911,10 @@ const EmailVerification = () => {
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <button
                           onClick={() => setExpandedListId(list.id)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors flex items-center text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50"
+                          className="text-blue-600 hover:text-blue-800 transition-all flex items-center text-xs sm:text-sm px-3 py-2 rounded-lg hover:bg-blue-50 font-medium shadow-sm hover:shadow-md"
                         >
                           <svg
-                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1"
+                            className="w-4 h-4 mr-1.5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -911,10 +936,10 @@ const EmailVerification = () => {
                         </button>
                         <button
                           onClick={() => exportEmails("valid", list.id)}
-                          className="text-green-600 hover:text-green-800 transition-colors flex items-center"
+                          className="text-green-600 hover:text-green-800 transition-all flex items-center px-3 py-2 rounded-lg hover:bg-green-50 font-medium shadow-sm hover:shadow-md"
                         >
                           <svg
-                            className="w-4 h-4 mr-1"
+                            className="w-4 h-4 mr-1.5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -930,10 +955,10 @@ const EmailVerification = () => {
                         </button>
                         <button
                           onClick={() => exportEmails("invalid", list.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors flex items-center"
+                          className="text-red-600 hover:text-red-800 transition-all flex items-center px-3 py-2 rounded-lg hover:bg-red-50 font-medium shadow-sm hover:shadow-md"
                         >
                           <svg
-                            className="w-4 h-4 mr-1"
+                            className="w-4 h-4 mr-1.5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -978,10 +1003,11 @@ const EmailVerification = () => {
             </tbody>
           </table>
         </div>
+        </div>
 
         {/* Pagination */}
         {lists.length > 0 && (
-          <div className="flex flex-col items-center justify-center mt-6 px-1 gap-2">
+          <div className="flex flex-col items-center justify-center mt-6 px-1 gap-2 pb-4">
             <div className="text-sm text-gray-500 mb-2">
               Showing{" "}
               <span className="font-medium">
@@ -1132,6 +1158,7 @@ const EmailVerification = () => {
           </div>
         )}
       </div>
+      {/* End Lists Section */}
 
       {/* Emails List Overlay */}
       {expandedListId && (
@@ -1140,6 +1167,7 @@ const EmailVerification = () => {
           onClose={() => setExpandedListId(null)}
         />
       )}
+      </div>
     </div>
   );
 };

@@ -81,6 +81,10 @@ const Smtp = () => {
   const [editId, setEditId] = useState(null);
   const [status, setStatus] = useState(null);
   const [expandedServer, setExpandedServer] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    rowsPerPage: 10,
+  });
   const [accountForm, setAccountForm] = useState({
     email: "",
     password: "",
@@ -508,34 +512,60 @@ const Smtp = () => {
     );
   };
 
+  // Pagination helpers
+  const paginatedServers = servers.slice(
+    (pagination.page - 1) * pagination.rowsPerPage,
+    pagination.page * pagination.rowsPerPage
+  );
+
+  const totalPages = Math.ceil(servers.length / pagination.rowsPerPage);
+
+  const handlePageChange = (newPage) => {
+    setPagination({ ...pagination, page: newPage });
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setPagination({ page: 1, rowsPerPage: parseInt(e.target.value) });
+  };
+
   return (
-    <main className="max-w-7xl mx-auto px-4 mt-14 sm:px-6 py-6">
-      {/* Glassmorphism Status Popup */}
-      <StatusMessage status={status} onClose={() => setStatus(null)} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">
+        {/* Glassmorphism Status Popup */}
+        <StatusMessage status={status} onClose={() => setStatus(null)} />
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-          <i className="fas fa-server mr-3 text-indigo-600"></i>
-          SMTP Records
-        </h1>
-        <button
-          onClick={() => {
-            setForm(emptyServer);
-            setModalOpen(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          <i className="fas fa-plus mr-2"></i> Add SMTP Server
-        </button>
-      </div>
+        {/* SMTP Records Section */}
+        <div className="glass-effect rounded-xl shadow-xl border border-white/20 p-5 sm:p-6 lg:p-8 mb-5 sm:mb-6 hover:shadow-2xl transition-all duration-300">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">SMTP Records</h2>
+            </div>
+            <button
+              onClick={() => {
+                setForm(emptyServer);
+                setModalOpen(true);
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add SMTP Server
+            </button>
+          </div>
 
-      {/* SMTP Servers Table */}
-      <div className="card overflow-hidden bg-white/80 backdrop-blur-md rounded-xl shadow-lg">
+          {/* SMTP Servers Table */}
+          <div className="overflow-hidden rounded-xl border-2 border-gray-200/50 shadow-inner bg-white/50 backdrop-blur-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50/80">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   Server
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -552,7 +582,7 @@ const Smtp = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white/60 divide-y divide-gray-200">
+            <tbody className="bg-white/40 divide-y divide-gray-200">
               {loading ? (
                 <TableSkeleton rows={5} columns={5} />
               ) : servers.length === 0 ? (
@@ -562,13 +592,13 @@ const Smtp = () => {
                   </td>
                 </tr>
               ) : (
-                servers.map((server, index) => (
+                paginatedServers.map((server, index) => (
                   <React.Fragment key={server.id}>
                     <tr className="hover:bg-indigo-50/30 transition">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="text-xs text-gray-400 mr-3">
-                            #{index + 1}
+                            #{(pagination.page - 1) * pagination.rowsPerPage + index + 1}
                           </div>
                           <div>
                             <div className="text-base font-semibold text-gray-900">
@@ -795,32 +825,145 @@ const Smtp = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {servers.length > 0 && (
+          <div className="flex flex-col items-center justify-center mt-6 px-1 gap-2 pb-4">
+            <div className="text-sm text-gray-500 mb-2">
+              Showing{" "}
+              <span className="font-medium">
+                {(pagination.page - 1) * pagination.rowsPerPage + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">
+                {Math.min(pagination.page * pagination.rowsPerPage, servers.length)}
+              </span>{" "}
+              of <span className="font-medium">{servers.length}</span> servers
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(1)}
+                disabled={pagination.page === 1}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <span className="text-sm font-bold text-gray-900">
+                Page {pagination.page} of {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= totalPages}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={pagination.page >= totalPages}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              <select
+                value={pagination.rowsPerPage}
+                onChange={handleRowsPerPageChange}
+                className="border p-2 rounded-lg text-sm bg-white focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                {[10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        </div>
       </div>
 
       {/* Add Server Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-md">
-          <div className="relative w-full max-w-2xl mx-auto bg-white rounded-lg shadow-lg flex flex-col"
-               style={{ maxHeight: "90vh" }}>
-            {/* Sticky header */}
-            <div className="sticky top-0 z-10 bg-white border-b flex justify-between items-center px-5 py-3 rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                <i className="fas fa-plus-circle mr-2 text-indigo-600"></i>
-                Add New SMTP Server
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            {/* Scrollable content */}
-            <form
-              className="overflow-y-auto px-5 py-4"
-              style={{ maxHeight: "75vh" }}
-              onSubmit={handleAdd}
-            >
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-full max-w-3xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl flex flex-col" style={{ maxHeight: "90vh" }}>
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 rounded-t-xl flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                    <i className="fas fa-plus-circle text-indigo-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Add New SMTP Server</h3>
+                    <p className="text-sm text-gray-600 mt-0.5">Configure server settings and accounts</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg p-2 transition-colors"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+
+              {/* Scrollable Body */}
+              <form className="overflow-y-auto px-6 py-6" style={{ maxHeight: "calc(90vh - 140px)" }} onSubmit={handleAdd}>
               {/* Section: Server Details */}
               <div className="mb-6">
                 <h4 className="text-md font-semibold text-indigo-700 mb-3 flex items-center">
@@ -1050,32 +1193,35 @@ const Smtp = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Server Modal */}
       {editModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl mx-auto bg-white rounded-lg shadow-xl flex flex-col" style={{ maxHeight: "90vh" }}>
-            {/* Header */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="bg-gray-100 p-2 rounded-lg">
-                  <i className="fas fa-server text-blue-600 text-lg"></i>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-full max-w-3xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl flex flex-col" style={{ maxHeight: "90vh" }}>
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 rounded-t-xl flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                    <i className="fas fa-server text-indigo-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Edit SMTP Server</h3>
+                    <p className="text-sm text-gray-600 mt-0.5">Update server configuration and accounts</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Edit SMTP Server</h3>
-                  <p className="text-gray-500 text-sm">Update server configuration and accounts</p>
-                </div>
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg p-2 transition-colors"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
               </div>
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md p-2 transition-colors"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
 
             {/* Scrollable Body */}
             <form className="overflow-y-auto px-6 py-6" style={{ maxHeight: "calc(90vh - 140px)" }} onSubmit={handleUpdate}>
@@ -1303,128 +1449,140 @@ const Smtp = () => {
             </div>
           </div>
         </div>
+        </div>
       )}
 
       {/* Edit Account Modal */}
       {editAccountModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-lg mx-auto bg-white rounded-lg shadow-xl">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="bg-gray-100 p-2 rounded-lg">
-                  <i className="fas fa-edit text-blue-600 text-lg"></i>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Edit Email Account</h3>
-                  <p className="text-gray-500 text-sm">Update account settings and limits</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditAccountModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md p-2 transition-colors"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editAccountForm.email}
-                    onChange={handleEditAccountFormChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="user@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password (leave blank to keep current)
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={editAccountForm.password}
-                    onChange={handleEditAccountFormChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="New password (optional)"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hourly Limit
-                    </label>
-                    <input
-                      type="number"
-                      name="hourly_limit"
-                      value={editAccountForm.hourly_limit}
-                      onChange={handleEditAccountFormChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      min="0"
-                      max="1000"
-                    />
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-full max-w-2xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              {/* Modal Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 rounded-t-xl">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                      <i className="fas fa-edit text-indigo-600 text-xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">Edit Email Account</h3>
+                      <p className="text-sm text-gray-600 mt-0.5">Update account settings and limits</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Daily Limit
-                    </label>
-                    <input
-                      type="number"
-                      name="daily_limit"
-                      value={editAccountForm.daily_limit}
-                      onChange={handleEditAccountFormChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      min="0"
-                      max="10000"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_active"
-                    id="edit_account_is_active"
-                    checked={editAccountForm.is_active}
-                    onChange={handleEditAccountFormChange}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="edit_account_is_active"
-                    className="ml-2 block text-sm text-gray-700"
+                  <button
+                    onClick={() => setEditAccountModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg p-2 transition-colors"
                   >
-                    Active
-                  </label>
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end px-6 py-4 space-x-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => setEditAccountModalOpen(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <i className="fas fa-times mr-2"></i>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleUpdateAccount}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <i className="fas fa-save mr-2"></i>
-                Update Account
-              </button>
+
+              {/* Modal Body */}
+              <div className="px-6 py-6">
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editAccountForm.email}
+                      onChange={handleEditAccountFormChange}
+                      className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
+                      placeholder="user@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Password (leave blank to keep current)
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={editAccountForm.password}
+                      onChange={handleEditAccountFormChange}
+                      className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
+                      placeholder="New password (optional)"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Hourly Limit
+                      </label>
+                      <input
+                        type="number"
+                        name="hourly_limit"
+                        value={editAccountForm.hourly_limit}
+                        onChange={handleEditAccountFormChange}
+                        className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
+                        min="0"
+                        max="1000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Daily Limit
+                      </label>
+                      <input
+                        type="number"
+                        name="daily_limit"
+                        value={editAccountForm.daily_limit}
+                        onChange={handleEditAccountFormChange}
+                        className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
+                        min="0"
+                        max="10000"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 pt-2">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      id="edit_account_is_active"
+                      checked={editAccountForm.is_active}
+                      onChange={handleEditAccountFormChange}
+                      className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-all cursor-pointer"
+                    />
+                    <label
+                      htmlFor="edit_account_is_active"
+                      className="block text-sm font-medium text-gray-700 cursor-pointer"
+                    >
+                      Active
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setEditAccountModalOpen(false)}
+                  className="px-6 py-2.5 border-2 border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all shadow-sm hover:shadow-md"
+                >
+                  <i className="fas fa-times mr-2"></i>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdateAccount}
+                  className="px-6 py-2.5 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                >
+                  <i className="fas fa-save mr-2"></i>
+                  Update Account
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </main>
+      </div>
+    </div>
   );
 };
 

@@ -62,24 +62,23 @@ export default function Navbar({ user, onLogout }) {
   }, [location.pathname]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50" role="navigation" aria-label="Main navigation">
+    <nav className="fixed top-0 left-0 right-0 glass-effect border-b border-white/20 shadow-lg z-50" role="navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <img 
-                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjM0I4MkY2Ii8+CiAgPHBhdGggZD0iTTI1IDM1IEw1MCA1NSBMNzUgMzUgTDc1IDY1IEwyNSA2NSBaIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzMCIgcj0iOCIgZmlsbD0iIzEwQjk4MSIvPgo8L3N2Zz4="
-                alt="Relyon CRM Logo" 
-                className="h-8 w-8 mr-2"
-                style={{ imageRendering: 'crisp-edges' }}
-              />
-              <span className="text-gray-800 font-semibold text-lg">Relyon CRM</span>
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <div className="p-1.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span className="text-gray-800 font-bold text-lg">Relyon CRM</span>
             </div>
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center gap-1">
             {/* Navigation Links */}
             {navLinks.map((link) => (
               <NavLink
@@ -87,12 +86,14 @@ export default function Navbar({ user, onLogout }) {
                 to={link.to}
                 aria-label={`Navigate to ${link.label}`}
                 className={({ isActive }) =>
-                  `${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                  } px-3 py-2 rounded-md text-sm font-medium flex items-center`
+                  `${isActive 
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md" 
+                    : "text-gray-700 hover:bg-white/50"
+                  } px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 whitespace-nowrap`
                 }
               >
-                <i className={`fas ${link.icon} mr-2`} aria-hidden="true"></i>
-                {link.label}
+                <i className={`fas ${link.icon} text-sm`} aria-hidden="true"></i>
+                <span>{link.label}</span>
               </NavLink>
             ))}
 
@@ -140,23 +141,23 @@ export default function Navbar({ user, onLogout }) {
             
             {/* User Info - Desktop */}
             {user && (
-              <div className="ml-4 flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+              <div className="ml-3 flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20">
+                  <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="text-sm">
                     <div className="font-semibold text-gray-800">{user.name}</div>
-                    <div className="text-xs text-gray-500 capitalize">{user.role}</div>
+                    <div className="text-xs text-gray-600 capitalize">{user.role}</div>
                   </div>
                 </div>
                 <button
                   onClick={onLogout}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                  className="px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 text-sm font-medium flex items-center gap-1.5"
                   aria-label="Logout"
                 >
-                  <i className="fas fa-sign-out-alt mr-2"></i>
-                  Logout
+                  <i className="fas fa-sign-out-alt text-sm"></i>
+                  <span>Logout</span>
                 </button>
               </div>
             )}
@@ -168,10 +169,10 @@ export default function Navbar({ user, onLogout }) {
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle main menu"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:bg-white/50 transition-all duration-300"
             >
               <span className="sr-only">Open main menu</span>
-              <i className={`fas ${mobileMenuOpen ? "fa-times" : "fa-bars"}`} aria-hidden="true"></i>
+              <i className={`fas ${mobileMenuOpen ? "fa-times" : "fa-bars"} text-lg`} aria-hidden="true"></i>
             </button>
           </div>
         </div>
@@ -179,8 +180,8 @@ export default function Navbar({ user, onLogout }) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200 shadow">
-          <div className="pt-2 pb-3 space-y-1">
+        <div className="md:hidden glass-effect border-t border-white/20 shadow-lg">
+          <div className="pt-2 pb-3 space-y-1 px-4">
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
@@ -188,12 +189,12 @@ export default function Navbar({ user, onLogout }) {
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label={`Navigate to ${link.label}`}
                 className={({ isActive }) =>
-                  `flex items-center pl-3 pr-4 py-2 border-l-4 text-base font-medium ${isActive
-                    ? "bg-blue-50 text-blue-600 border-blue-500"
-                    : "text-gray-600 hover:bg-blue-50 hover:text-blue-600 border-transparent"}`
+                  `flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-300 ${isActive
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white/50"}`
                 }
               >
-                <i className={`fas ${link.icon} mr-2`} aria-hidden="true"></i>
+                <i className={`fas ${link.icon} w-5 text-center`} aria-hidden="true"></i>
                 {link.label}
               </NavLink>
             ))}
@@ -241,15 +242,15 @@ export default function Navbar({ user, onLogout }) {
           
           {/* User Info - Mobile */}
           {user && (
-            <div className="border-t border-gray-200 pt-3 pb-3 px-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+            <div className="border-t border-white/20 pt-3 pb-3 px-4">
+              <div className="flex items-center gap-3 mb-3 p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <div className="font-semibold text-gray-800">{user.name}</div>
-                  <div className="text-sm text-gray-500">{user.email}</div>
-                  <div className="text-xs text-gray-500 capitalize">Role: {user.role}</div>
+                  <div className="text-sm text-gray-600">{user.email}</div>
+                  <div className="text-xs text-gray-600 capitalize">Role: {user.role}</div>
                 </div>
               </div>
               <button
@@ -257,7 +258,7 @@ export default function Navbar({ user, onLogout }) {
                   setMobileMenuOpen(false);
                   onLogout();
                 }}
-                className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-medium flex items-center justify-center gap-2"
               >
                 <i className="fas fa-sign-out-alt"></i>
                 Logout

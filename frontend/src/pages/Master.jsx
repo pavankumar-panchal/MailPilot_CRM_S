@@ -399,19 +399,29 @@ const Master = () => {
   }, [campaigns]);
 
   return (
-    <div className="bg-gray-100 min-h-screen mt-14">      
-      {loading && (
-        <div className="container mx-auto px-2 sm:px-4 py-6 w-full max-w-7xl">
-          <div className="grid grid-cols-1 gap-4 sm:gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">      
+        {loading && (
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <CardSkeleton cards={3} />
           </div>
-        </div>
-      )}
-      {!loading && (
-      <div className="container mx-auto px-2 sm:px-4 py-6 w-full max-w-7xl">
-        <StatusMessage message={message} onClose={() => setMessage(null)} />
+        )}
+        {!loading && (
+        <>
+          <StatusMessage message={message} onClose={() => setMessage(null)} />
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-6">
+          {/* Master Control Section */}
+          <div className="glass-effect rounded-xl shadow-xl border border-white/20 p-5 sm:p-6 lg:p-8 mb-5 sm:mb-6 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Master Control</h2>
+            </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
           {paginatedCampaigns.map((campaign) => {
             const counts = emailCounts[campaign.campaign_id] || {};
             const selectedCsvList = getSelectedCsvList(campaign.campaign_id);
@@ -430,9 +440,9 @@ const Master = () => {
             return (
               <div
                 key={campaign.campaign_id}
-                className="bg-white rounded-xl shadow-md overflow-hidden transition-all hover:shadow-lg"
+                className="glass-effect rounded-xl shadow-lg overflow-hidden transition-all hover:shadow-xl"
               >
-                <div className="p-4 sm:p-6">
+                <div className="p-4 sm:p-5 lg:p-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1 break-words">
@@ -719,7 +729,6 @@ const Master = () => {
         </div>
       )}
       </div>
-      )}
 
       {/* CSV List Selection Modal with Search */}
       {showCsvModal && (
@@ -1166,9 +1175,14 @@ const Master = () => {
           </div>
         </div>
       )}
+        </>
+        )}
+      </div>
     </div>
   );
-};// Memoized status badge component
+};
+
+// Memoized status badge component
 const StatusBadge = React.memo(({ status }) => {
   const statusClass = (status || "pending").toLowerCase();
   const statusColors = {

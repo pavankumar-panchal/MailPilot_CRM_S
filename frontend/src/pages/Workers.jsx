@@ -74,6 +74,10 @@ const Workers = () => {
   const [form, setForm] = useState(emptyWorker);
   const [editId, setEditId] = useState(null);
   const [status, setStatus] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    rowsPerPage: 10,
+  });
 
   // Toggle worker active status
   const toggleWorkerStatus = async (worker) => {
@@ -257,33 +261,59 @@ const Workers = () => {
     }
   }, [status]);
 
+  // Pagination helpers
+  const paginatedWorkers = workers.slice(
+    (pagination.page - 1) * pagination.rowsPerPage,
+    pagination.page * pagination.rowsPerPage
+  );
+
+  const totalPages = Math.ceil(workers.length / pagination.rowsPerPage);
+
+  const handlePageChange = (newPage) => {
+    setPagination({ ...pagination, page: newPage });
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setPagination({ page: 1, rowsPerPage: parseInt(e.target.value) });
+  };
+
   return (
-    <main className="max-w-7xl mx-auto px-4 mt-14 sm:px-6 py-6">
-      <StatusMessage status={status} onClose={() => setStatus(null)} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">
+        <StatusMessage status={status} onClose={() => setStatus(null)} />
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-          <i className="fas fa-users mr-3 text-blue-600"></i>
-          Workers
-        </h1>
-        <button
-          onClick={() => {
-            setForm(emptyWorker);
-            setModalOpen(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <i className="fas fa-plus mr-2"></i> Add Worker
-        </button>
-      </div>
+        {/* Workers Section */}
+        <div className="glass-effect rounded-xl shadow-xl border border-white/20 p-5 sm:p-6 lg:p-8 mb-5 sm:mb-6 hover:shadow-2xl transition-all duration-300">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Workers</h2>
+            </div>
+            <button
+              onClick={() => {
+                setForm(emptyWorker);
+                setModalOpen(true);
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Worker
+            </button>
+          </div>
 
-      {/* Workers Table */}
-      <div className="card overflow-hidden bg-white rounded-xl shadow">
+          {/* Workers Table */}
+          <div className="overflow-hidden rounded-xl border-2 border-gray-200/50 shadow-inner bg-white/50 backdrop-blur-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -313,7 +343,7 @@ const Workers = () => {
                   </td>
                 </tr>
               ) : (
-                workers.map((worker) => (
+                paginatedWorkers.map((worker) => (
                   <tr key={worker.id} className={worker.is_active === 0 ? 'bg-gray-50' : ''}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {worker.id}
@@ -362,29 +392,147 @@ const Workers = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {workers.length > 0 && (
+          <div className="flex flex-col items-center justify-center mt-6 px-1 gap-2 pb-4">
+            <div className="text-sm text-gray-500 mb-2">
+              Showing{" "}
+              <span className="font-medium">
+                {(pagination.page - 1) * pagination.rowsPerPage + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">
+                {Math.min(pagination.page * pagination.rowsPerPage, workers.length)}
+              </span>{" "}
+              of <span className="font-medium">{workers.length}</span> workers
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(1)}
+                disabled={pagination.page === 1}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <span className="text-sm font-bold text-gray-900">
+                Page {pagination.page} of {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= totalPages}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={pagination.page >= totalPages}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-bold text-gray-900"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              <select
+                value={pagination.rowsPerPage}
+                onChange={handleRowsPerPageChange}
+                className="border p-2 rounded-lg text-sm bg-white focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                {[10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        </div>
       </div>
 
       {/* Add Worker Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md backdrop-saturate-150 border border-white/20 shadow-xl overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          {/* StatusMessage inside modal */}
-          <StatusMessage status={status} onClose={() => setStatus(null)} />
-          <div className="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                <i className="fas fa-plus-circle mr-2 text-blue-600"></i>
-                Add New Worker
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form className="space-y-4" onSubmit={handleAdd}>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-full max-w-2xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 rounded-t-xl flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                    <i className="fas fa-plus-circle text-indigo-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Add New Worker</h3>
+                    <p className="text-sm text-gray-600 mt-0.5">Configure worker name and IP address</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg p-2 transition-colors"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+
+              {/* Body */}
+              <form className="px-6 py-6 space-y-5" onSubmit={handleAdd}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Worker Name
                 </label>
                 <input
@@ -392,14 +540,14 @@ const Workers = () => {
                   name="workername"
                   required
                   maxLength={50}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   placeholder="Enter worker name"
                   value={form.workername}
                   onChange={handleChange}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   IP Address
                 </label>
                 <input
@@ -407,19 +555,19 @@ const Workers = () => {
                   name="ip"
                   required
                   maxLength={39}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   placeholder="Enter IP address"
                   value={form.ip}
                   onChange={handleChange}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Status
                 </label>
                 <select
                   name="is_active"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   value={form.is_active !== undefined ? form.is_active : 1}
                   onChange={handleChange}
                 >
@@ -427,47 +575,65 @@ const Workers = () => {
                   <option value={0}>Inactive</option>
                 </select>
               </div>
-              <div className="flex justify-end pt-4 space-x-3">
+              </form>
+              
+              {/* Footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-6 py-2.5 border-2 border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all shadow-sm hover:shadow-md"
                 >
+                  <i className="fas fa-times mr-2"></i>
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const form = e.target.closest('.inline-block').querySelector('form');
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                  }}
+                  className="px-6 py-2.5 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg hover:shadow-xl hover:scale-105"
                 >
-                  <i className="fas fa-save mr-2"></i> Save Worker
+                  <i className="fas fa-save mr-2"></i>
+                  Add Worker
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Worker Modal */}
       {editModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md backdrop-saturate-150 border border-white/20 shadow-xl overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          {/* StatusMessage inside modal */}
-          <StatusMessage status={status} onClose={() => setStatus(null)} />
-          <div className="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                <i className="fas fa-edit mr-2 text-blue-600"></i>
-                Edit Worker
-              </h3>
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form className="space-y-4" onSubmit={handleUpdate}>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div className="inline-block w-full max-w-2xl my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-xl">
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 rounded-t-xl flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                    <i className="fas fa-edit text-indigo-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Edit Worker</h3>
+                    <p className="text-sm text-gray-600 mt-0.5">Update worker configuration</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg p-2 transition-colors"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+
+              {/* Body */}
+              <form className="px-6 py-6 space-y-5" onSubmit={handleUpdate}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Worker Name
                 </label>
                 <input
@@ -475,14 +641,14 @@ const Workers = () => {
                   name="workername"
                   required
                   maxLength={50}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   placeholder="Enter worker name"
                   value={form.workername}
                   onChange={handleChange}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   IP Address
                 </label>
                 <input
@@ -490,19 +656,19 @@ const Workers = () => {
                   name="ip"
                   required
                   maxLength={39}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   placeholder="Enter IP address"
                   value={form.ip}
                   onChange={handleChange}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Status
                 </label>
                 <select
                   name="is_active"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                   value={form.is_active !== undefined ? form.is_active : 1}
                   onChange={handleChange}
                 >
@@ -510,26 +676,37 @@ const Workers = () => {
                   <option value={0}>Inactive</option>
                 </select>
               </div>
-              <div className="flex justify-end pt-4 space-x-3">
+              </form>
+              
+              {/* Footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-6 py-2.5 border-2 border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all shadow-sm hover:shadow-md"
                 >
+                  <i className="fas fa-times mr-2"></i>
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const form = e.target.closest('.inline-block').querySelector('form');
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                  }}
+                  className="px-6 py-2.5 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg hover:shadow-xl hover:scale-105"
                 >
-                  <i className="fas fa-save mr-2"></i> Update Worker
+                  <i className="fas fa-save mr-2"></i>
+                  Update Worker
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
-    </main>
+      </div>
+    </div>
   );
 };
 

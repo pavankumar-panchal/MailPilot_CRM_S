@@ -110,7 +110,12 @@ const App = () => {
     <>
       {isAuthenticated && !hideNavbar && <Navbar user={user} onLogout={handleLogout} />}
       {isAuthenticated && <TopProgressBar />}
-      <main id="main-content" role="main" aria-label="Main application content">
+      <main 
+        id="main-content" 
+        role="main" 
+        aria-label="Main application content"
+        className={isAuthenticated && !hideNavbar ? "pt-16" : ""}
+      >
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public routes */}

@@ -2,163 +2,176 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Home = ({ user }) => {
+  const quickActions = [
+    {
+      title: 'Email Verification',
+      description: 'Upload and verify email lists',
+      path: '/email-verification',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      gradient: 'from-emerald-500 to-teal-600',
+    },
+    {
+      title: 'SMTP Servers',
+      description: 'Manage email servers',
+      path: '/smtp',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+        </svg>
+      ),
+      gradient: 'from-blue-500 to-indigo-600',
+    },
+    {
+      title: 'Campaigns',
+      description: 'Create email campaigns',
+      path: '/campaigns',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      gradient: 'from-violet-500 to-purple-600',
+    },
+    {
+      title: 'Master Control',
+      description: 'Advanced campaign management',
+      path: '/master',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+      gradient: 'from-orange-500 to-amber-600',
+    },
+    {
+      title: 'Templates',
+      description: 'Email template designer',
+      path: '/mail-templates',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      ),
+      gradient: 'from-pink-500 to-rose-600',
+    },
+    {
+      title: 'Workers',
+      description: 'Monitor email workers',
+      path: '/workers',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+      gradient: 'from-cyan-500 to-blue-600',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-12 mt-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Welcome Header */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-                  <img 
-                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjM0I4MkY2Ii8+CiAgPHBhdGggZD0iTTI1IDM1IEw1MCA1NSBMNzUgMzUgTDc1IDY1IEwyNSA2NSBaIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzMCIgcj0iOCIgZmlsbD0iIzEwQjk4MSIvPgo8L3N2Zz4=" 
-                    alt="Relyon CRM Logo" 
-                    className="h-10 w-10"
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                  Welcome to Relyon CRM
-                </h1>
-                <p className="text-gray-600 text-lg">
-                  Hello, <span className="font-semibold text-purple-600">{user?.name}</span>!
-                </p>
-                <p className="text-gray-500 mt-2">
-                  Your powerful email campaign management system
-                </p>
-              </div>
-              <div className="hidden md:block">
-                <div className="p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full">
-                  <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl">
+        {/* Header */}
+        <div className="glass-effect rounded-2xl p-4 sm:p-5 lg:p-6 mb-4 sm:mb-6 border border-white/20">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                Welcome back, <span className="text-blue-600">{user?.name || 'User'}</span>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">Enterprise Email Campaign Management</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 rounded-full border border-green-200">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-xs sm:text-sm text-green-700 font-medium">Online</span>
             </div>
           </div>
+        </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Email Verification */}
-            <Link
-              to="/email-verification"
-              className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
-            >
-              <div className="flex items-center mb-3">
-                <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-600 transition-colors">
-                  <svg className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="glass-effect rounded-xl p-3 sm:p-4 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 text-xs sm:text-sm font-medium">Total Campaigns</span>
+              <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Email Verification</h3>
-              <p className="text-gray-600 text-sm">Upload and verify email lists for deliverability</p>
-            </Link>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+          </div>
 
-            {/* SMTP Management */}
-            <Link
-              to="/smtp"
-              className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
-            >
-              <div className="flex items-center mb-3">
-                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-600 transition-colors">
-                  <svg className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                  </svg>
-                </div>
+          <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 text-xs sm:text-sm font-medium">Emails Sent</span>
+              <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">SMTP Servers</h3>
-              <p className="text-gray-600 text-sm">Configure and manage your SMTP accounts</p>
-            </Link>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+          </div>
 
-            {/* Campaigns */}
-            <Link
-              to="/campaigns"
-              className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
-            >
-              <div className="flex items-center mb-3">
-                <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-600 transition-colors">
-                  <svg className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
+          <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 text-xs sm:text-sm font-medium">Active SMTP</span>
+              <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Campaigns</h3>
-              <p className="text-gray-600 text-sm">Create and manage email campaigns</p>
-            </Link>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+          </div>
 
-            {/* Master Campaigns */}
-            <Link
-              to="/master"
-              className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
-            >
-              <div className="flex items-center mb-3">
-                <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-600 transition-colors">
-                  <svg className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                  </svg>
-                </div>
+          <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 text-xs sm:text-sm font-medium">Success Rate</span>
+              <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Master Campaigns</h3>
-              <p className="text-gray-600 text-sm">Advanced campaign management and tracking</p>
-            </Link>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0%</p>
+          </div>
+        </div>
 
-            {/* Mail Templates */}
-            <Link
-              to="/mail-templates"
-              className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
-            >
-              <div className="flex items-center mb-3">
-                <div className="p-2 bg-pink-100 rounded-lg group-hover:bg-pink-600 transition-colors">
-                  <svg className="w-6 h-6 text-pink-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Mail Templates</h3>
-              <p className="text-gray-600 text-sm">Design and save reusable email templates</p>
-            </Link>
-
-            {/* Workers - Admin Only */}
-            {user?.role === 'admin' && (
+        {/* Quick Actions */}
+        <div className="glass-effect rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {quickActions.map((action, index) => (
               <Link
-                to="/workers"
-                className="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all transform hover:scale-105 group"
+                key={index}
+                to={action.path}
+                className="group relative overflow-hidden bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/70 hover:shadow-xl transition-all duration-300"
               >
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg group-hover:bg-yellow-600 transition-colors">
-                    <svg className="w-6 h-6 text-yellow-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className={`p-2 sm:p-3 bg-gradient-to-br ${action.gradient} rounded-xl text-white group-hover:scale-110 transition-transform duration-300 shadow-lg flex-shrink-0`}>
+                    {action.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors truncate">
+                      {action.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{action.description}</p>
                   </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">Workers</h3>
-                <p className="text-gray-600 text-sm">Manage background job processors</p>
+                <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
               </Link>
-            )}
-          </div>
-
-          {/* Quick Stats */}
-          <div className="mt-6 bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Stats</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 mb-1">--</div>
-                <div className="text-gray-600 text-sm">Total Campaigns</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 mb-1">--</div>
-                <div className="text-gray-600 text-sm">Emails Sent</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 mb-1">--</div>
-                <div className="text-gray-600 text-sm">Verified Emails</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600 mb-1">--</div>
-                <div className="text-gray-600 text-sm">Active SMTP</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
