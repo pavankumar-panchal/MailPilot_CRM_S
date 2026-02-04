@@ -101,14 +101,22 @@ try {
     $statusRes = $conn->query("SELECT status, sent_emails, failed_emails FROM campaign_status WHERE campaign_id = $campaign_id");
     $statusRow = $statusRes ? $statusRes->fetch_assoc() : null;
 
-    $sent = (int)($statusRow['sent_emails'] ?? 0);
-    $failed = (int)($statusRow['failed_emails'] ?? 0);
-    // If mail_blaster exists, compute pending from its rows (retry-aware); otherwise use total - (sent+failed)
-    if ($mbTotal > 0) {
-        $pendRes = $conn->query("SELECT COUNT(*) AS pending FROM mail_blaster WHERE campaign_id = " . (int)$campaign_id . " AND (status IS NULL OR status = 'pending' OR (status='failed' AND attempt_count < 3))");
-        $pendRow = $pendRes ? $pendRes->fetch_assoc() : ['pending' => 0];
-        $pending = (int)$pendRow['pending'];
+    // CRITICAL: Count from mail_blaster table (source of truth)
+    // sent = success count, failed = attempt_count >= 5, pending = retryable (< 5 attempts)
+    if ($totalEmails > 0) {
+        $statsQuery = "SELECT 
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as sent_count,
+            SUM(CASE WHEN status = 'failed' AND attempt_count >= 5 THEN 1 ELSE 0 END) as failed_count,
+            SUM(CASE WHEN status IN ('pending', 'failed') AND attempt_count < 5 THEN 1 ELSE 0 END) as pending_count
+        FROM mail_blaster WHERE campaign_id = $campaign_id";
+        $statsRes = $conn->query($statsQuery);
+        $stats = $statsRes ? $statsRes->fetch_assoc() : ['sent_count' => 0, 'failed_count' => 0, 'pending_count' => 0];
+        $sent = (int)($stats['sent_count'] ?? 0);
+        $failed = (int)($stats['failed_count'] ?? 0);
+        $pending = (int)($stats['pending_count'] ?? 0);
     } else {
+        $sent = (int)($statusRow['sent_emails'] ?? 0);
+        $failed = (int)($statusRow['failed_emails'] ?? 0);
         $pending = max($totalEmails - ($sent + $failed), 0);
     }
 
@@ -232,12 +240,12 @@ try {
     }
 
     // Log the start
-    error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid - IMMEDIATE worker launch\n", 3, $logsDir . '/campaign_starts.log');
+    error_log("[" . date('Y-m-d H:i:s') . "] Started campaign $campaign_id with PID $pid\n", 3, $logsDir . '/campaign_starts.log');
 
     // Return immediately to frontend
     echo json_encode([
         'status' => 'started',
-        'message' => 'Campaign started - workers launching immediately (no cron wait)',
+        'message' => 'Campaign sending started in background',
         'campaign_id' => $campaign_id,
         'total_emails' => $totalEmails,
         'pending_emails' => $pending,

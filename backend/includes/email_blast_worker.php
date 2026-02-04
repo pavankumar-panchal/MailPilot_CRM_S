@@ -8,25 +8,33 @@
 
     error_reporting(E_ALL);
     ini_set('display_errors', 0); // Disable display in production
+    ini_set('log_errors', 0); // Disable logging in production
     set_time_limit(0);
 
     // Ensure consistent timezone for hour-based limits
     date_default_timezone_set('Asia/Kolkata');
 
-    // Worker debug logging with file output for debugging
-    define('DEBUG_LOG_FILE', __DIR__ . '/../logs/worker_debug_' . date('Y-m-d') . '.log');
+    // Worker debug logging (enable/disable here)
+    if (!defined('WORKER_LOG_ENABLED')) {
+        define('WORKER_LOG_ENABLED', false); // DISABLED
+    }
+    if (!defined('WORKER_LOG_FILE')) {
+        define('WORKER_LOG_FILE', __DIR__ . '/../logs/email_worker_' . date('Y-m-d') . '.log');
+    }
     function workerLog($msg) {
+        if (!WORKER_LOG_ENABLED) return;
+        $dir = dirname(WORKER_LOG_FILE);
+        if (!is_dir($dir)) {@mkdir($dir, 0777, true);}    
         $ts = date('Y-m-d H:i:s');
-        echo "[$ts] $msg\n"; // Echo to console
-        $log_dir = dirname(DEBUG_LOG_FILE);
-        if (!is_dir($log_dir)) {@mkdir($log_dir, 0777, true);}
-        @file_put_contents(DEBUG_LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
+        @file_put_contents(WORKER_LOG_FILE, "[$ts] $msg\n", FILE_APPEND);
+        echo "[$ts] $msg\n"; // Also echo to console
     }
 
     // Catch fatal errors
     register_shutdown_function(function() {
         $error = error_get_last();
         if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+            file_put_contents(__DIR__ . '/../logs/email_worker_fatal.log', '[' . date('Y-m-d H:i:s') . "] FATAL ERROR: {$error['message']} in {$error['file']}:{$error['line']}\n", FILE_APPEND);
             echo "[FATAL] {$error['message']} in {$error['file']}:{$error['line']}\n";
         }
     });
@@ -102,8 +110,8 @@
     workerLog('Server config: ' . json_encode($safeServer));
     }
 
-    $accounts = loadAllActiveAccountsForUser($conn, $GLOBALS['campaign_user_id']);
-    workerLog("Worker loaded " . count($accounts) . ' TOTAL accounts across ALL servers for user ' . $GLOBALS['campaign_user_id']);
+    $accounts = loadActiveAccountsForServer($conn, $server_id, $campaign_user_id);
+    workerLog("Server #$server_id loaded " . count($accounts) . ' accounts for user #' . $campaign_user_id);
 
     // Log queue state before entering loop - check correct source table
     if ($import_batch_id) {
@@ -118,20 +126,8 @@
         $eligibleCount = ($eligibleRes && $eligibleRes->num_rows) ? (int)$eligibleRes->fetch_assoc()['c'] : 0;
         workerLog("Server #$server_id: eligible_emails_from_csv=$eligibleCount");
     }
-    // CRITICAL: Empty status '' is treated as 'pending' (campaign init bug compatibility)
-    $pendingRes = $conn->query("SELECT COUNT(*) AS c FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', '') OR status IS NULL)");
+    $pendingRes = $conn->query("SELECT COUNT(*) AS c FROM mail_blaster WHERE campaign_id = $campaign_id AND status = 'pending'");
     $pendingCount = ($pendingRes && $pendingRes->num_rows) ? (int)$pendingRes->fetch_assoc()['c'] : 0;
-    
-    // Debug: check what statuses exist for this campaign
-    $statusRes = $conn->query("SELECT status, COUNT(*) as count FROM mail_blaster WHERE campaign_id = $campaign_id GROUP BY status");
-    if ($statusRes && $statusRes->num_rows > 0) {
-        $statusCounts = [];
-        while ($srow = $statusRes->fetch_assoc()) {
-            $statusCounts[] = $srow['status'] . '=' . $srow['count'];
-        }
-        workerLog("Server #$server_id: mail_blaster status breakdown: " . implode(', ', $statusCounts));
-    }
-    
     workerLog("Server #$server_id: eligible_emails=$eligibleCount pending_in_mail_blaster=$pendingCount");
 
     if (empty($accounts)) { 
@@ -143,14 +139,13 @@
     // Do not alter schema (no index/DDL changes at runtime)
     workerLog("Server #$server_id: Starting send loop for campaign #$campaign_id");
 
-    // PERFORMANCE: Create persistent SMTP connections per account (reuse across emails)
-    $smtp_connections = []; // key: account_id, value: PHPMailer instance
-
     $rotation_idx = 0;
     $send_count = 0;
     $loop_iter = 0;
     $consecutive_limit_checks = 0;
     $consecutive_empty_claims = 0; // Track consecutive failed claim attempts to handle locked rows
+    $consecutive_server_failures = 0; // Track server connection/auth failures for automatic failover
+    $max_server_failures = 5; // Switch to another server after 5 consecutive failures
     while (true) {
         $loop_iter++;
         // Abort immediately if campaign no longer exists (deleted)
@@ -185,30 +180,20 @@
     //         file_put_contents(__DIR__ . '/../logs/email_worker.log', '[' . date('Y-m-d H:i:s') . "] Server #$server_id: Loop iteration $loop_iter (send_count=$send_count)\n", FILE_APPEND);
         }
         
-        // Pick next eligible account in strict round-robin order
-        // Simple rotation ensures ALL accounts are used equally
+        // Pick next eligible account in strict order first
         $selected = null; $tries = 0; $count = count($accounts);
-        
-        // Start from a random offset to distribute load if multiple workers
-        if ($send_count === 0) {
-            $rotation_idx = mt_rand(0, $count - 1);
-            workerLog("Server #$server_id: Starting rotation at random index $rotation_idx (total accounts: $count)");
-        }
-        
         while ($tries < $count) {
             $idx = $rotation_idx % $count;
             $candidate = $accounts[$idx];
-            
-            // Check if this account is within limits
-            if (accountWithinLimits($conn, intval($candidate['id']))) {
+            if (accountWithinLimits($conn, intval($candidate['id']))) { 
                 $selected = $candidate;
-                workerLog("Server #$server_id: Selected account #{$candidate['id']} ({$candidate['email']}) [rotation $tries/$count]");
-                $rotation_idx = ($idx + 1) % $count; // Move to next for next iteration
-                $consecutive_limit_checks = 0;
-                break;
+                workerLog("Server #$server_id: Selected account #{$candidate['id']} ({$candidate['email']}) - within limits");
+                $rotation_idx = ($idx + 1) % $count; 
+                $consecutive_limit_checks = 0; // Reset counter when account found
+                break; 
             } else {
                 if ($tries === 0) {
-                    workerLog("Server #$server_id: Account #{$candidate['id']} ({$candidate['email']}) at limits, trying next...");
+                    workerLog("Server #$server_id: Account #{$candidate['id']} ({$candidate['email']}) at limits, checking next...");
                 }
             }
             $rotation_idx = ($idx + 1) % $count; 
@@ -216,13 +201,27 @@
         }
         
         if (!$selected) { 
-            // All SMTP accounts are at hourly/daily limits. Stop immediately to free DB connections.
-            workerLog("Server #$server_id: All accounts at limits; exiting");
-            $conn->close();
-            exit(0);
+            // All SMTP accounts are at hourly/daily limits temporarily
+            // Wait for limits to reset instead of exiting immediately
+            workerLog("Server #$server_id: All accounts at limits temporarily. Waiting 60s for limits to reset...");
+            sleep(60); // Wait 1 minute for hourly limit reset
+            
+            // Reload accounts and check again
+            $accounts = loadActiveAccountsForServer($conn, $server_id, $campaign_user_id);
+            if (empty($accounts)) {
+                workerLog("Server #$server_id: Still no accounts available after waiting. Exiting.");
+                $conn->close();
+                exit(0);
+            }
+            
+            // Reset rotation and continue trying
+            $rotation_idx = 0;
+            $consecutive_limit_checks = 0;
+            continue; // Retry account selection
         }
 
         // First try to pick up an existing pending/failed email (backlog) - prefer cross-server retry
+        workerLog("Server #$server_id: Checking for pending/retry emails...");
         try {
             $pending = fetchNextPending($conn, $campaign_id, $server_id);
         } catch (Exception $e) {
@@ -244,12 +243,15 @@
             workerLog("Server #$server_id: Assigned pending $to to account #{$selected['id']} ({$selected['email']})");
         } else {
             // No backlog: claim next email atomically only after we have an eligible account
+            workerLog("Server #$server_id: No pending emails, attempting to claim new email...");
             try {
                 $claimed = claimNextEmail($conn, $campaign_id, intval($selected['id']));
             } catch (Exception $e) {
                 workerLog("Server #$server_id: ERROR in claimNextEmail: " . $e->getMessage());
                 $claimed = null;
             }
+            
+            workerLog("Server #$server_id: claimNextEmail returned: " . ($claimed ? "SUCCESS" : "NULL"));
             if (!$claimed) {
                 $consecutive_empty_claims++;
                 
@@ -259,7 +261,7 @@
                     $batch_escaped = $conn->real_escape_string($import_batch_id);
                     $unclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM imported_recipients ir WHERE ir.import_batch_id = '$batch_escaped' AND ir.is_active = 1 AND ir.Emails IS NOT NULL AND ir.Emails <> '' AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails)");
                 } else {
-                    $unclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid)");
+                    $unclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.domain_status = 1 AND e.validation_status = 'valid' AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid)");
                 }
                 
                 $unclaimed = ($unclaimedCheck && $unclaimedCheck->num_rows > 0) ? intval($unclaimedCheck->fetch_assoc()['cnt']) : 0;
@@ -275,47 +277,48 @@
                 }
                 
                 // Check if there are emails remaining to process (already in queue)
-                // CRITICAL: Empty status '' is treated as 'pending' (campaign init bug compatibility)
-                $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND ((status IN ('pending', 'failed', '') OR status IS NULL) AND attempt_count < 5)");
+                $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed') AND attempt_count < 5)");
                 $remaining = ($remainingCheck && $remainingCheck->num_rows > 0) ? intval($remainingCheck->fetch_assoc()['cnt']) : 0;
                 
-                // Also check for actively processing emails (being handled by other workers)
-                $processingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND status = 'processing' AND updated_at > DATE_SUB(NOW(), INTERVAL 2 MINUTE)");
-                $processing = ($processingCheck && $processingCheck->num_rows > 0) ? intval($processingCheck->fetch_assoc()['cnt']) : 0;
-                
-                if ($remaining > 0 || $processing > 0) {
-                    // There ARE emails remaining/processing in queue
-                    if ($consecutive_empty_claims <= 3) {
-                        $wait_ms = min(50 * $consecutive_empty_claims, 200); // Reduced wait time for speed
-                        workerLog("Server #$server_id: $remaining pending + $processing processing. Retry #$consecutive_empty_claims/3. Waiting {$wait_ms}ms...");
+                if ($remaining > 0) {
+                    // There ARE emails remaining in queue, but they're locked by other workers
+                    // OR they're assigned to other servers via hash distribution
+                    // Keep retrying with exponential backoff
+                    if ($consecutive_empty_claims <= 30) { // Increased from 10 to 30
+                        $wait_ms = min(100 * $consecutive_empty_claims, 2000); // 100ms to 2000ms
+                        workerLog("Server #$server_id: $remaining emails still pending but not for this server yet. Retry attempt #$consecutive_empty_claims/30. Waiting {$wait_ms}ms...");
                         usleep($wait_ms * 1000);
                         continue; // Retry claiming
                     } else {
-                        // After 3 failed claims, check if queue is truly stuck
-                        workerLog("Server #$server_id: After 3 attempts: $remaining pending + $processing processing. Checking if truly stuck...");
-                        
-                        // Check if processing emails are stuck (older than 5 minutes)
-                        $stuckCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND status = 'processing' AND updated_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-                        $stuck = ($stuckCheck && $stuckCheck->num_rows > 0) ? intval($stuckCheck->fetch_assoc()['cnt']) : 0;
-                        
-                        if ($stuck > 0) {
-                            workerLog("Server #$server_id: Found $stuck stuck emails. Resetting them to pending...");
-                            $conn->query("UPDATE mail_blaster SET status = 'pending' WHERE campaign_id = $campaign_id AND status = 'processing' AND updated_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-                            $consecutive_empty_claims = 0;
-                            continue;
-                        }
-                        
-                        workerLog("Server #$server_id: No stuck emails. Other workers handling. Exiting gracefully.");
-                        break; // Exit worker
+                        // After 30 retries, take a longer break and reset counter (keep trying!)
+                        workerLog("Server #$server_id: $remaining emails pending. Taking 5s break then continuing...");
+                        sleep(5);
+                        $consecutive_empty_claims = 0;
+                        continue; // Keep trying, don't exit
                     }
                 } else {
-                    // No emails remaining - truly exhausted
-                    workerLog("Server #$server_id: No more emails to process. Queue truly exhausted (verified: $unclaimed unclaimed, $remaining pending).");
+                    // No emails remaining - check if ALL workers are done (not just this server)
+                    workerLog("Server #$server_id: No more emails for this server. Checking global status...");
+                    
+                    // Double-check: Are there emails assigned to OTHER servers still pending?
+                    $globalCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND status IN ('pending', 'failed', 'processing') AND attempt_count < 5");
+                    $globalPending = ($globalCheck && $globalCheck->num_rows > 0) ? intval($globalCheck->fetch_assoc()['cnt']) : 0;
+                    
+                    if ($globalPending > 0) {
+                        // Other servers are still working - wait and see if we get reassignments
+                        workerLog("Server #$server_id: $globalPending emails being processed by other servers. Waiting 10s before rechecking...");
+                        sleep(10);
+                        $consecutive_empty_claims = 0;
+                        continue; // Keep checking
+                    }
+                    
+                    // Truly no emails left anywhere
+                    workerLog("Server #$server_id: No more emails to process globally. Queue truly exhausted (verified: $unclaimed unclaimed, $remaining for this server, $globalPending globally).");
                     
                     // Check if campaign is completed and update status
                     checkCampaignCompletion($conn, $campaign_id);
                     
-                    break; // Exit worker
+                    break; // Exit worker only when truly nothing left
                 }
             }
             
@@ -327,20 +330,13 @@
         }
 
         try {
-            // CRITICAL: Fetch server config for this account dynamically (since we now use ALL accounts across ALL servers)
-            $accountServerId = isset($selected['smtp_server_id']) ? intval($selected['smtp_server_id']) : 0;
-            $serverConfigQuery = $conn->query("SELECT id as server_id, host, port, encryption, received_email FROM smtp_servers WHERE id = $accountServerId LIMIT 1");
-            if (!$serverConfigQuery || $serverConfigQuery->num_rows === 0) {
-                workerLog("Server #$server_id: ERROR - Server config not found for account #{$selected['id']} (server_id: $accountServerId). Skipping email.");
-                continue;
-            }
-            $dynamicServerConfig = $serverConfigQuery->fetch_assoc();
-            
-            // Use FAST persistent connection version
-            sendEmailFast($conn, $campaign_id, $to, $dynamicServerConfig, $selected, $campaign, $smtp_connections, $email_csv_list_id ?? null);
+            workerLog("Server #$server_id: Sending to $to via account #{$selected['id']} ({$selected['email']}) on {$server_config['host']}:{$server_config['port']}");
+            sendEmail($conn, $campaign_id, $to, $server_config, $selected, $campaign, $email_csv_list_id ?? null);
             $send_count++;
-            if ($send_count % 50 == 0) { workerLog("Server #$server_id: === Progress: $send_count emails sent ==="); }
-            // NO DELAY - Maximum speed with persistent connections
+            $consecutive_server_failures = 0; // Reset on success
+            workerLog("Server #$server_id: ✓ SUCCESS sent to $to via account #{$selected['id']} ({$selected['email']}) [total sent: $send_count]");
+            if ($send_count % 10 == 0) { workerLog("Server #$server_id: === Progress: $send_count emails sent ==="); }
+            usleep(50000); // OPTIMIZED: Reduced from 100ms to 50ms for faster throughput
         } catch (Exception $e) {
             // Ensure transaction is rolled back on any exception
             if ($conn->connect_errno === 0) {
@@ -357,6 +353,47 @@
                 // Don't record as failed, just continue to next email
                 $consecutive_empty_claims = 0; // Reset since we're making progress
                 continue;
+            }
+            
+            // Check if failure is server-related (connection/auth issues)
+            $error_msg = $e->getMessage();
+            $isServerFailure = (stripos($error_msg, 'connect') !== false || 
+                              stripos($error_msg, 'authenticate') !== false || 
+                              stripos($error_msg, 'login') !== false ||
+                              stripos($error_msg, 'timeout') !== false ||
+                              stripos($error_msg, 'timed out') !== false ||
+                              stripos($error_msg, 'connection refused') !== false);
+            
+            if ($isServerFailure) {
+                $consecutive_server_failures++;
+                workerLog("Server #$server_id: SERVER FAILURE ($consecutive_server_failures/$max_server_failures): " . $error_msg);
+                
+                // Switch to backup server if threshold reached
+                if ($consecutive_server_failures >= $max_server_failures) {
+                    workerLog("Server #$server_id: Max failures reached! Attempting server failover...");
+                    $backup = switchToBackupServer($conn, $server_id, $campaign_user_id);
+                    
+                    if ($backup) {
+                        // Switch to backup server
+                        $server_id = $backup['server_id'];
+                        $server_config = $backup;
+                        
+                        // Reload accounts from new server (with user filter)
+                        $accounts = loadActiveAccountsForServer($conn, $server_id, $campaign_user_id);
+                        if (!empty($accounts)) {
+                            workerLog("✓ Failover complete! Now using server #$server_id with " . count($accounts) . " accounts for user #$campaign_user_id");
+                            $rotation_idx = 0;
+                            $consecutive_server_failures = 0;
+                            continue; // Skip recording and retry with new server
+                        } else {
+                            workerLog("✗ Backup server #$server_id has no accounts available for user #$campaign_user_id");
+                        }
+                    }
+                    // If failover fails, continue with normal error handling below
+                }
+            } else {
+                // Not a server failure - reset counter
+                $consecutive_server_failures = 0;
             }
             
             // Check current attempt count
@@ -378,15 +415,6 @@
     // Mark stopped before exiting
     workerLog("Server #$server_id: Worker stopping after sending $send_count emails");
     
-    // Close all persistent SMTP connections
-    foreach ($smtp_connections as $account_id => $mail) {
-        try {
-            $mail->smtpClose();
-        } catch (Exception $e) {
-            // Ignore close errors
-        }
-    }
-    
     // Final verification: Check if there are still emails to process
     $finalUnclaimedCheck = null;
     $finalPendingCheck = null;
@@ -395,13 +423,12 @@
         $batch_escaped = $conn->real_escape_string($import_batch_id);
         $finalUnclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM imported_recipients ir WHERE ir.import_batch_id = '$batch_escaped' AND ir.is_active = 1 AND ir.Emails IS NOT NULL AND ir.Emails <> '' AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails)");
     } else {
-        $finalUnclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid)");
+        $finalUnclaimedCheck = $conn->query("SELECT COUNT(*) as cnt FROM emails e WHERE e.domain_status = 1 AND e.validation_status = 'valid' AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> '' $csv_list_filter AND NOT EXISTS (SELECT 1 FROM mail_blaster mb WHERE mb.campaign_id = $campaign_id AND mb.to_mail = e.raw_emailid)");
     }
     $finalUnclaimed = ($finalUnclaimedCheck && $finalUnclaimedCheck->num_rows > 0) ? intval($finalUnclaimedCheck->fetch_assoc()['cnt']) : 0;
     
     // Check emails in queue but not yet sent
-    // CRITICAL: Empty status '' is treated as 'pending' (campaign init bug compatibility)
-    $finalPendingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND ((status IN ('pending', 'failed', '') OR status IS NULL) AND attempt_count < 5)");
+    $finalPendingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed') AND attempt_count < 5)");
     $finalPending = ($finalPendingCheck && $finalPendingCheck->num_rows > 0) ? intval($finalPendingCheck->fetch_assoc()['cnt']) : 0;
     
     $finalTotal = $finalUnclaimed + $finalPending;
@@ -418,198 +445,6 @@
 
     $conn->close();
     exit(0);
-    
-    // FAST VERSION: Reuses SMTP connections across emails
-    function sendEmailFast($conn, $campaign_id, $to_email, $server, $account, $campaign, &$smtp_connections, $csv_list_id = null) {
-        if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) { throw new Exception("Invalid email: $to_email"); }
-        
-        // CRITICAL: Start transaction and lock the row IMMEDIATELY to prevent duplicates
-        $conn->query("START TRANSACTION");
-        
-        $to_escaped = $conn->real_escape_string($to_email);
-        
-        // Quick check if email already sent successfully (fast abort without lock)
-        $quickCheck = $conn->query("SELECT status FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' AND status = 'success' LIMIT 1");
-        if ($quickCheck && $quickCheck->num_rows > 0) {
-            $conn->query("ROLLBACK");
-            throw new Exception("Duplicate prevented: Email already sent successfully");
-        }
-        
-        // Lock the row and check detailed status
-        $conn->query("SET SESSION innodb_lock_wait_timeout = 1");
-        $checkExisting = $conn->query("SELECT status, smtpid, delivery_time, id FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
-        
-        if (!$checkExisting && $conn->errno == 1205) {
-            $conn->query("ROLLBACK");
-            throw new Exception("Lock timeout: Email being processed by another worker");
-        }
-        
-        if ($checkExisting && $checkExisting->num_rows > 0) {
-            $existing = $checkExisting->fetch_assoc();
-            $rowId = $existing['id'];
-            
-            if ($existing['status'] === 'success') {
-                $conn->query("ROLLBACK");
-                throw new Exception("Duplicate prevented: Email already sent successfully");
-            }
-            
-            if (($existing['status'] === 'pending' || $existing['status'] === 'processing') && $existing['smtpid'] != $account['id']) {
-                $deliveryTime = strtotime($existing['delivery_time']);
-                $timeDiff = time() - $deliveryTime;
-                if ($timeDiff < 60) {
-                    $conn->query("ROLLBACK");
-                    throw new Exception("Duplicate prevented: Email being processed by another worker");
-                }
-            }
-            
-            $conn->query("UPDATE mail_blaster SET smtpid = {$account['id']}, delivery_date = CURDATE(), delivery_time = NOW(), status = 'processing' WHERE id = $rowId AND campaign_id = " . intval($campaign_id));
-        } else {
-            $insertResult = $conn->query("INSERT IGNORE INTO mail_blaster (campaign_id, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, status, attempt_count) VALUES (" . intval($campaign_id) . ", '$to_escaped', " . ($csv_list_id ? intval($csv_list_id) : "NULL") . ", {$account['id']}, CURDATE(), NOW(), 'processing', 0)");
-            
-            if ($conn->affected_rows === 0) {
-                $conn->query("ROLLBACK");
-                throw new Exception("Duplicate prevented: Email already in queue");
-            }
-        }
-        
-        // Get or create persistent SMTP connection for this account
-        $account_id = $account['id'];
-        if (!isset($smtp_connections[$account_id]) || !$smtp_connections[$account_id]->smtpConnect()) {
-            // Create new connection
-            $mail = new PHPMailer(true);
-            $mail->isSMTP();
-            $mail->Host = $server['host'];
-            $mail->Port = $server['port'];
-            $mail->SMTPAuth = true;
-            $mail->Username = $account['email'];
-            $mail->Password = $account['password'];
-            $mail->Timeout = 5;
-            $mail->SMTPDebug = 0;
-            $mail->SMTPKeepAlive = true; // CRITICAL: Keep connection alive
-            if ($server['encryption'] === 'ssl') $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            elseif ($server['encryption'] === 'tls') $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->SMTPOptions = ['ssl' => ['verify_peer' => false,'verify_peer_name' => false]]; // Speed optimization
-            $mail->SMTPAutoTLS = false; // Speed optimization
-            
-            // Connect once
-            try {
-                $mail->smtpConnect();
-                $smtp_connections[$account_id] = $mail;
-            } catch (Exception $e) {
-                $conn->query("ROLLBACK");
-                throw new Exception("SMTP connection failed: " . $e->getMessage());
-            }
-        }
-        
-        $mail = $smtp_connections[$account_id];
-        
-        // Clear previous recipients
-        $mail->clearAddresses();
-        $mail->clearAttachments();
-        $mail->clearCustomHeaders();
-        
-        $mail->setFrom($account['email']);
-        
-        // Validate and sanitize email
-        $to_email = trim($to_email);
-        if (empty($to_email) || !filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
-            $conn->query("ROLLBACK");
-            throw new Exception("Invalid email format: $to_email");
-        }
-        
-        if (!$mail->addAddress($to_email)) {
-            $conn->query("ROLLBACK");
-            throw new Exception("Failed to add recipient: $to_email");
-        }
-        
-        $mail->Subject = $campaign['mail_subject'];
-        
-        // Process campaign body
-        $body = processCampaignBody($conn, $campaign, $to_email, $csv_list_id);
-        if (empty(trim($body))) {
-            $conn->query("ROLLBACK");
-            throw new Exception("Empty body after template processing");
-        }
-        
-        // Clean HTML
-        $body = preg_replace('/<span\s+style=["\']color:\s*rgb\([^)]+\);?["\']>([^<]*)<\/span>/i', '$1', $body);
-        $body = preg_replace('/<\/?span[^>]*>/i', '', $body);
-        $body = preg_replace('/^<p>(.*)<\/p>$/is', '$1', trim($body));
-        $body = str_replace(['<p>', '</p>'], ['', ''], $body);
-        $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        $detectedHtml = bodyLooksHtml($body);
-        $isHtml = (!empty($campaign['send_as_html'])) || $detectedHtml;
-        if (isset($campaign['template_id']) && intval($campaign['template_id']) > 0) {
-            $isHtml = true;
-        }
-        
-        $mail->isHTML($isHtml);
-        $mail->CharSet = 'UTF-8';
-        $mail->Encoding = 'base64';
-        $mail->XMailer = ' ';
-        
-        if ($isHtml) {
-            $mail->ContentType = 'text/html; charset=UTF-8';
-        } else {
-            $mail->ContentType = 'text/plain; charset=UTF-8';
-        }
-        
-        $mail->addCustomHeader('X-Priority','3');
-        $mail->addCustomHeader('Importance','Normal');
-        
-        if (!empty($campaign['reply_to'])) { 
-            $mail->clearReplyTos(); 
-            $mail->addReplyTo($campaign['reply_to']); 
-        } elseif (!empty($server['received_email'])) { 
-            $mail->clearReplyTos(); 
-            $mail->addReplyTo($server['received_email']); 
-        }
-        
-        if (!empty($campaign['attachment_path'])) {
-            $paths = preg_split('/[,\n\r]+/', (string)$campaign['attachment_path']);
-            foreach ($paths as $p) {
-                $p = trim($p);
-                if ($p === '') continue;
-                $resolved = resolve_mail_file_path($p);
-                if ($resolved && file_exists($resolved)) { 
-                    $mail->addAttachment($resolved); 
-                }
-            }
-        }
-        
-        list($processedBody, $embeddedCount) = embed_local_images($mail, $body);
-        
-        if ($embeddedCount > 0 && !$isHtml) { 
-            $mail->isHTML(true); 
-            $isHtml = true;
-        }
-        
-        if ($isHtml) {
-            $mail->Body = $processedBody;
-            $mail->AltBody = strip_tags($processedBody);
-            $mail->ContentType = 'text/html; charset=UTF-8';
-        } else {
-            $mail->isHTML(false);
-            $mail->Body = strip_tags($processedBody);
-            $mail->ContentType = 'text/plain; charset=UTF-8';
-        }
-        
-        // Send using existing connection
-        if (!$mail->send()) {
-            // Connection might be dead, remove it
-            unset($smtp_connections[$account_id]);
-            $conn->query("ROLLBACK");
-            throw new Exception($mail->ErrorInfo);
-        }
-        
-        // Update status to success
-        $srvId = intval($server['server_id'] ?? 0);
-        recordDelivery($conn, $account['id'], $srvId, $campaign_id, $to_email, 'success', null, $csv_list_id);
-        
-        // Commit transaction
-        $conn->query("COMMIT");
-    }
         
     function sendEmail($conn, $campaign_id, $to_email, $server, $account, $campaign, $csv_list_id = null) {
         if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) { throw new Exception("Invalid email: $to_email"); }
@@ -637,7 +472,7 @@
         }
         
         // LAYER 2: Lock the row and check detailed status (with timeout handling)
-        $conn->query("SET SESSION innodb_lock_wait_timeout = 1"); // OPTIMIZED: 1 second lock timeout for fast failure
+        $conn->query("SET SESSION innodb_lock_wait_timeout = 5"); // 5 second lock timeout
         $checkExisting = $conn->query("SELECT status, smtpid, delivery_time, id FROM mail_blaster WHERE campaign_id = " . intval($campaign_id) . " AND to_mail = '$to_escaped' LIMIT 1 FOR UPDATE");
         
         // Handle lock timeout (error 1205)
@@ -652,10 +487,9 @@
             $rowId = $existing['id'];
             
             // LAYER 3: Already sent successfully - ABORT (with row lock still held)
-            // NOTE: Handle both 'success' status and empty status with attempt_count > 0 (bug compatibility)
-            if ($existing['status'] === 'success' || ($existing['status'] === '' && $existing['attempt_count'] > 0)) {
+            if ($existing['status'] === 'success') {
                 $conn->query("ROLLBACK");
-                workerLog("✓ DUPLICATE PREVENTED (Layer 3): Email $to_email already sent successfully (row ID: $rowId, status: '{$existing['status']}', attempts: {$existing['attempt_count']})");
+                workerLog("✓ DUPLICATE PREVENTED (Layer 3): Email $to_email already sent successfully (row ID: $rowId)");
                 throw new Exception("Duplicate prevented: Email already sent successfully");
             }
             
@@ -698,32 +532,15 @@
         $mail->SMTPAuth = true;
         $mail->Username = $account['email'];
         $mail->Password = $account['password'];
-        $mail->Timeout = 5; // OPTIMIZED: 5 second timeout for faster failure detection
+        $mail->Timeout = 15; // OPTIMIZED: Reduced from 30 to 15 seconds for faster failure detection
         $mail->SMTPDebug = 0;
         $mail->SMTPKeepAlive = true; // OPTIMIZED: Enable connection reuse for speed
         if ($server['encryption'] === 'ssl') $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         elseif ($server['encryption'] === 'tls') $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->SMTPOptions = ['ssl' => ['verify_peer' => true,'verify_peer_name' => true,'allow_self_signed' => false,'crypto_method' => STREAM_CRYPTO_METHOD_TLS_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT]];
+        $mail->SMTPOptions = ['ssl' => ['verify_peer' => false,'verify_peer_name' => false,'allow_self_signed' => true,'crypto_method' => STREAM_CRYPTO_METHOD_TLS_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT]];
         $mail->SMTPAutoTLS = true;
         $mail->setFrom($account['email']);
-        
-        // CRITICAL: Validate and sanitize email before sending
-        $to_email = trim($to_email); // Remove whitespace/newlines
-        
-        // Check for empty email after trim
-        if (empty($to_email)) {
-            throw new Exception("Empty email address");
-        }
-        
-        // Validate email format
-        if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Invalid email format: $to_email");
-        }
-        
-        // Add recipient and verify success
-        if (!$mail->addAddress($to_email)) {
-            throw new Exception("Failed to add recipient: $to_email");
-        }
+        $mail->addAddress($to_email);
         $mail->Subject = $campaign['mail_subject'];
 
         // Process campaign body - use template merge if template_id is set, otherwise use regular mail_body
@@ -751,13 +568,6 @@
         // Auto-detect HTML if text contains tags; allow explicit send_as_html to force
         $detectedHtml = bodyLooksHtml($body);
         $isHtml = (!empty($campaign['send_as_html'])) || $detectedHtml;
-        
-        // CRITICAL: Force HTML mode for template-based emails
-        if (isset($campaign['template_id']) && intval($campaign['template_id']) > 0) {
-            $isHtml = true;
-            workerLog("Forcing HTML mode: template_id={$campaign['template_id']}");
-        }
-        
         $mail->isHTML($isHtml);
 
         // Then set charset and encoding
@@ -765,12 +575,9 @@
         $mail->Encoding = 'base64';
         $mail->XMailer = ' ';
         
-        // CRITICAL: Set proper MIME type to prevent email showing as attachment
+        // FORCE Content-Type for HTML emails (belt and suspenders approach)
         if ($isHtml) {
-            $mail->ContentType = 'text/html; charset=UTF-8';
-            workerLog("Set ContentType to text/html for HTML email");
-        } else {
-            $mail->ContentType = 'text/plain; charset=UTF-8';
+            $mail->ContentType = 'text/html';
         }
         
         // Add custom headers AFTER isHTML
@@ -803,19 +610,15 @@
         
         // Use PHPMailer's msgHTML to set HTML body and AltBody correctly
         if ($isHtml) {
-            // CRITICAL: Use Body instead of msgHTML to prevent attachment issues
-            // msgHTML can sometimes cause emails to be sent as attachments
-            $mail->Body = $processedBody;
-            $mail->AltBody = strip_tags($processedBody);
-            
-            // Ensure ContentType is set correctly
-            $mail->ContentType = 'text/html; charset=UTF-8';
-            workerLog("Set HTML body (length: " . strlen($processedBody) . " chars)");
+            $mail->msgHTML($processedBody);
+            // Ensure plain-text alternative exists
+            if (empty($mail->AltBody)) { $mail->AltBody = strip_tags($processedBody); }
+            // Force ContentType again after msgHTML (belt and suspenders)
+            $mail->ContentType = 'text/html';
         } else {
             // Plain text campaign
             $mail->isHTML(false);
             $mail->Body = strip_tags($processedBody);
-            $mail->ContentType = 'text/plain; charset=UTF-8';
         }
         
         workerLog("Final ContentType before send: {$mail->ContentType}");
@@ -827,16 +630,11 @@
             throw new Exception($mail->ErrorInfo);
         }
         
-        // CRITICAL: Update status to 'success' BEFORE commit to prevent race condition
-        // This ensures other workers see status='success' immediately after lock is released
+        // Send successful - now commit the transaction to release lock
+        $conn->query("COMMIT");
+        
         $srvId = intval($server['server_id'] ?? 0);
         recordDelivery($conn, $account['id'], $srvId, $campaign_id, $to_email, 'success', null, $csv_list_id);
-        
-        // Log successful send
-        workerLog("✓ Email sent successfully to $to_email via {$account['email']} at " . date('H:i:s'));
-        
-        // Now commit the transaction to release lock
-        $conn->query("COMMIT");
     }
 
     function resolve_mail_file_path($path) {
@@ -930,6 +728,12 @@
     }
 
     function recordDelivery($conn, $smtp_account_id, $server_id, $campaign_id, $to_email, $status, $error = null, $csv_list_id = null) {
+        // Skip writes if campaign is deleted (check early to avoid unnecessary queries)
+        $existsRes = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = " . intval($campaign_id) . " LIMIT 1");
+        if (!$existsRes || $existsRes->num_rows === 0) {
+            return;
+        }
+        
         // Fetch the SMTP email address from smtp_account_id
         $smtp_email = '';
         $emailQuery = $conn->query("SELECT email FROM smtp_accounts WHERE id = " . intval($smtp_account_id) . " LIMIT 1");
@@ -937,125 +741,114 @@
             $smtp_email = $emailQuery->fetch_assoc()['email'];
         }
         
-        // CRITICAL: First check if record exists to UPDATE instead of INSERT
+        // Check existing record status to avoid overwriting success with failure
+        $wasAlreadySuccess = false;
+        $existingAttempts = 0;
         $to_escaped = $conn->real_escape_string($to_email);
-        $existingCheck = $conn->query("SELECT id, attempt_count, status FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '$to_escaped' LIMIT 1");
+        $checkStmt = $conn->prepare("SELECT status, attempt_count FROM mail_blaster WHERE campaign_id = ? AND to_mail = ? LIMIT 1");
+        $checkStmt->bind_param("is", $campaign_id, $to_email);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        if ($checkResult->num_rows > 0) {
+            $existing = $checkResult->fetch_assoc();
+            $existingAttempts = intval($existing['attempt_count']);
+            if ($existing['status'] === 'success') {
+                $wasAlreadySuccess = true;
+                // Email already sent successfully - skip this duplicate attempt
+                workerLog("Skipping duplicate recordDelivery for $to_email - already marked success");
+                $checkStmt->close();
+                return;
+            }
+        }
+        $checkStmt->close();
         
-        if ($existingCheck && $existingCheck->num_rows > 0) {
-            // Record exists - UPDATE it (don't insert duplicate)
-            $existing = $existingCheck->fetch_assoc();
-            
-            // CRITICAL: Don't update if already successfully sent (prevent duplicate sends)
-            if ($existing['status'] === 'success' && $status === 'success') {
-                workerLog("DUPLICATE PREVENTED: Email $to_email already sent successfully (attempt #{$existing['attempt_count']}), skipping update");
-                return;
-            }
-            
-            $new_attempt_count = intval($existing['attempt_count']) + 1;
-            
-            $updateStmt = $conn->prepare("
-                UPDATE mail_blaster 
-                SET smtp_account_id = ?,
-                    smtp_email = ?,
-                    csv_list_id = ?,
-                    smtpid = ?,
-                    delivery_date = CURDATE(),
-                    delivery_time = NOW(),
-                    sent_at = IF(? = 'success', NOW(), sent_at),
-                    status = ?,
-                    error_message = ?,
-                    attempt_count = ?,
-                    user_id = ?
-                WHERE campaign_id = ? 
-                AND to_mail = ?
-                AND status != 'success'
-                LIMIT 1
-            ");
-            
-            $error_msg = ($status === 'failed' && $error) ? substr($error, 0, 500) : null;
-            $updateStmt->bind_param("isissssiiis",
-                $smtp_account_id,
-                $smtp_email,
-                $csv_list_id,
-                $smtp_account_id,
-                $status,
-                $status,
-                $error_msg,
-                $new_attempt_count,
-                $GLOBALS['campaign_user_id'],
-                $campaign_id,
-                $to_email
-            );
-            
-            $updateStmt->execute();
-            $affected = $updateStmt->affected_rows;
-            $updateStmt->close();
-            
-            if ($affected > 0) {
-                workerLog("Updated existing mail_blaster record for $to_email (attempt #$new_attempt_count, status: $status)");
-            } else {
-                workerLog("DUPLICATE PREVENTED: Email $to_email already marked as success, update skipped");
-            }
-            
-            $wasAlreadySuccess = false; // NEW record, so not a duplicate success
-        } else {
-            // Record doesn't exist - INSERT new record
-            $stmt = $conn->prepare("
-                INSERT INTO mail_blaster 
-                    (campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, sent_at, status, error_message, attempt_count, user_id) 
-                VALUES 
-                    (?, ?, ?, ?, ?, ?, CURDATE(), NOW(), IF(? = 'success', NOW(), NULL), ?, ?, 1, ?)
-            ");
-            
-            // Skip writes if campaign is deleted
-            $existsRes = $conn->query("SELECT 1 FROM campaign_master WHERE campaign_id = " . intval($campaign_id) . " LIMIT 1");
-            if (!$existsRes || $existsRes->num_rows === 0) {
-                return;
-            }
-            
-            // Get campaign user_id for tracking
-            $campaign_user_id = isset($GLOBALS['campaign_user_id']) ? intval($GLOBALS['campaign_user_id']) : 0;
-            
-            $error_msg = ($status === 'failed' && $error) ? substr($error, 0, 500) : null;
-            
-            // Bind parameters: campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, status (for sent_at), status, error_message, user_id
-            $stmt->bind_param("iissiisssi", 
-                $campaign_id, 
-                $smtp_account_id, 
-                $smtp_email, 
-                $to_email, 
-                $csv_list_id, 
-                $smtp_account_id, 
-                $status,
-                $status, 
-                $error_msg, 
-                $campaign_user_id
-            );
-            $stmt->execute();
-            $stmt->close();
-            
-            workerLog("Inserted new mail_blaster record for $to_email (status: $status)");
+        // Get campaign user_id for tracking
+        $campaign_user_id = isset($GLOBALS['campaign_user_id']) ? intval($GLOBALS['campaign_user_id']) : 0;
+        
+        // OPTIMIZED: Update existing record instead of inserting duplicates - reduces DB storage
+        // ON DUPLICATE KEY UPDATE ensures single record per campaign+email combination
+        // REQUIRES: UNIQUE KEY unique_campaign_email (campaign_id, to_mail) on mail_blaster table
+        // attempt_count: starts at 1, max 5 attempts with different SMTP accounts
+        $stmt = $conn->prepare("
+            INSERT INTO mail_blaster 
+                (campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, status, error_message, attempt_count, user_id) 
+            VALUES 
+                (?, ?, ?, ?, ?, ?, CURDATE(), NOW(), ?, ?, 1, ?) 
+            ON DUPLICATE KEY UPDATE 
+                smtp_account_id = VALUES(smtp_account_id),
+                smtp_email = VALUES(smtp_email),
+                csv_list_id = VALUES(csv_list_id), 
+                smtpid = VALUES(smtpid), 
+                delivery_date = VALUES(delivery_date), 
+                delivery_time = VALUES(delivery_time), 
+                status = VALUES(status),
+                error_message = IF(VALUES(status) = 'success', NULL, CONCAT('[Attempt ', mail_blaster.attempt_count + 1, '] ', VALUES(error_message))),
+                attempt_count = LEAST(mail_blaster.attempt_count + 1, 5),
+                user_id = VALUES(user_id)
+        ");
+        
+        // Bind parameters: campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, status, error_message, user_id
+        $stmt->bind_param("iissiissi", 
+            $campaign_id, 
+            $smtp_account_id, 
+            $smtp_email,
+            $to_email, 
+            $csv_list_id, 
+            $smtp_account_id, 
+            $status, 
+            $error, 
+            $campaign_user_id
+        );
+        $stmt->execute();
+        $affectedRows = $stmt->affected_rows;
+        $stmt->close();
+        
+        // Log update vs insert for debugging
+        if ($affectedRows === 1) {
+            workerLog("Inserted new record for $to_email with status=$status");
+        } elseif ($affectedRows === 2) {
+            workerLog("Updated existing record for $to_email: attempts=" . ($existingAttempts + 1) . ", status=$status");
         }
         
-        // Only increment counters for NEW successful sends (not updates)
-        if ($status === 'success') {
+        // Only increment counters for NEW successful sends (not retries of already-successful emails)
+        if ($status === 'success' && !$wasAlreadySuccess) {
+            // Update SMTP account counters
             $conn->query("UPDATE smtp_accounts SET sent_today = sent_today + 1, total_sent = total_sent + 1 WHERE id = $smtp_account_id");
-            $usage_date = date('Y-m-d'); $usage_hour = (int)date('G'); $now = date('Y-m-d H:i:s');
-            // Increment hourly usage, then hard-cap to hourly_limit to avoid > limit due to race conditions
-            $conn->query("INSERT INTO smtp_usage (smtp_id,date,hour,timestamp,emails_sent) VALUES ($smtp_account_id,'$usage_date',$usage_hour,'$now',1) ON DUPLICATE KEY UPDATE emails_sent = emails_sent + 1, timestamp = VALUES(timestamp)");
-                    // Only clamp when an explicit hourly_limit is configured (>0)
-                    $conn->query("UPDATE smtp_usage su JOIN smtp_accounts sa ON sa.id = $smtp_account_id 
-                                                SET su.emails_sent = LEAST(su.emails_sent, sa.hourly_limit)
-                                                WHERE su.smtp_id = $smtp_account_id 
-                                                    AND su.date = '$usage_date' AND su.hour = $usage_hour
-                                                    AND sa.hourly_limit > 0");
+            
+            // OPTIMIZED: Update existing hourly record instead of creating duplicates - reduces DB storage
+            // Uses ON DUPLICATE KEY UPDATE to increment counter in single row per (smtp_id, date, hour, user_id)
+            $usage_date = date('Y-m-d'); 
+            $usage_hour = (int)date('G'); 
+            $now = date('Y-m-d H:i:s');
+            
+            // Ensure smtp_usage has unique key on (smtp_id, date, hour, user_id) for proper updates
+            $conn->query("
+                INSERT INTO smtp_usage (smtp_id, date, hour, timestamp, emails_sent, user_id) 
+                VALUES ($smtp_account_id, '$usage_date', $usage_hour, '$now', 1, $campaign_user_id) 
+                ON DUPLICATE KEY UPDATE 
+                    emails_sent = emails_sent + 1, 
+                    timestamp = VALUES(timestamp)
+            ");
+            
+            // Safety cap: Prevent counter from exceeding hourly_limit (handles race conditions)
+            // Only applies when hourly_limit > 0 (not unlimited)
+            $conn->query("
+                UPDATE smtp_usage su 
+                JOIN smtp_accounts sa ON sa.id = $smtp_account_id 
+                SET su.emails_sent = LEAST(su.emails_sent, sa.hourly_limit)
+                WHERE su.smtp_id = $smtp_account_id 
+                    AND su.date = '$usage_date' 
+                    AND su.hour = $usage_hour
+                    AND su.user_id = $campaign_user_id
+                    AND sa.hourly_limit > 0
+            ");
+            
+            workerLog("Updated smtp_usage: smtp_id=$smtp_account_id, hour=$usage_hour, user_id=$campaign_user_id");
         }
         
-        // Check if campaign is completed after EVERY email (success or failed)
-        // This ensures completion is detected even if last emails fail
-        if (($status === 'success' && !$wasAlreadySuccess) || $status === 'failed') {
-            checkCampaignCompletion($conn, $campaign_id);
-        }
+        // CRITICAL: Check campaign completion after EVERY delivery to update pending count in real-time
+        // This ensures the UI shows accurate counts and campaign completes when all retries exhausted
+        checkCampaignCompletion($conn, $campaign_id);
         
         // Update SMTP health
         if ($status === 'success') {
@@ -1069,36 +862,23 @@
                     updated_at = NOW()");
         } else {
             // Track failure and update health status
-            // CRITICAL: Categorize errors - don't penalize SMTP for bad email data!
             $error_type = 'unknown';
-            $is_data_error = false; // Flag for invalid email data (not SMTP's fault)
-            
-            if ($error) {
-                if (stripos($error, 'Invalid email') !== false || stripos($error, 'Empty email') !== false) {
-                    $error_type = 'invalid_email';
-                    $is_data_error = true; // Don't blame SMTP for bad data
-                } elseif (stripos($error, 'Failed to add recipient') !== false) {
-                    $error_type = 'recipient_error';
-                    $is_data_error = true; // Don't blame SMTP for bad recipient
-                } elseif (stripos($error, 'authenticate') !== false || stripos($error, 'login') !== false) {
-                    $error_type = 'auth_failed';
-                } elseif (stripos($error, 'connect') !== false) {
-                    $error_type = 'connection_failed';
-                } elseif (stripos($error, 'timeout') !== false || stripos($error, 'timed out') !== false) {
-                    $error_type = 'timeout';
-                }
+            if ($error && (stripos($error, 'authenticate') !== false || stripos($error, 'login') !== false)) {
+                $error_type = 'auth_failed';
+            } elseif ($error && stripos($error, 'connect') !== false) {
+                $error_type = 'connection_failed';
+            } elseif ($error && (stripos($error, 'timeout') !== false || stripos($error, 'timed out') !== false)) {
+                $error_type = 'timeout';
             }
             
-            // Only update SMTP health if this is a real SMTP error (not bad data)
-            if (!$is_data_error) {
-                $safe_error = $conn->real_escape_string(substr($error, 0, 500));
-                $conn->query("INSERT INTO smtp_health (smtp_id, health, consecutive_failures, last_failure_at, last_error_type, last_error_message, updated_at) 
-                    VALUES ($smtp_account_id, 'healthy', 1, NOW(), '$error_type', '$safe_error', NOW())
-                    ON DUPLICATE KEY UPDATE 
-                        consecutive_failures = consecutive_failures + 1,
-                        last_failure_at = NOW(),
-                        last_error_type = '$error_type',
-                        last_error_message = '$safe_error',
+            $safe_error = $conn->real_escape_string(substr($error, 0, 500));
+            $conn->query("INSERT INTO smtp_health (smtp_id, health, consecutive_failures, last_failure_at, last_error_type, last_error_message, updated_at) 
+                VALUES ($smtp_account_id, 'healthy', 1, NOW(), '$error_type', '$safe_error', NOW())
+                ON DUPLICATE KEY UPDATE 
+                    consecutive_failures = consecutive_failures + 1,
+                    last_failure_at = NOW(),
+                    last_error_type = '$error_type',
+                    last_error_message = '$safe_error',
                     health = CASE 
                         WHEN consecutive_failures + 1 >= 15 THEN 'suspended'
                         WHEN consecutive_failures + 1 >= 8 THEN 'degraded'
@@ -1109,10 +889,6 @@
                         ELSE suspend_until
                     END,
                     updated_at = NOW()"); // OPTIMIZED: Increased thresholds (15/8 vs 10/5) and reduced suspension (30min vs 1hr)
-            } else {
-                // Log data error but don't penalize SMTP
-                workerLog("Data error (not SMTP fault): $error_type - SMTP health not affected");
-            }
         }
     }
 
@@ -1143,65 +919,47 @@
         return true;
     }
 
-    function loadAllActiveAccountsForUser($conn, $user_id) {
-        // Load ALL healthy SMTP accounts across ALL servers for this user
-        // This ensures fair distribution across all 35+ accounts, not just one server's accounts
-        $accounts = [];
-        $user_filter = $user_id > 0 ? " AND sa.user_id = $user_id" : "";
-        workerLog("loadAllActiveAccountsForUser: user_id=$user_id - loading ALL accounts across ALL servers");
+    function switchToBackupServer($conn, $current_server_id, $campaign_user_id) {
+        workerLog("Switching from failed server #$current_server_id to backup server...");
         
-        $healthyRes = $conn->query("
-            SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, sa.sent_today, sa.total_sent, sa.smtp_server_id 
-            FROM smtp_accounts sa
-            LEFT JOIN smtp_health sh ON sa.id = sh.smtp_id
-            INNER JOIN smtp_servers ss ON sa.smtp_server_id = ss.id
-            WHERE sa.is_active = 1
-            AND ss.is_active = 1
-            $user_filter
-            AND (sh.health IS NULL OR sh.health = 'healthy' OR (sh.health = 'suspended' AND sh.suspend_until < NOW()))
-            ORDER BY sa.id ASC
-        ");
+        // Get all active servers for this user EXCEPT the failed one
+        $query = "SELECT ss.id, ss.name, ss.host, ss.port, ss.encryption, ss.received_email 
+            FROM smtp_servers ss 
+            WHERE ss.is_active = 1 
+            AND ss.id != $current_server_id";
         
-        if ($healthyRes) {
-            while ($r = $healthyRes->fetch_assoc()) $accounts[] = $r;
-            if (count($accounts) > 0) {
-                workerLog("Loaded " . count($accounts) . " healthy accounts across ALL servers for user #$user_id");
-            }
+        if ($campaign_user_id > 0) {
+            $query .= " AND EXISTS (
+                SELECT 1 FROM smtp_accounts sa 
+                WHERE sa.smtp_server_id = ss.id 
+                AND sa.user_id = $campaign_user_id 
+                AND sa.is_active = 1
+            )";
         }
         
-        // If no healthy accounts available, load degraded accounts as fallback
-        if (empty($accounts)) {
-            workerLog("No healthy accounts found for user #$user_id, falling back to degraded accounts");
-            $degradedRes = $conn->query("
-                SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, sa.sent_today, sa.total_sent, sa.smtp_server_id 
-                FROM smtp_accounts sa
-                INNER JOIN smtp_health sh ON sa.id = sh.smtp_id
-                INNER JOIN smtp_servers ss ON sa.smtp_server_id = ss.id
-                WHERE sa.is_active = 1
-                AND ss.is_active = 1
-                $user_filter
-                AND sh.health = 'degraded'
-                ORDER BY sa.id ASC
-            ");
-            
-            if ($degradedRes) {
-                while ($r = $degradedRes->fetch_assoc()) $accounts[] = $r;
-                if (count($accounts) > 0) {
-                    workerLog("Loaded " . count($accounts) . " degraded accounts for user #$user_id");
-                } else {
-                    workerLog("No accounts found at all for user #$user_id");
-                }
-            }
+        $query .= " ORDER BY ss.id ASC LIMIT 1";
+        
+        $result = $conn->query($query);
+        if ($result && $result->num_rows > 0) {
+            $server = $result->fetch_assoc();
+            workerLog("✓ Switched to backup server #{$server['id']} ({$server['name']})");
+            return [
+                'server_id' => (int)$server['id'],
+                'host' => $server['host'],
+                'port' => $server['port'],
+                'encryption' => $server['encryption'],
+                'received_email' => $server['received_email']
+            ];
         }
         
-        return $accounts;
+        workerLog("✗ No backup servers available");
+        return null;
     }
 
     function loadActiveAccountsForServer($conn, $server_id, $user_id = 0) {
-        // First try to load healthy accounts only
+        // First try to load healthy accounts only - FILTERED BY USER
         $accounts = [];
-        $user_filter = $user_id > 0 ? " AND sa.user_id = $user_id" : "";
-        workerLog("loadActiveAccountsForServer: server_id=$server_id, user_id=$user_id");
+        $user_filter = ($user_id > 0) ? " AND sa.user_id = $user_id" : "";
         
         $healthyRes = $conn->query("
             SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, sa.sent_today, sa.total_sent 
@@ -1216,14 +974,11 @@
         
         if ($healthyRes) {
             while ($r = $healthyRes->fetch_assoc()) $accounts[] = $r;
-            if (count($accounts) > 0) {
-                workerLog("Loaded " . count($accounts) . " healthy accounts for server #$server_id");
-            }
         }
         
         // If no healthy accounts available, load degraded accounts as fallback
         if (empty($accounts)) {
-            workerLog("No healthy accounts found for server #$server_id, falling back to degraded accounts");
+            workerLog("No healthy accounts found for server #$server_id" . ($user_id > 0 ? " (user #$user_id)" : "") . ", falling back to degraded accounts");
             $degradedRes = $conn->query("
                 SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, sa.sent_today, sa.total_sent 
                 FROM smtp_accounts sa
@@ -1237,12 +992,11 @@
             
             if ($degradedRes) {
                 while ($r = $degradedRes->fetch_assoc()) $accounts[] = $r;
-                if (count($accounts) > 0) {
-                    workerLog("Loaded " . count($accounts) . " degraded accounts for server #$server_id");
-                } else {
-                    workerLog("No degraded accounts found either. Total accounts for server: 0");
-                }
             }
+        }
+        
+        if ($user_id > 0) {
+            workerLog("Loaded " . count($accounts) . " accounts for server #$server_id filtered by user #$user_id");
         }
         
         return $accounts;
@@ -1272,13 +1026,49 @@
         // Start transaction for atomic claim
         $conn->query("START TRANSACTION");
         
-        // Pick next eligible email that's NOT already in mail_blaster
+        // PRIORITY 1: Try to claim FAILED emails that need retry (attempt_count < 5)
+        workerLog("claimNextEmail: First checking for failed emails that need retry...");
+        $retryRes = $conn->query("SELECT to_mail, csv_list_id, attempt_count, error_message 
+            FROM mail_blaster 
+            WHERE campaign_id = $campaign_id 
+            AND status = 'failed' 
+            AND attempt_count < 5
+            ORDER BY attempt_count ASC, id ASC
+            LIMIT 1 FOR UPDATE");
+        
+        if ($retryRes && $retryRes->num_rows > 0) {
+            $retryRow = $retryRes->fetch_assoc();
+            $to_mail = $retryRow['to_mail'];
+            $csv_list_id = $retryRow['csv_list_id'];
+            $prev_attempt = intval($retryRow['attempt_count']);
+            workerLog("claimNextEmail: Found failed email for retry: $to_mail (previous attempts: $prev_attempt)");
+            
+            // Update to pending status so it will be retried
+            $to_escaped = $conn->real_escape_string($to_mail);
+            $conn->query("UPDATE mail_blaster 
+                SET status = 'pending', 
+                    smtpid = $smtp_account_id
+                WHERE campaign_id = $campaign_id 
+                AND to_mail = '$to_escaped'");
+            
+            $conn->query("COMMIT");
+            
+            return [
+                'to_mail' => $to_mail,
+                'csv_list_id' => $csv_list_id,
+                'is_retry' => true,
+                'attempt_count' => $prev_attempt
+            ];
+        }
+        
+        // PRIORITY 2: Pick next NEW email that's NOT in mail_blaster yet
         // Use import_batch_id to determine source table
-        $offset = 0; // NO RANDOM OFFSET - Sequential claiming is faster
+        $offset = mt_rand(0, 999);
         
         if ($import_batch_id) {
-            // Fetch from imported_recipients table (Excel campaigns) - FETCH ALL EMAILS (no validation filter)
+            // Fetch from imported_recipients table
             $batch_escaped = $conn->real_escape_string($import_batch_id);
+            workerLog("claimNextEmail: Executing SELECT from imported_recipients (offset=$offset)");
             $res = $conn->query("SELECT ir.id, ir.Emails AS to_mail, '$import_batch_id' AS import_batch_id 
                 FROM imported_recipients ir
                 WHERE ir.Emails IS NOT NULL 
@@ -1292,14 +1082,15 @@
                 )
                 ORDER BY ir.id ASC 
                 LIMIT 1 OFFSET $offset LOCK IN SHARE MODE");
+            workerLog("claimNextEmail: Query result: " . ($res ? "SUCCESS" : "FAILED") . " rows=" . ($res ? $res->num_rows : 0) . " error=" . $conn->error);
         } else {
-            // Fetch from emails table (CSV campaigns) - ONLY VALID EMAILS
+            // Fetch from emails table (original CSV logic)
             $res = $conn->query("SELECT e.id, e.raw_emailid AS to_mail, e.csv_list_id 
                 FROM emails e 
-                WHERE e.raw_emailid IS NOT NULL 
+                WHERE e.domain_status = 1 
+                AND e.validation_status = 'valid' 
+                AND e.raw_emailid IS NOT NULL 
                 AND e.raw_emailid <> ''
-                AND e.domain_status = 1
-                AND e.validation_status = 'valid'
                 $csv_list_filter
                 AND NOT EXISTS (
                     SELECT 1 FROM mail_blaster mb 
@@ -1312,12 +1103,13 @@
         }
             
         if (!$res || $res->num_rows === 0) {
-            // No retry needed since offset=0
-            if (false && $offset > 0) {
+            workerLog("claimNextEmail: First attempt returned no rows, checking if we should retry without offset (offset=$offset)");
+            // If our offset range is exhausted, try from beginning without offset
+            if ($offset > 0) {
                 workerLog("claimNextEmail: Retrying from beginning (offset=0)");
                 if ($import_batch_id) {
-                    // Excel campaigns - fetch ALL emails without validation filtering
                     $batch_escaped = $conn->real_escape_string($import_batch_id);
+                    workerLog("claimNextEmail: Retry SELECT from imported_recipients (offset=0)");
                     $res = $conn->query("SELECT ir.id, ir.Emails AS to_mail, '$import_batch_id' AS import_batch_id 
                         FROM imported_recipients ir
                         WHERE ir.Emails IS NOT NULL 
@@ -1331,13 +1123,14 @@
                         )
                         ORDER BY ir.id ASC 
                         LIMIT 1 LOCK IN SHARE MODE");
+                    workerLog("claimNextEmail: Retry result: " . ($res ? "SUCCESS" : "FAILED") . " rows=" . ($res ? $res->num_rows : 0) . " error=" . $conn->error);
                 } else {
                     $res = $conn->query("SELECT e.id, e.raw_emailid AS to_mail, e.csv_list_id 
                         FROM emails e 
-                        WHERE e.raw_emailid IS NOT NULL 
+                        WHERE e.domain_status = 1 
+                        AND e.validation_status = 'valid' 
+                        AND e.raw_emailid IS NOT NULL 
                         AND e.raw_emailid <> ''
-                        AND e.domain_status = 1
-                        AND e.validation_status = 'valid'
                         $csv_list_filter
                         AND NOT EXISTS (
                             SELECT 1 FROM mail_blaster mb 
@@ -1357,19 +1150,22 @@
             }
         }
         
+        workerLog("claimNextEmail: Found row, fetching data...");
         $row = $res->fetch_assoc();
         $to = $conn->real_escape_string($row['to_mail']);
         $email_csv_list_id = isset($row['csv_list_id']) ? intval($row['csv_list_id']) : 'NULL';
         $email_import_batch = isset($row['import_batch_id']) ? "'" . $conn->real_escape_string($row['import_batch_id']) . "'" : 'NULL';
+        workerLog("claimNextEmail: attempting to claim $to (email.id={$row['id']}, csv_list_id=$email_csv_list_id, import_batch_id=$email_import_batch, depth=$depth)");
         
         // Double-check: does this email already exist in mail_blaster for this campaign?
-        $doubleCheck = $conn->query("SELECT id, status, attempt_count, smtpid FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '$to' LIMIT 1 FOR UPDATE");
+        workerLog("claimNextEmail: Double-checking if $to already exists in mail_blaster...");
+        $doubleCheck = $conn->query("SELECT id, status, attempt_count FROM mail_blaster WHERE campaign_id = $campaign_id AND to_mail = '$to' LIMIT 1 FOR UPDATE");
         workerLog("claimNextEmail: Double-check result: " . ($doubleCheck ? $doubleCheck->num_rows : 0) . " rows");
         if ($doubleCheck && $doubleCheck->num_rows > 0) {
-            // Already claimed by another worker or already sent - rollback and try next
+            // Already claimed by another worker - rollback and try next
             $existing = $doubleCheck->fetch_assoc();
             $conn->query("ROLLBACK");
-            workerLog("claimNextEmail: DUPLICATE PREVENTED - $to already in mail_blaster (id={$existing['id']}, status={$existing['status']}, smtpid={$existing['smtpid']}) - seeking next (depth=$depth)");
+            workerLog("claimNextEmail: $to already claimed (status={$existing['status']}) - seeking next (depth=$depth)");
             if ($depth > 50) { 
                 workerLog("claimNextEmail: depth limit reached (depth=$depth), giving up"); 
                 return null; 
@@ -1378,29 +1174,42 @@
         }
         
         // Insert to claim this email (csv_list_id will be NULL for imported_recipients)
+        workerLog("claimNextEmail: Inserting into mail_blaster to claim $to...");
+        workerLog("claimNextEmail: Connection status: " . ($conn->ping() ? "ALIVE" : "DEAD"));
+        
         try {
+            workerLog("claimNextEmail: Preparing INSERT statement...");
+            // Start attempt_count at 1 (not 0) to properly track retry attempts
             $stmt = $conn->prepare("INSERT IGNORE INTO mail_blaster (campaign_id,to_mail,csv_list_id,smtpid,delivery_date,delivery_time,status,error_message,attempt_count) 
-                VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 'pending', NULL, 0)");
+                VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 'pending', NULL, 1)");
             
             if (!$stmt) {
+                workerLog("claimNextEmail: Prepare failed: " . $conn->error);
                 $conn->query("ROLLBACK");
                 return null;
             }
             
+            workerLog("claimNextEmail: Binding parameters...");
             $csv_list_for_bind = ($email_csv_list_id === 'NULL') ? null : $email_csv_list_id;
             $stmt->bind_param("isii", $campaign_id, $to, $csv_list_for_bind, $smtp_account_id);
             
+            workerLog("claimNextEmail: Executing statement...");
             $insertResult = $stmt->execute();
             $affectedRows = $stmt->affected_rows;
             $stmt->close();
+            workerLog("claimNextEmail: Statement executed! affected_rows=$affectedRows");
         } catch (Exception $e) {
+            workerLog("claimNextEmail: EXCEPTION during INSERT: " . $e->getMessage());
             $conn->query("ROLLBACK");
             return null;
         } catch (Error $e) {
+            workerLog("claimNextEmail: PHP ERROR during INSERT: " . $e->getMessage());
             $conn->query("ROLLBACK");
             return null;
         }
         
+        workerLog("claimNextEmail: Insert result: " . ($insertResult ? "SUCCESS" : "FAILED") . " affected_rows=$affectedRows error=" . $conn->error . " errno=" . $conn->errno);
+                
         // With INSERT IGNORE, if affected_rows = 0, it means duplicate was ignored
         if ($affectedRows === 0) {
             $conn->query("ROLLBACK");
@@ -1430,7 +1239,9 @@
         }
         
         // Commit the transaction - we successfully claimed this email
+        workerLog("claimNextEmail: Committing transaction...");
         $conn->query("COMMIT");
+        workerLog("claimNextEmail: ✓ successfully claimed $to");
         return [
             'id' => $row['id'], 
             'to_mail' => $row['to_mail'], 
@@ -1441,9 +1252,7 @@
 
     function fetchNextPending($conn, $campaign_id, $server_id) {
         // Quick check: if no pending emails exist at all, return immediately
-        // CRITICAL: Empty status '' is treated as 'pending' ONLY if attempt_count = 0 (campaign init bug compatibility)
-        // Exclude already-sent emails (empty status with attempt_count > 0)
-        $quickCheck = $conn->query("SELECT 1 FROM mail_blaster WHERE campaign_id = $campaign_id AND ((status IN ('pending', 'failed') OR (status = '' AND attempt_count = 0) OR status IS NULL) AND status != 'success') AND attempt_count < 5 LIMIT 1");
+        $quickCheck = $conn->query("SELECT 1 FROM mail_blaster WHERE campaign_id = $campaign_id AND status IN ('pending', 'failed') AND attempt_count < 5 LIMIT 1");
         if (!$quickCheck || $quickCheck->num_rows === 0) {
             workerLog("fetchNextPending: No pending/failed emails in queue");
             return null;
@@ -1455,12 +1264,10 @@
         
         // Fetch next pending/failed/stuck-processing email that hasn't exceeded 5 retry attempts
         // Include 'processing' status if delivery_time is old (crashed worker recovery)
-        // CRITICAL: Empty status '' is treated as 'pending' ONLY if attempt_count = 0 (campaign init bug compatibility)
-        // Exclude already-sent emails (empty status with attempt_count > 0)
         $query = "SELECT id, to_mail, attempt_count, smtpid, csv_list_id FROM mail_blaster ";
         $query .= "WHERE campaign_id = $campaign_id ";
         $query .= "AND (";
-        $query .= "  ((status IN ('pending', 'failed') OR (status = '' AND attempt_count = 0) OR status IS NULL) AND status != 'success' AND attempt_count < 5) ";
+        $query .= "  (status IN ('pending', 'failed') AND attempt_count < 5) ";
         $query .= "  OR (status = 'processing' AND delivery_time < DATE_SUB(NOW(), INTERVAL 60 SECOND) AND attempt_count < 5)";
         $query .= ") ";
         $query .= "ORDER BY attempt_count ASC, delivery_date ASC, id ASC LIMIT 1 ";
@@ -1516,49 +1323,51 @@
         // Get campaign source
         $campaignRes = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id");
         if (!$campaignRes || $campaignRes->num_rows === 0) {
-            return; // Campaign not found
+            return;
         }
         
         $campaignData = $campaignRes->fetch_assoc();
         $import_batch_id = $campaignData['import_batch_id'];
         $csv_list_id = intval($campaignData['csv_list_id']);
         
-        $remaining = 0;
-        $total = 0;
-        $completed = 0;
-        $unclaimed = 0;
+        // Count emails from mail_blaster (source of truth)
+        $statusQuery = "SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+            SUM(CASE WHEN status = 'failed' AND attempt_count >= 5 THEN 1 ELSE 0 END) as failed_count,
+            SUM(CASE WHEN status IN ('pending', 'failed') AND attempt_count < 5 THEN 1 ELSE 0 END) as retryable_count
+        FROM mail_blaster 
+        WHERE campaign_id = $campaign_id";
         
+        $statusRes = $conn->query($statusQuery);
+        if (!$statusRes) {
+            workerLog("Campaign $campaign_id: Error querying mail_blaster");
+            return;
+        }
+        
+        $stats = $statusRes->fetch_assoc();
+        $total = intval($stats['total']);
+        $successCount = intval($stats['success_count']);
+        $failedCount = intval($stats['failed_count']);
+        $retryableCount = intval($stats['retryable_count']);
+        
+        workerLog("Campaign $campaign_id: Total=$total, Success=$successCount, Failed(5+)=$failedCount, Retryable(<5)=$retryableCount");
+        
+        // Update campaign_status table with accurate counts
+        if ($total > 0) {
+            $updateStatsQuery = "UPDATE campaign_status 
+                SET total_emails = $total,
+                    sent_emails = $successCount,
+                    failed_emails = $failedCount,
+                    pending_emails = $retryableCount
+                WHERE campaign_id = $campaign_id";
+            $conn->query($updateStatsQuery);
+        }
+        
+        // Check for unclaimed emails
+        $unclaimed = 0;
         if ($import_batch_id) {
-            // Check imported_recipients table (Excel uploads)
             $batch_escaped = $conn->real_escape_string($import_batch_id);
-            
-            // First get total emails from Excel import
-            $totalQuery = "SELECT COUNT(*) as total FROM imported_recipients 
-                WHERE import_batch_id = '$batch_escaped' 
-                AND is_active = 1 
-                AND Emails IS NOT NULL 
-                AND Emails <> ''";
-            $totalRes = $conn->query($totalQuery);
-            $total = ($totalRes && $totalRes->num_rows > 0) ? (int)$totalRes->fetch_assoc()['total'] : 0;
-            
-            // Count successfully sent emails
-            // NOTE: Handle empty status ('') for compatibility with campaign init bug
-            $successQuery = "SELECT COUNT(*) as success_count FROM mail_blaster 
-                WHERE campaign_id = $campaign_id 
-                AND (status = 'success' OR (status = '' AND attempt_count > 0))";
-            $successRes = $conn->query($successQuery);
-            $successCount = ($successRes && $successRes->num_rows > 0) ? (int)$successRes->fetch_assoc()['success_count'] : 0;
-            
-            // Count permanently failed emails (5+ attempts)
-            // NOTE: Handle empty status ('') for compatibility with campaign init bug
-            $failedQuery = "SELECT COUNT(*) as failed_count FROM mail_blaster 
-                WHERE campaign_id = $campaign_id 
-                AND (status = 'failed' OR status = '' OR status IS NULL) 
-                AND attempt_count >= 5";
-            $failedRes = $conn->query($failedQuery);
-            $failedCount = ($failedRes && $failedRes->num_rows > 0) ? (int)$failedRes->fetch_assoc()['failed_count'] : 0;
-            
-            // CRITICAL: Check for unclaimed emails (not in mail_blaster yet)
             $unclaimedQuery = "SELECT COUNT(*) as unclaimed FROM imported_recipients ir
                 WHERE ir.import_batch_id = '$batch_escaped'
                 AND ir.is_active = 1
@@ -1570,42 +1379,11 @@
                     AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
                 )";
             $unclaimedRes = $conn->query($unclaimedQuery);
-            $unclaimed = ($unclaimedRes && $unclaimedRes->num_rows > 0) ? (int)$unclaimedRes->fetch_assoc()['unclaimed'] : 0;
-            
-            $completed = $successCount + $failedCount;
-            $remaining = $total - $completed;
-            
-            workerLog("Campaign $campaign_id (Excel): Total=$total, Success=$successCount, Failed=$failedCount, Completed=$completed, Unclaimed=$unclaimed, Remaining=$remaining");
+            if ($unclaimedRes) {
+                $unclaimedRow = $unclaimedRes->fetch_assoc();
+                $unclaimed = intval($unclaimedRow['unclaimed']);
+            }
         } elseif ($csv_list_id > 0) {
-            // Check emails table (CSV uploads)
-            // First get total
-            $totalQuery = "SELECT COUNT(*) as total FROM emails e 
-                WHERE e.domain_status = 1 
-                AND e.validation_status = 'valid' 
-                AND e.raw_emailid IS NOT NULL 
-                AND e.raw_emailid <> ''
-                AND e.csv_list_id = $csv_list_id";
-            $totalRes = $conn->query($totalQuery);
-            $total = ($totalRes && $totalRes->num_rows > 0) ? (int)$totalRes->fetch_assoc()['total'] : 0;
-            
-            // Count successfully sent
-            // NOTE: Handle empty status ('') for compatibility with campaign init bug
-            $successQuery = "SELECT COUNT(*) as success_count FROM mail_blaster 
-                WHERE campaign_id = $campaign_id 
-                AND (status = 'success' OR (status = '' AND attempt_count > 0))";
-            $successRes = $conn->query($successQuery);
-            $successCount = ($successRes && $successRes->num_rows > 0) ? (int)$successRes->fetch_assoc()['success_count'] : 0;
-            
-            // Count permanently failed
-            // NOTE: Handle empty status ('') for compatibility with campaign init bug
-            $failedQuery = "SELECT COUNT(*) as failed_count FROM mail_blaster 
-                WHERE campaign_id = $campaign_id 
-                AND (status = 'failed' OR status = '' OR status IS NULL) 
-                AND attempt_count >= 5";
-            $failedRes = $conn->query($failedQuery);
-            $failedCount = ($failedRes && $failedRes->num_rows > 0) ? (int)$failedRes->fetch_assoc()['failed_count'] : 0;
-            
-            // CRITICAL: Check for unclaimed emails (not in mail_blaster yet)
             $unclaimedQuery = "SELECT COUNT(*) as unclaimed FROM emails e
                 WHERE e.domain_status = 1
                 AND e.validation_status = 'valid'
@@ -1618,30 +1396,18 @@
                     AND mb.to_mail = e.raw_emailid
                 )";
             $unclaimedRes = $conn->query($unclaimedQuery);
-            $unclaimed = ($unclaimedRes && $unclaimedRes->num_rows > 0) ? (int)$unclaimedRes->fetch_assoc()['unclaimed'] : 0;
-            
-            $completed = $successCount + $failedCount;
-            $remaining = $total - $completed;
-            
-            workerLog("Campaign $campaign_id (CSV): Total=$total, Success=$successCount, Failed=$failedCount, Completed=$completed, Unclaimed=$unclaimed, Remaining=$remaining");
+            if ($unclaimedRes) {
+                $unclaimedRow = $unclaimedRes->fetch_assoc();
+                $unclaimed = intval($unclaimedRow['unclaimed']);
+            }
         }
         
-        // Mark campaign as completed ONLY when:
-        // 1. All emails are in mail_blaster (unclaimed = 0)
-        // 2. All emails are processed (remaining = 0)
-        // 3. Total matches completed count
-        if ($unclaimed === 0 && $remaining === 0 && $total > 0 && $completed === $total) {
-            workerLog("Campaign $campaign_id: 100% emails completed! Marking as completed. (Total=$total, Completed=$completed, Unclaimed=$unclaimed)");
-            $updateResult = $conn->query("UPDATE campaign_status SET status = 'completed', end_time = NOW(), process_pid = NULL WHERE campaign_id = $campaign_id AND status != 'completed'");
-            if ($updateResult) {
-                workerLog("Campaign $campaign_id: Status updated to completed successfully.");
-            } else {
-                workerLog("Campaign $campaign_id: Failed to update status. Error: " . $conn->error);
-            }
-        } elseif ($total === 0) {
-            workerLog("Campaign $campaign_id: WARNING - No emails found for this campaign!");
+        // Mark as completed when all retries exhausted and no unclaimed emails
+        if ($unclaimed === 0 && $retryableCount === 0 && $total > 0) {
+            workerLog("Campaign $campaign_id: All retry attempts exhausted! Marking as completed.");
+            $conn->query("UPDATE campaign_status SET status = 'completed', end_time = NOW(), process_pid = NULL, pending_emails = 0 WHERE campaign_id = $campaign_id AND status != 'completed'");
         } else {
-            workerLog("Campaign $campaign_id: Not completed yet. Remaining=$remaining, Unclaimed=$unclaimed, Total=$total");
+            workerLog("Campaign $campaign_id: Not completed. Retryable=$retryableCount, Unclaimed=$unclaimed");
         }
     }
 

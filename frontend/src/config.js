@@ -1,47 +1,54 @@
 // Environment Configuration
-// Automatically detects if running on localhost or production server
+// Uses Vite environment variables for configuration
 
-const isLocalhost = () => {
-  const host = window.location.hostname;
-  const protocol = window.location.protocol;
-  
-  // If opened as file:// (not served by a web server), default to localhost
-  if (protocol === 'file:') {
-    return true;
+// Helper to safely log only in development
+const isDevelopment = import.meta.env.DEV;
+const enableLogs = import.meta.env.VITE_ENABLE_CONSOLE_LOGS === 'true';
+
+const logInfo = (...args) => {
+  if (isDevelopment && enableLogs) {
+    console.log(...args);
+  }
+};
+
+// Get base URL from environment variable or fallback to auto-detection
+export const getBaseUrl = () => {
+  // Use environment variable if available (recommended for production)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+    logInfo('🔧 Using configured base URL:', baseUrl);
+    return baseUrl;
   }
   
-  // Check for localhost variations
-  return host === 'localhost' || 
-         host === '127.0.0.1' || 
-         host.includes('192.168.') ||
-         host.includes('10.0.') ||
-         host.endsWith('.local');
-};
-
-const isDevServer = () => {
-  // Check if running on Vite dev server (ports 5173-5176)
+  // Fallback to auto-detection (for backward compatibility)
+  const host = window.location.hostname;
+  const protocol = window.location.protocol;
   const port = window.location.port;
-  return port === '5173' || port === '5174' || port === '5175' || port === '5176';
-};
-
-// Base URLs
-const LOCAL_BASE = 'http://localhost/verify_emails/MailPilot_CRM_S';
-const PRODUCTION_BASE = 'https://payrollsoft.in/emailvalidation';
-
-export const getBaseUrl = () => {
-  // For production server, always use PRODUCTION_BASE unless explicitly on localhost
-  const isLocal = isDevServer() || isLocalhost();
-  const baseUrl = isLocal ? LOCAL_BASE : PRODUCTION_BASE;
   
-  // Log environment for debugging
-  console.log('🔧 Environment Detection:', {
-    hostname: window.location.hostname,
-    port: window.location.port,
-    protocol: window.location.protocol,
-    isLocalhost: isLocalhost(),
-    isDevServer: isDevServer(),
+  // Check if running on Vite dev server
+  const isDevServer = ['5173', '5174', '5175', '5176'].includes(port);
+  
+  // Check for localhost variations
+  const isLocalhost = protocol === 'file:' ||
+    host === 'localhost' || 
+    host === '127.0.0.1' || 
+    host.includes('192.168.') ||
+    host.includes('10.0.') ||
+    host.endsWith('.local');
+  
+  const isLocal = isDevServer || isLocalhost;
+  const baseUrl = isLocal 
+    ? 'http://localhost/verify_emails/MailPilot_CRM_S'
+    : 'https://payrollsoft.in/emailvalidation';
+  
+  logInfo('🔧 Environment Detection:', {
+    hostname: host,
+    port: port,
+    protocol: protocol,
+    isLocalhost,
+    isDevServer,
     selectedBase: isLocal ? 'LOCAL' : 'PRODUCTION',
-    baseUrl: baseUrl
+    baseUrl
   });
   
   return baseUrl;

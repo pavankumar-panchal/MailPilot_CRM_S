@@ -18,6 +18,8 @@ register_shutdown_function(function() {
 });
 
 // Error handling
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/import_errors.log');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 set_time_limit(300);

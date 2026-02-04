@@ -1,5 +1,16 @@
 <?php
-
+/**
+ * Campaign Cron Job - Monitor and Auto-Restart
+ * 
+ * Add to crontab (runs every 2 minutes):
+ * star-slash-2 * * * * /opt/plesk/php/8.1/bin/php /var/www/vhosts/payrollsoft.in/httpdocs/emailvalidation/backend/campaign_cron.php >> /var/www/vhosts/payrollsoft.in/httpdocs/emailvalidation/backend/logs/cron_output.log 2>&1
+ * Replace "star-slash-2" with: asterisk followed by forward-slash followed by 2 (without spaces)
+ * 
+ * This script:
+ * 1. Monitors running campaigns - ensures orchestrator is alive
+ * 2. Restarts crashed orchestrators
+ * 3. Auto-restarts campaigns with pending retries (optional)
+ */
 
 // Hard lock to prevent concurrent cron executions (mandatory guard)
 $__cron_lock_file = sys_get_temp_dir() . '/campaign_cron.lock';
@@ -42,16 +53,20 @@ if (!$lock->acquire()) {
     exit(0);
 }
 
-// Start logging immediately with file output
-$cron_log_file = __DIR__ . '/logs/cron_debug_' . date('Y-m-d') . '.log';
+// Start logging immediately
+$log_file = __DIR__ . '/logs/campaign_cron.log';
+$log_dir = dirname($log_file);
+if (!is_dir($log_dir)) {
+    @mkdir($log_dir, 0777, true);
+}
+
 function logCron($message) {
-    global $cron_log_file;
-    $timestamp = date('Y-m-d H:i:s');
-    $log_msg = "[$timestamp] $message\n";
-    echo $log_msg; // Output to console for cron email/output
-    $log_dir = dirname($cron_log_file);
-    if (!is_dir($log_dir)) {@mkdir($log_dir, 0777, true);}
-    @file_put_contents($cron_log_file, $log_msg, FILE_APPEND | LOCK_EX);
+    // LOGGING DISABLED
+    // global $log_file;
+    // $timestamp = date('Y-m-d H:i:s');
+    // $log_msg = "[$timestamp] $message\n";
+    // @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
+    // echo $log_msg; // Also output to console for cron email/output
 }
 
 logCron("=== CRON JOB START ===");
@@ -144,24 +159,6 @@ if (!is_dir($pid_dir)) {
     @mkdir($pid_dir, 0777, true);
 }
 logCron("PID directory: $pid_dir");
-
-// OPTIMIZED: Use multi-campaign processor for parallel campaign execution
-$multi_campaign_script = __DIR__ . '/includes/multi_campaign_processor.php';
-if (file_exists($multi_campaign_script)) {
-    logCron("Launching multi-campaign processor for parallel execution...");
-    $max_concurrent = 5; // Process up to 5 campaigns simultaneously
-    $cmd = sprintf(
-        '%s %s %d > /dev/null 2>&1',
-        escapeshellarg($php_bin),
-        escapeshellarg($multi_campaign_script),
-        $max_concurrent
-    );
-    exec($cmd, $output, $ret);
-    logCron("Multi-campaign processor executed (exit code: $ret)");
-} else {
-    logCron("Multi-campaign processor not found, using legacy single-campaign mode");
-    // Fallback to original single-campaign launch below
-}
 
 // Launch parallel email blaster for each running campaign (if not already running)
 foreach ($campaigns as $campaign) {

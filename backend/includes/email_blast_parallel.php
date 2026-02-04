@@ -3,15 +3,13 @@
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Production safe
+// ini_set('log_errors', 1); // Commented - log disabled
+// ini_set('error_log', __DIR__ . '/../logs/php_errors.log'); // Commented - log disabled
 set_time_limit(0);
 ini_set('memory_limit', '4096M');
 
 date_default_timezone_set('Asia/Kolkata');
-// Determine execution mode: CLI daemon or web-trigger that launches the CLI daemon in background
-// Support both: when run from CLI the script becomes the daemon; when invoked via web (browser/XHR)
-// it will spawn the CLI daemon in background and return immediately.
 
-// Helper to check if a PID is running (works on Linux with /proc)
 function isPidRunning($pid) {
     if ($pid <= 0) return false;
     return file_exists('/proc/' . intval($pid));
@@ -105,13 +103,13 @@ register_shutdown_function(function () use ($pid_file, $campaign_id) {
 });
 
 // Configuration
-define('MAX_WORKERS_PER_SERVER', 3); // OPTIMIZED: 3 parallel workers per SMTP server for faster processing
+define('MAX_WORKERS_PER_SERVER', 1); // Exactly one worker per SMTP server
 define('EMAILS_PER_WORKER', 100); // Unused in per-server model, kept for compatibility
 define('WORKER_SCRIPT', __DIR__ . '/email_blast_worker.php');
-define('LOG_FILE', __DIR__ . '/../logs/parallel_debug_' . date('Y-m-d') . '.log'); // Debug log enabled
+// define('LOG_FILE', __DIR__ . '/../logs/email_blast_parallel_' . date('Y-m-d') . '.log'); // Commented - log file disabled
 define('RETRY_FAILED_AFTER_CYCLE', true); // Retry failed emails after one complete cycle
 define('MAX_RETRY_ATTEMPTS', 5); // Maximum retry attempts per email (PRODUCTION: Changed from 3 to 5 for consistency)
-define('RETRY_DELAY_SECONDS', 1); // OPTIMIZED: Reduced from 2 to 1 second for faster retries
+define('RETRY_DELAY_SECONDS', 2); // Delay between retry cycles - OPTIMIZED for speed
 
 /**
  * Reset daily counters if it's a new day
@@ -233,25 +231,21 @@ function runParallelEmailBlast($conn, $campaign_id) {
         return ["status" => "error", "message" => "Campaign not found"];
     }
     
-    // Get campaign owner's user_id for SMTP filtering (CRITICAL: Must match exactly)
+    // Get campaign owner's user_id for SMTP filtering
     $campaign_user_id = isset($campaign['user_id']) ? (int)$campaign['user_id'] : null;
     logMessage("==========================================");
-    logMessage("Campaign user_id: " . ($campaign_user_id ?? 'NULL'));
+    logMessage("Campaign user_id: " . ($campaign_user_id ?? 'NULL (ALL USERS)'));
     
-    if (!$campaign_user_id) {
-        logMessage("ERROR: Campaign has no user_id! Cannot proceed without user.");
-        return ["status" => "error", "message" => "Campaign missing user_id"];
-    }
-    
-    // Get user details for logging
-    $userQuery = $conn->query("SELECT name, email FROM users WHERE id = $campaign_user_id LIMIT 1");
-    if ($userQuery && $userQuery->num_rows > 0) {
-        $userData = $userQuery->fetch_assoc();
-        logMessage("Campaign owner: {$userData['name']} ({$userData['email']})");
-        logMessage("Using ONLY SMTP accounts belonging to user #{$campaign_user_id} (100% accurate filtering)");
+    if ($campaign_user_id) {
+        // Get user details for logging
+        $userQuery = $conn->query("SELECT name, email FROM users WHERE id = $campaign_user_id LIMIT 1");
+        if ($userQuery && $userQuery->num_rows > 0) {
+            $userData = $userQuery->fetch_assoc();
+            logMessage("Campaign owner: {$userData['name']} ({$userData['email']})");
+            logMessage("Using ONLY SMTP accounts belonging to user #{$campaign_user_id}");
+        }
     } else {
-        logMessage("ERROR: User #{$campaign_user_id} not found in database!");
-        return ["status" => "error", "message" => "Campaign user not found"];
+        logMessage("WARNING: No user_id found - will use ALL SMTP accounts");
     }
     logMessage("==========================================");
     
@@ -436,17 +430,11 @@ function getCampaignDetails($conn, $campaign_id) {
 function getSmtpServersWithAccounts($conn, $user_id = null) {
     $servers = [];
     
-    // CRITICAL: user_id is now MANDATORY for accurate SMTP filtering
-    if (!$user_id) {
-        logMessage("ERROR: user_id is required for getSmtpServersWithAccounts");
-        return [];
-    }
-    
     // Reset daily counters if it's a new day
     resetDailyCountersIfNeeded($conn);
     
-    // User filter for SMTP servers (MANDATORY)
-    $userServerFilter = "AND ss.user_id = $user_id";
+    // User filter for SMTP servers
+    $userServerFilter = $user_id ? "AND ss.user_id = $user_id" : "";
     
     // Get all active servers (filtered by user if provided)
     $server_result = $conn->query("
@@ -465,19 +453,17 @@ function getSmtpServersWithAccounts($conn, $user_id = null) {
     $today = date('Y-m-d');
     $current_hour = intval(date('G'));
     
-    // User filter for SMTP accounts (MANDATORY - 100% accurate filtering)
-    $userAccountFilter = "AND sa.user_id = $user_id";
+    // User filter for SMTP accounts
+    $userAccountFilter = $user_id ? "AND sa.user_id = $user_id" : "";
     
     while ($server = $server_result->fetch_assoc()) {
-        // Get accounts that are within their limits AND healthy/degraded (filtered by user)
-        // CRITICAL: Must match worker's health check logic to avoid false positive account counts
+        // Get accounts that are within their limits using smtp_usage (filtered by user)
         $account_result = $conn->query("
             SELECT sa.id, sa.email, sa.password, sa.daily_limit, sa.hourly_limit, 
                    sa.total_sent,
                    COALESCE(daily_usage.sent_today, 0) as sent_today,
                    COALESCE(hourly_usage.emails_sent, 0) as sent_this_hour
             FROM smtp_accounts sa
-            LEFT JOIN smtp_health sh ON sa.id = sh.smtp_id
             LEFT JOIN (
                 SELECT smtp_id, SUM(emails_sent) as sent_today
                 FROM smtp_usage
@@ -491,7 +477,6 @@ function getSmtpServersWithAccounts($conn, $user_id = null) {
             $userAccountFilter
             AND (sa.daily_limit = 0 OR COALESCE(daily_usage.sent_today, 0) < sa.daily_limit)
             AND (sa.hourly_limit = 0 OR COALESCE(hourly_usage.emails_sent, 0) < sa.hourly_limit)
-            AND (sh.health IS NULL OR sh.health = 'healthy' OR sh.health = 'degraded' OR (sh.health = 'suspended' AND sh.suspend_until < NOW()))
             ORDER BY sa.id ASC
         ");
         
@@ -557,17 +542,11 @@ function getNextAccountForServer($conn, $server, $accounts) {
 function getWorkingSmtpServers($conn, $user_id = null) {
     $servers = [];
     
-    // CRITICAL: user_id is now MANDATORY
-    if (!$user_id) {
-        logMessage("ERROR: user_id is required for getWorkingSmtpServers");
-        return [];
-    }
-    
     // Reset daily counters if it's a new day
     resetDailyCountersIfNeeded($conn);
     
-    // Build user filter (MANDATORY)
-    $userFilter = "AND ss.user_id = $user_id";
+    // Build user filter
+    $userFilter = $user_id ? "AND ss.user_id = $user_id" : "";
     
     // Get servers that have sent successfully in the last 10 minutes
     // OR have no recent failures
@@ -697,8 +676,8 @@ function getEmailsToSend($conn, $campaign_id) {
         $result = $conn->query("
             SELECT e.id, e.raw_emailid
             FROM emails e
-            WHERE e.raw_emailid IS NOT NULL
-            AND e.raw_emailid <> ''
+            WHERE e.domain_status = 1
+            AND e.validation_status = 'valid'
             $csvFilter
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
@@ -828,12 +807,11 @@ function updateFinalCampaignStats($conn, $campaign_id) {
     
     // Get accurate counts from mail_blaster table
     // Only count permanently failed (attempt_count >= 5)
-    // NOTE: Handle empty status ('') for compatibility with campaign init bug
     $stats = $conn->query("
         SELECT 
             COUNT(DISTINCT CASE WHEN mb.status = 'success' THEN mb.to_mail END) as sent_count,
             COUNT(DISTINCT CASE WHEN mb.status = 'failed' AND mb.attempt_count >= 5 THEN mb.to_mail END) as failed_count,
-            COUNT(DISTINCT CASE WHEN (mb.status IN ('pending', 'failed', '') OR mb.status IS NULL) AND mb.attempt_count < 5 THEN mb.to_mail END) as retry_count
+            COUNT(DISTINCT CASE WHEN mb.status IN ('pending', 'failed') AND mb.attempt_count < 5 THEN mb.to_mail END) as retry_count
         FROM mail_blaster mb
         WHERE mb.campaign_id = $campaign_id
     ")->fetch_assoc();
@@ -862,80 +840,36 @@ function updateFinalCampaignStats($conn, $campaign_id) {
             SELECT COUNT(*) as total
             FROM emails
             WHERE csv_list_id = $csv_list_id
+            AND domain_status = 1
+            AND validation_status = 'valid'
             AND raw_emailid IS NOT NULL
             AND raw_emailid <> ''
         ");
         $total_emails = intval($total_result->fetch_assoc()['total']);
-        logMessage("Campaign #$campaign_id uses CSV list (ID: $csv_list_id), Total emails: $total_emails");
+        logMessage("Campaign #$campaign_id uses CSV list (ID: $csv_list_id), Total valid emails: $total_emails");
     } else {
-        // All emails source
+        // All valid emails source
         $total_result = $conn->query("
             SELECT COUNT(DISTINCT e.raw_emailid) as total
             FROM emails e
-            WHERE e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
+            WHERE e.domain_status = 1 AND e.validation_status = 'valid'
+            AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
         ");
         $total_emails = intval($total_result->fetch_assoc()['total']);
-        logMessage("Campaign #$campaign_id uses all emails, Total: $total_emails");
+        logMessage("Campaign #$campaign_id uses all valid emails, Total: $total_emails");
     }
     
-    // CRITICAL: Check for unclaimed emails (not yet in mail_blaster)
-    $unclaimed = 0;
-    if ($import_batch_id) {
-        $batch_escaped = $conn->real_escape_string($import_batch_id);
-        $unclaimedRes = $conn->query("
-            SELECT COUNT(*) as unclaimed FROM imported_recipients ir
-            WHERE ir.import_batch_id = '$batch_escaped'
-            AND ir.is_active = 1
-            AND ir.Emails IS NOT NULL
-            AND ir.Emails <> ''
-            AND NOT EXISTS (
-                SELECT 1 FROM mail_blaster mb
-                WHERE mb.campaign_id = $campaign_id
-                AND mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
-            )
-        ");
-        $unclaimed = intval($unclaimedRes->fetch_assoc()['unclaimed']);
-    } elseif ($csv_list_id > 0) {
-        $unclaimedRes = $conn->query("
-            SELECT COUNT(*) as unclaimed FROM emails e
-            WHERE e.csv_list_id = $csv_list_id
-            AND e.raw_emailid IS NOT NULL
-            AND e.raw_emailid <> ''
-            AND NOT EXISTS (
-                SELECT 1 FROM mail_blaster mb
-                WHERE mb.campaign_id = $campaign_id
-                AND mb.to_mail = e.raw_emailid
-            )
-        ");
-        $unclaimed = intval($unclaimedRes->fetch_assoc()['unclaimed']);
-    }
-    
-    // Pending = Total - Success - Permanently Failed (or unclaimed emails if any)
+    // Pending = Total - Success - Permanently Failed
     $pending_emails = max(0, $total_emails - $sent_emails - $failed_emails);
-    if ($unclaimed > 0) {
-        $pending_emails = max($pending_emails, $unclaimed);
-    }
     
-    // Determine campaign status - mark as completed ONLY when:
-    // 1. All emails are in mail_blaster (unclaimed = 0)
-    // 2. All emails are successfully sent or permanently failed (no pending)
-    // 3. At least some emails were actually sent (sent_emails > 0 OR failed_emails == total_emails)
+    // Determine campaign status - mark as completed when all emails are processed
     $campaign_status = 'running';
-    
-    // CRITICAL FIX: Don't mark as completed if NO emails were sent yet
-    if ($sent_emails == 0 && $pending_emails > 0) {
-        $campaign_status = 'running';
-        logMessage("Campaign #$campaign_id RUNNING - 0 sent, $pending_emails pending (not started yet)");
-    } elseif ($pending_emails == 0 && $total_emails > 0 && $unclaimed == 0 && ($sent_emails > 0 || $failed_emails >= $total_emails)) {
+    if ($pending_emails == 0 && $total_emails > 0) {
         $campaign_status = 'completed';
         logMessage("Campaign #$campaign_id COMPLETED - All $total_emails emails processed (Sent: $sent_emails, Failed: $failed_emails)");
     } elseif ($total_emails == 0) {
         $campaign_status = 'completed';
         logMessage("Campaign #$campaign_id COMPLETED - No emails to send");
-    } elseif ($unclaimed > 0) {
-        logMessage("Campaign #$campaign_id RUNNING - $unclaimed emails not yet claimed");
-    } else {
-        logMessage("Campaign #$campaign_id RUNNING - Sent: $sent_emails/$total_emails, Failed: $failed_emails, Pending: $pending_emails");
     }
     
     // Update campaign_status with accurate numbers
@@ -967,13 +901,15 @@ function updateFinalCampaignStats($conn, $campaign_id) {
  * Log message to file
  */
 function logMessage($message) {
-    $timestamp = date('Y-m-d H:i:s');
-    $pid = getmypid();
-    $log_msg = "[$timestamp][PID:$pid] $message\n";
-    echo $log_msg;
-    $log_dir = dirname(LOG_FILE);
-    if (!is_dir($log_dir)) {@mkdir($log_dir, 0777, true);}
-    @file_put_contents(LOG_FILE, $log_msg, FILE_APPEND | LOCK_EX);
+    // LOGGING DISABLED
+    // global $campaign_id;
+    // $timestamp = date('Y-m-d H:i:s');
+    // $pid = getmypid();
+    // $log_msg = "[$timestamp][PID:$pid] $message\n";
+    // echo $log_msg;
+    // $cid = isset($campaign_id) ? $campaign_id : 'unknown';
+    // $log_file = __DIR__ . '/../logs/orchestrator_campaign_' . $cid . '.log';
+    // @file_put_contents($log_file, $log_msg, FILE_APPEND | LOCK_EX);
 }
 
 // Helper: remaining emails count
@@ -1010,7 +946,9 @@ function getEmailsRemainingCount($conn, $campaign_id, $csv_list_id = 0) {
         $csv_list_filter = $csv_list_id > 0 ? " AND e.csv_list_id = " . intval($csv_list_id) : "";
         $res = $conn->query("
             SELECT COUNT(*) as remaining FROM emails e
-            WHERE e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
+            WHERE e.domain_status = 1
+            AND e.validation_status = 'valid'
+            AND e.raw_emailid IS NOT NULL AND e.raw_emailid <> ''
             $csv_list_filter
             AND NOT EXISTS (
                 SELECT 1 FROM mail_blaster mb 
@@ -1071,29 +1009,22 @@ function launchPerServerWorkers($conn, $campaign_id, $smtp_servers, $campaign) {
         ]);
         $campaign_json = json_encode($campaign);
 
-        // OPTIMIZED: Launch multiple workers per server for parallel processing
-        $workers_to_launch = min(MAX_WORKERS_PER_SERVER, count($server['accounts']));
-        logMessage("Launching $workers_to_launch parallel workers for server #{$server['id']} ({$server['name']}) with " . count($server['accounts']) . " accounts");
-        
-        for ($w = 0; $w < $workers_to_launch; $w++) {
-            $cmd = sprintf(
-                '%s %s %d %s %s %s > /dev/null 2>&1 &',
-                escapeshellarg($php_cli),
-                escapeshellarg(WORKER_SCRIPT),
-                $campaign_id,
-                escapeshellarg(''),
-                escapeshellarg($server_config),
-                escapeshellarg($campaign_json)
-            );
-            exec($cmd, $out, $ret);
-            $processes[] = [
-                'server_id' => (int)$server['id'],
-                'worker_num' => $w + 1,
-                'name' => $server['name']
-            ];
-            logMessage("Launched worker #" . ($w+1) . "/$workers_to_launch for server #{$server['id']} ({$server['name']})");
-            usleep(5000); // OPTIMIZED: 5ms delay between worker launches
-        }
+        $cmd = sprintf(
+            '%s %s %d %s %s %s > /dev/null 2>&1 &',
+            escapeshellarg($php_cli),
+            escapeshellarg(WORKER_SCRIPT),
+            $campaign_id,
+            escapeshellarg(''),
+            escapeshellarg($server_config),
+            escapeshellarg($campaign_json)
+        );
+        exec($cmd, $out, $ret);
+        $processes[] = [
+            'server_id' => (int)$server['id'],
+            'name' => $server['name']
+        ];
+        logMessage("Launched server worker for #{$server['id']} ({$server['name']})");
+        usleep(10000); // OPTIMIZED: Reduced from 50ms to 10ms
     }
 
     return [
@@ -1217,70 +1148,38 @@ while (true) {
         }
 
         // Check if there are emails remaining to send
-        // Get campaign details to determine source (Excel vs CSV)
-        $campaignData = $conn->query("SELECT import_batch_id, csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id")->fetch_assoc();
-        $import_batch_id = $campaignData['import_batch_id'];
+        // Get campaign csv_list_id to filter correctly
+        $campaignData = $conn->query("SELECT csv_list_id FROM campaign_master WHERE campaign_id = $campaign_id")->fetch_assoc();
         $csv_list_id = isset($campaignData['csv_list_id']) ? intval($campaignData['csv_list_id']) : 0;
+        $csvListFilter = $csv_list_id > 0 ? " AND e.csv_list_id = $csv_list_id" : "";
         
-        $remaining_count = 0;
-        if ($import_batch_id) {
-            // Excel import - check imported_recipients table
-            $batch_escaped = $conn->real_escape_string($import_batch_id);
-            $remaining_result = $conn->query("
-                SELECT COUNT(*) as remaining FROM imported_recipients ir
-                WHERE ir.import_batch_id = '$batch_escaped'
-                AND ir.is_active = 1
-                AND ir.Emails IS NOT NULL
-                AND ir.Emails <> ''
-                AND NOT EXISTS (
-                    SELECT 1 FROM mail_blaster mb 
-                    WHERE mb.to_mail COLLATE utf8mb4_unicode_ci = ir.Emails
-                    AND mb.campaign_id = $campaign_id
-                    AND (mb.status = 'success' OR (mb.status = 'failed' AND mb.attempt_count >= 5))
-                )
-            ");
-            $remaining_count = $remaining_result->fetch_assoc()['remaining'];
-            logMessage("Excel campaign: $remaining_count emails remaining (batch: $import_batch_id)");
-        } else {
-            // CSV list - check emails table
-            $csvListFilter = $csv_list_id > 0 ? " AND e.csv_list_id = $csv_list_id" : "";
-            $remaining_result = $conn->query("
-                SELECT COUNT(*) as remaining FROM emails e
-                WHERE e.raw_emailid IS NOT NULL
-                AND e.raw_emailid <> ''
-                $csvListFilter
-                AND NOT EXISTS (
-                    SELECT 1 FROM mail_blaster mb 
-                    WHERE mb.to_mail = e.raw_emailid 
-                    AND mb.campaign_id = $campaign_id
-                    AND (mb.status = 'success' OR (mb.status = 'failed' AND mb.attempt_count >= 5))
-                )
-            ");
-            $remaining_count = $remaining_result->fetch_assoc()['remaining'];
-            logMessage("CSV campaign: $remaining_count emails remaining" . ($csv_list_id > 0 ? " (list ID: $csv_list_id)" : ""));
-        }
+        $remaining_result = $conn->query("
+            SELECT COUNT(*) as remaining FROM emails e
+            WHERE e.domain_status = 1
+            AND e.validation_status = 'valid'
+            AND e.raw_emailid IS NOT NULL
+            AND e.raw_emailid <> ''
+            $csvListFilter
+            AND NOT EXISTS (
+                SELECT 1 FROM mail_blaster mb 
+                WHERE mb.to_mail = e.raw_emailid 
+                AND mb.campaign_id = $campaign_id
+                AND (mb.status = 'success' OR (mb.status = 'failed' AND mb.attempt_count >= 5))
+            )
+        ");
+        
+        $remaining_count = $remaining_result->fetch_assoc()['remaining'];
 
         if ($remaining_count == 0) {
-            // Double-check: ensure we actually processed emails before marking complete
-            $processedCheck = $conn->query("SELECT sent_emails, failed_emails FROM campaign_status WHERE campaign_id = $campaign_id")->fetch_assoc();
-            $totalProcessed = intval($processedCheck['sent_emails']) + intval($processedCheck['failed_emails']);
-            
-            if ($totalProcessed > 0) {
-                $conn->query("UPDATE campaign_status 
-                             SET status = 'completed', pending_emails = 0, end_time = NOW() 
-                             WHERE campaign_id = $campaign_id");
-                logMessage("All emails processed for campaign #$campaign_id. Total processed: $totalProcessed. Campaign completed. Exiting daemon.");
-                $conn->close();
-                break;
-            } else {
-                logMessage("WARNING: No emails remaining but none processed yet. Continuing to wait for initialization...");
-                $conn->close();
-                sleep(5);
-                continue;
-            }
+            $conn->query("UPDATE campaign_status 
+                         SET status = 'completed', pending_emails = 0, end_time = NOW() 
+                         WHERE campaign_id = $campaign_id");
+            logMessage("All emails processed for campaign #$campaign_id" . ($csv_list_id > 0 ? " (CSV List ID: $csv_list_id)" : "") . ". Campaign completed. Exiting daemon.");
+            $conn->close();
+            break;
         }
 
-        logMessage("--- Starting parallel blast cycle for $remaining_count emails ---");
+        logMessage("--- Starting parallel blast cycle for $remaining_count emails" . ($csv_list_id > 0 ? " (CSV List ID: $csv_list_id)" : "") . " ---");
         
         // Execute one cycle of parallel email blast
         $result = runParallelEmailBlast($conn, $campaign_id);

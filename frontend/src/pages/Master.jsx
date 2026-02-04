@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PageLoader from "../components/PageLoader";
 import { CardSkeleton } from "../components/SkeletonLoader";
 import { API_CONFIG } from "../config";
+import logger from "../utils/logger";
+import { sanitizeHtml } from "../utils/sanitizer";
 
 // Use centralized config for API endpoints
 const API_PUBLIC_URL = API_CONFIG.API_MASTER_CAMPAIGNS;
@@ -43,27 +45,27 @@ const Master = () => {
   // Fetch CSV lists
   const fetchCsvLists = useCallback(async () => {
     try {
-      console.log('🔄 Fetching CSV lists from:', API_CONFIG.GET_CSV_LIST);
+      logger.debug('🔄 Fetching CSV lists from:', API_CONFIG.GET_CSV_LIST);
       const res = await axios.get(API_CONFIG.GET_CSV_LIST, {
         params: { limit: 'all' }
       });
-      console.log('✅ CSV Lists API Response:', res.data);
+      logger.debug('✅ CSV Lists API Response:', res.data);
       if (res.data?.debug) {
-        console.log('🔍 Debug Info:', res.data.debug);
+        logger.debug('🔍 Debug Info:', res.data.debug);
       }
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        console.log('📋 Setting CSV lists:', res.data.data.length, 'lists found');
+        logger.debug('📋 Setting CSV lists:', res.data.data.length, 'lists found');
         if (res.data.data.length > 0) {
-          console.log('📄 First list:', res.data.data[0]);
+          logger.debug('📄 First list:', res.data.data[0]);
         }
         setCsvLists(res.data.data);
       } else {
-        console.warn('⚠️ Unexpected CSV list response format:', res.data);
+        logger.warn('⚠️ Unexpected CSV list response format:', res.data);
         setCsvLists([]);
       }
     } catch (error) {
-      console.error('❌ Failed to fetch CSV lists:', error);
-      console.error('🔍 Error details:', {
+      logger.error('❌ Failed to fetch CSV lists:', error);
+      logger.error('🔍 Error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
@@ -95,7 +97,7 @@ const Master = () => {
       return campaigns;
     } catch (error) {
       // Log the error for easier debugging in browser console
-      console.error("Master.fetchData error:", error?.response || error?.message || error);
+      logger.error("Master.fetchData error:", error?.response || error?.message || error);
       setMessage({ type: "error", text: `Failed to load data: ${error?.response?.data?.message || error?.message || 'Unknown error'}` });
       setLoading(false);
       return [];
@@ -251,10 +253,10 @@ const Master = () => {
   // Handle CSV list selection change
   const handleCsvListChange = useCallback(async (campaignId, csvListId) => {
     try {
-      console.log('🔄 Saving CSV list selection:', { campaignId, csvListId });
+      logger.debug('🔄 Saving CSV list selection:', { campaignId, csvListId });
       const url = `${API_CONFIG.API_CAMPAIGNS}&id=${campaignId}`;
-      console.log('📡 Request URL:', url);
-      console.log('📦 Request body:', { csv_list_id: csvListId || null });
+      logger.debug('📡 Request URL:', url);
+      logger.debug('📦 Request body:', { csv_list_id: csvListId || null });
       
       // Save CSV list ID to database immediately
       const response = await axios.post(
@@ -263,7 +265,7 @@ const Master = () => {
         { headers: { 'Content-Type': 'application/json' } }
       );
       
-      console.log('✅ CSV list save response:', response.data);
+      logger.debug('✅ CSV list save response:', response.data);
       
       // Update local state
       setCampaignCsvListSelections(prev => ({
@@ -279,8 +281,8 @@ const Master = () => {
       
       setMessage({ type: "success", text: "CSV list selection saved" });
     } catch (error) {
-      console.error('❌ Failed to save CSV list:', error);
-      console.error('🔍 Error response:', error.response?.data);
+      logger.error('❌ Failed to save CSV list:', error);
+      logger.error('🔍 Error response:', error.response?.data);
       setMessage({
         type: "error",
         text: error.response?.data?.message || error.response?.data?.error || "Failed to save CSV list selection"
@@ -331,7 +333,7 @@ const Master = () => {
         setShowTemplatePreview(false);
       }
     } catch (error) {
-      console.error('Template preview error:', error);
+      logger.error('Template preview error:', error);
       setMessage({ type: 'error', text: 'Failed to load template preview' });
       setShowTemplatePreview(false);
     } finally {
@@ -581,8 +583,24 @@ const Master = () => {
                           )}
                         </div>
                         <div className="mt-4 text-xs text-gray-500">
-                          Started: {campaign.start_time ? campaign.start_time : "N/A"}<br />
-                          Ended: {campaign.end_time ? campaign.end_time : "N/A"}
+                          Started: {campaign.start_time && campaign.start_time !== '0000-00-00 00:00:00' ? new Date(campaign.start_time).toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false 
+                          }) : "N/A"}<br />
+                          Ended: {campaign.end_time && campaign.end_time !== '0000-00-00 00:00:00' ? new Date(campaign.end_time).toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false 
+                          }) : "N/A"}
                         </div>
                       </div>
                     </div>
@@ -1134,7 +1152,7 @@ const Master = () => {
                             e.stopPropagation();
                           }
                         }}
-                        dangerouslySetInnerHTML={{ __html: templatePreviewData.template_html }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(templatePreviewData.template_html) }}
                       />
                     </div>
                   </div>

@@ -17,7 +17,7 @@ require_once __DIR__ . '/../config/db.php';
  * @param int $campaign_id Campaign ID
  * @return array Statistics: [total_recipients, queued, already_queued, errors]
  */
-function initializeEmailQueue($conn, $campaign_id) {
+function initializeEmailQueue($conn, $campaign_id, $distribute_to_servers = true) {
     $stats = [
         'total_recipients' => 0,
         'queued' => 0,

@@ -8,7 +8,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import eslintConfigPrettier from 'eslint-config-prettier'
 
 export default [
-  { ignores: ['dist', 'coverage', 'vitest-dist'] },
+  { ignores: ['dist', 'coverage', 'vitest-dist', '.vite', 'node_modules', 'build'] },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {

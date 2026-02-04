@@ -4,6 +4,8 @@
  * This ensures requests work even if cookies fail
  */
 
+import logger from './logger';
+
 /**
  * Make an authenticated API request
  * @param {string} url - API endpoint URL
@@ -15,17 +17,15 @@ export async function authFetch(url, options = {}) {
   const token = localStorage.getItem('mailpilot_token');
   const tokenExpiry = localStorage.getItem('mailpilot_token_expiry');
   
-  // Debug logging
-  console.log('[authFetch] URL:', url);
-  console.log('[authFetch] Token present:', !!token);
-  console.log('[authFetch] Token expiry:', tokenExpiry);
+  logger.debug('[authFetch] URL:', url);
+  logger.debug('[authFetch] Token present:', !!token);
   
   // Check if token is expired
   if (tokenExpiry) {
     const expiryTime = new Date(tokenExpiry).getTime();
     if (Date.now() > expiryTime) {
       // Token expired - clear storage and redirect to login
-      console.log('[authFetch] Token expired, redirecting to login');
+      logger.warn('[authFetch] Token expired, redirecting to login');
       localStorage.removeItem('mailpilot_user');
       localStorage.removeItem('mailpilot_token');
       localStorage.removeItem('mailpilot_token_expiry');
@@ -42,9 +42,9 @@ export async function authFetch(url, options = {}) {
   // Add Authorization header if token exists
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('[authFetch] Added Authorization header');
+    logger.debug('[authFetch] Added Authorization header');
   } else {
-    console.warn('[authFetch] No token found in localStorage');
+    logger.warn('[authFetch] No token found in localStorage');
   }
   
   // Always include credentials for cookies
