@@ -141,7 +141,7 @@ if (!empty($batchDirs)) {
                 $conn->query("
                     UPDATE csv_list 
                     SET valid_count = {$counts['valid']}, 
-                        invalid_count = {$counts['invalid']}
+                        invalid_count = (total_emails - {$counts['total_in_list']}) + {$counts['invalid']}
                     WHERE id = $listId
                 ");
                 log_msg("Updated csv_list_id $listId: {$counts['valid']} valid, {$counts['invalid']} invalid, {$counts['processed']}/{$counts['total_in_list']} processed");
@@ -189,36 +189,6 @@ while ($row = $stmt->fetch_assoc()) {
     $emails[] = $row['raw_emailid'];
 }
 $stmt->close();
-
-if (empty($emails)) {
-    log_msg("No unprocessed emails found - checking for any csv_lists that need completion status update...");
-    
-    // Final check: Mark any csv_lists as completed if all their emails are processed
-    $conn->query("
-        UPDATE csv_list cl
-        SET status = 'completed'
-        WHERE status != 'completed'
-        AND id IN (
-            SELECT csv_list_id FROM (
-                SELECT e.csv_list_id,
-                       COUNT(*) as total,
-                       SUM(CASE WHEN e.domain_processed = 1 THEN 1 ELSE 0 END) as processed
-                FROM emails e
-                WHERE e.csv_list_id IS NOT NULL
-                GROUP BY e.csv_list_id
-                HAVING processed >= total AND total > 0
-            ) AS completed_lists
-        )
-    ");
-    $completedCount = $conn->affected_rows;
-    if ($completedCount > 0) {
-        log_msg("✓ Marked $completedCount csv_list(s) as COMPLETED");
-    }
-    
-    log_msg("=== CRON END ===");
-    flock($lock, LOCK_UN);
-    exit(0);
-}
 
 log_msg("Found " . count($emails) . " emails to validate (domain + SMTP)");
 
@@ -415,6 +385,44 @@ foreach ($activeProcesses as $worker) {
 }
 
 log_msg("All workers terminated. Results will be aggregated in next cron run.");
+
+// Final check: Mark any csv_lists as completed if all their emails are processed
+// This runs at the end of EVERY cron run to catch any lists that finished processing
+$conn->query("
+    UPDATE csv_list cl
+    JOIN (
+        SELECT 
+            csv_list_id,
+            COUNT(*) as total_db,
+            SUM(CASE WHEN domain_status = 1 AND domain_processed = 1 THEN 1 ELSE 0 END) as valid_db,
+            SUM(CASE WHEN domain_status = 0 AND domain_processed = 1 THEN 1 ELSE 0 END) as invalid_db
+        FROM emails
+        WHERE csv_list_id IS NOT NULL
+        GROUP BY csv_list_id
+    ) e ON cl.id = e.csv_list_id
+    SET 
+        cl.status = 'completed',
+        cl.valid_count = e.valid_db,
+        cl.invalid_count = (cl.total_emails - e.total_db) + e.invalid_db
+    WHERE 
+        cl.status != 'completed'
+        AND cl.id IN (
+            SELECT csv_list_id FROM (
+                SELECT csv_list_id,
+                       COUNT(*) as total,
+                       SUM(CASE WHEN domain_processed = 1 THEN 1 ELSE 0 END) as processed
+                FROM emails
+                WHERE csv_list_id IS NOT NULL
+                GROUP BY csv_list_id
+                HAVING processed >= total AND total > 0
+            ) AS completed_lists
+        )
+    ");
+$completedCount = $conn->affected_rows;
+if ($completedCount > 0) {
+    log_msg("✓ Marked $completedCount csv_list(s) as COMPLETED");
+}
+
 log_msg("=== CRON END ===");
 
 flock($lock, LOCK_UN);

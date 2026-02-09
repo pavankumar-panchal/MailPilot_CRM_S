@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 import { API_CONFIG } from "../config";
 import { authFetch } from "../utils/authFetch";
@@ -6,14 +6,40 @@ import { authFetch } from "../utils/authFetch";
 const TopProgressBar = () => {
   const [percent, setPercent] = useState(0);
   const [active, setActive] = useState(false);
+  const isPolling = useRef(false); // Prevent request pile-up
+  const abortController = useRef(null); // For timeout control
 
   useEffect(() => {
     let interval = null;
+    let isMounted = true;
 
     const fetchProgress = async () => {
+      // CRITICAL: Prevent overlapping requests
+      if (isPolling.current) {
+        return;
+      }
+
+      isPolling.current = true;
+
       try {
-        const res = await authFetch(API_CONFIG.PROGRESS);
+        // Create abort controller with 3-second timeout
+        abortController.current = new AbortController();
+        const timeoutId = setTimeout(() => abortController.current.abort(), 3000);
+
+        const res = await authFetch(API_CONFIG.PROGRESS, {
+          signal: abortController.current.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) throw new Error('Request failed');
+        
         const data = await res.json();
+
+        // Only update if component is still mounted
+        if (!isMounted) return;
+
+        // Check for validation progress
         if (
           data &&
           typeof data.percent === "number" &&
@@ -26,16 +52,34 @@ const TopProgressBar = () => {
           setActive(false);
           setPercent(0);
         }
-      } catch {
-        setActive(false);
-        setPercent(0);
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.warn('Progress request timed out');
+        }
+        if (isMounted) {
+          setActive(false);
+          setPercent(0);
+        }
+      } finally {
+        if (isMounted) {
+          isPolling.current = false;
+        }
       }
     };
 
+    // Initial fetch
     fetchProgress();
-    interval = setInterval(fetchProgress, 2000);
 
-    return () => clearInterval(interval);
+    // Poll every 2.5 seconds (giving 500ms buffer)
+    interval = setInterval(fetchProgress, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+    };
   }, []);
 
   if (!active) return null;

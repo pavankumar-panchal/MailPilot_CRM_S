@@ -400,6 +400,81 @@ function extractDomain($email) {
     return isset($parts[1]) ? strtolower(trim($parts[1])) : '';
 }
 
+/**
+ * Detect typo domains - common misspellings of popular email providers
+ * Conservative approach - only obvious typos
+ */
+function is_typo_domain($domain) {
+    $domain = strtolower(trim($domain));
+    
+    // CONSERVATIVE typo detection - only obvious misspellings of major providers
+    $typoDomains = [
+        // Gmail - only clear typos
+        'gmai.com', 'gmial.com', 'gmaill.com', 'gmil.com', 'gmal.com',
+        'gnail.com', 'gmeil.com', 'gameail.com',
+        
+        // Gmail - missing/wrong TLD
+        'gmail.co', 'gmail.om', 'gmail.cmo', 'gmailcom',
+        
+        // Yahoo - clear typos only
+        'yahooo.com', 'yaho.com', 'yahho.com', 'yhaoo.com',
+        'yahoo.co', 'yahoo.om', 'yahoocom',
+        
+        // Hotmail - clear typos only  
+        'hotmial.com', 'hotmai.com', 'hotmil.com', 'hotmal.com', 'hotmaill.com',
+        'hotmail.co', 'hotmail.om', 'hotmailcom',
+        
+        // Outlook - clear typos only
+        'outlok.com', 'outllook.com', 'outloook.com', 'outloo.com',
+        'outlook.co', 'outlook.om', 'outlookcom'
+    ];
+    
+    // Exact match only - no pattern matching to avoid false positives
+    return in_array($domain, $typoDomains, true);
+}
+
+/**
+ * Extract readable error from SMTP response - raw but clean
+ * Like ZeroBounce: preserve the error code and main message, remove tracking IDs
+ */
+function extract_readable_error($smtpResponse, $errorCode) {
+    $original = trim($smtpResponse);
+    
+    // If response is short enough (< 150 chars), return as-is
+    if (strlen($original) < 150) {
+        return $original;
+    }
+    
+    $cleanResponse = $original;
+    
+    // Remove tracking codes and URLs but keep error message
+    // Remove Microsoft tracking blocks: AS(1426) [OSA0EPF000000CB...]
+    $cleanResponse = preg_replace('/AS\(\d+\)\s*\[.*?\]/i', '', $cleanResponse);
+    
+    // Remove tracking IDs: [BN6NAM04FT044...], [EUR04-AM6...]
+    $cleanResponse = preg_replace('/\[[A-Z0-9]{10,}.*?\]/i', '', $cleanResponse);
+    
+    // Remove URLs
+    $cleanResponse = preg_replace('/https?:\/\/[^\s]+/i', '', $cleanResponse);
+    
+    // Remove "For more information" and similar phrases
+    $cleanResponse = preg_replace('/To request.*$/i', '', $cleanResponse);
+    $cleanResponse = preg_replace('/For more information.*$/i', '', $cleanResponse);
+    $cleanResponse = preg_replace('/Please visit.*$/i', '', $cleanResponse);
+    $cleanResponse = preg_replace('/See .*$/i', '', $cleanResponse);
+    
+    // Clean up multiple spaces and trim
+    $cleanResponse = preg_replace('/\s+/', ' ', $cleanResponse);
+    $cleanResponse = trim($cleanResponse);
+    
+    // Limit to 200 characters max for readability
+    if (strlen($cleanResponse) > 200) {
+        $cleanResponse = substr($cleanResponse, 0, 197) . '...';
+    }
+    
+    return $cleanResponse ?: $original; // Return original if cleaning failed
+}
+
 // ========== END ENTERPRISE HELPER FUNCTIONS ==========
 
 /**
@@ -418,6 +493,8 @@ function smtp_verify_full($email, $domain, $mxHosts) {
         'domain_verified' => 1,
         'has_mx' => 1
     ];
+    
+    $lastError = null; // Track last error message
     
     $port = 25;
     $timeout = 60;
@@ -467,7 +544,7 @@ function smtp_verify_full($email, $domain, $mxHosts) {
         }
         
         // EHLO
-        fputs($smtp, "EHLO server.relyon.co.in\r\n");
+        fputs($smtp, "EHLO server.payrollsoft.in\r\n");
         fflush($smtp);
         usleep(3000000); // Wait 3 seconds
         
@@ -492,7 +569,7 @@ function smtp_verify_full($email, $domain, $mxHosts) {
         
         if (empty($ehloLines) || substr($ehloLines[0], 0, 3) !== '250') {
             // Try HELO fallback
-            fputs($smtp, "HELO server.relyon.co.in\r\n");
+            fputs($smtp, "HELO server.payrollsoft.in\r\n");
             fflush($smtp);
             usleep(500000);
             
@@ -505,7 +582,7 @@ function smtp_verify_full($email, $domain, $mxHosts) {
         }
         
         // MAIL FROM
-        fputs($smtp, "MAIL FROM:<info@relyon.co.in>\r\n");
+        fputs($smtp, "MAIL FROM:<validator@payrollsoft.in>\r\n");
         fflush($smtp);
         usleep(2000000); // Wait 2 seconds
         
@@ -565,11 +642,12 @@ function smtp_verify_full($email, $domain, $mxHosts) {
             // Resolve hostname to IP address
             $ipAddress = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
             
-            $result['validation_status'] = 'valid';
+            $result['validation_status'] = $isCatchAll ? 'catch-all' : 'valid';
             $result['validation_response'] = $ipAddress;
             $result['domain_status'] = 1;
+            $result['is_catchall'] = $isCatchAll;
             
-            log_worker("✓ VALID: $email on $host (IP: $ipAddress)");
+            log_worker("✓ VALID: $email on $host (IP: $ipAddress)" . ($isCatchAll ? " [CATCH-ALL]" : ""));
             return $result; // SUCCESS!
         }
         
@@ -579,24 +657,37 @@ function smtp_verify_full($email, $domain, $mxHosts) {
         
         // Definitive invalid (5xx hard failure)
         if ($rCode == '550' || $rCode == '553' || $rCode == '554') {
-            // Resolve hostname to IP address
-            $ipAddress = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+            // Store raw but readable error - like ZeroBounce
+            $rawError = trim($rcpt);
+            $readableError = extract_readable_error($rawError, $rCode);
             
             $result['validation_status'] = 'invalid';
-            $result['validation_response'] = $ipAddress;
+            $result['validation_response'] = $readableError;
             $result['domain_status'] = 0;
+            $result['raw_smtp_response'] = $rawError; // Keep original for debugging
             
-            log_worker("✗ INVALID: $email - " . trim($rcpt));
+            log_worker("✗ INVALID: $email - " . $readableError);
             return $result;
         }
         
         // Other responses - continue to next host
         log_worker("Inconclusive response $rCode from $host - trying next");
+        
+        // Track the last error for reporting if all hosts fail
+        if ($rcpt !== false && !empty(trim($rcpt))) {
+            $lastError = trim($rcpt);
+        }
     }
     
     // All MX hosts tried - mark as invalid
     $result['validation_status'] = 'invalid';
-    $result['validation_response'] = 'No viable SMTP path after trying all MX hosts';
+    // Show the last actual error message (cleaned but readable)
+    if ($lastError) {
+        $result['validation_response'] = extract_readable_error($lastError, '550');
+        $result['raw_smtp_response'] = $lastError; // Keep original
+    } else {
+        $result['validation_response'] = 'All MX hosts failed to respond';
+    }
     $result['domain_status'] = 0;
     
     return $result;
@@ -630,13 +721,13 @@ function detect_catchall($email, $domain, $host, $smtp = null) {
         }
         
         // EHLO
-        fputs($smtp, "EHLO server.relyon.co.in\r\n");
+        fputs($smtp, "EHLO server.payrollsoft.in\r\n");
         fflush($smtp);
         usleep(500000);
         fgets($smtp, 4096);
         
         // MAIL FROM
-        fputs($smtp, "MAIL FROM:<info@relyon.co.in>\r\n");
+        fputs($smtp, "MAIL FROM:<validator@payrollsoft.in>\r\n");
         fflush($smtp);
         usleep(500000);
         fgets($smtp, 4096);
@@ -729,13 +820,19 @@ function verifyEmailViaSMTP($email, $domain) {
     
     if ($fastResult['status'] === 'invalid') {
         $host = $fastResult['host'] ?? 'unknown';
-        // Resolve hostname to IP address
+        // Resolve hostname to IP address for logging only
         $ipAddress = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
         
+        // Extract readable error (raw but clean) - like ZeroBounce
+        $errorResponse = $fastResult['response'] ?? 'Email rejected by mail server';
+        $errorCode = $fastResult['code'] ?? '5xx';
+        $readableError = extract_readable_error($errorResponse, $errorCode);
+        
         $result['validation_status'] = 'invalid';
-        $result['validation_response'] = $ipAddress;
+        $result['validation_response'] = $readableError;
         $result['domain_status'] = 0;
         $result['ip'] = $ipAddress;
+        $result['raw_smtp_response'] = $errorResponse; // Keep original for debugging
         return $result;
     }
     
@@ -803,6 +900,9 @@ foreach ($emailsToProcess as $email) {
         continue;
     }
     
+    // Flag if domain is possibly a typo (will verify but override result later)
+    $isPossiblyTypo = is_typo_domain($domain);
+    
     // Check excluded accounts (noreply, postmaster, etc)
     if (in_array(strtolower($account), $excludedAccounts, true)) {
         $validEmails[] = $email;
@@ -829,8 +929,16 @@ foreach ($emailsToProcess as $email) {
     // Verify via SMTP with enterprise-grade metadata
     $result = verifyEmailViaSMTP($email, $domain);
     
+    // Override result if domain is a typo - mark as invalid regardless of SMTP result
+    if ($isPossiblyTypo) {
+        $result['validation_status'] = 'invalid';
+        $result['domain_status'] = 0;
+        $result['validation_response'] = 'Typo domain: ' . $domain;
+        log_worker("✗ TYPO DOMAIN: $email - domain: $domain (forced invalid)");
+    }
+    
     // Classify result (only valid or invalid - no retryable)
-    $isValid = ($result['validation_status'] === 'valid');
+    $isValid = ($result['validation_status'] === 'valid' || $result['validation_status'] === 'catch-all');
     $isInvalid = !$isValid;
     
     // IMMEDIATE DATABASE UPDATE with all new fields
@@ -906,7 +1014,8 @@ foreach ($emailsToProcess as $email) {
             $conn->query("
                 UPDATE csv_list 
                 SET valid_count = (SELECT COUNT(*) FROM emails WHERE csv_list_id = {$row['csv_list_id']} AND domain_status = 1 AND domain_processed = 1),
-                    invalid_count = (SELECT COUNT(*) FROM emails WHERE csv_list_id = {$row['csv_list_id']} AND domain_status = 0 AND domain_processed = 1)
+                    invalid_count = (total_emails - (SELECT COUNT(*) FROM emails WHERE csv_list_id = {$row['csv_list_id']})) + 
+                                    (SELECT COUNT(*) FROM emails WHERE csv_list_id = {$row['csv_list_id']} AND domain_status = 0 AND domain_processed = 1)
                 WHERE id = {$row['csv_list_id']}
             ");
         }
@@ -998,7 +1107,10 @@ foreach (array_keys($affectedLists) as $listId) {
     if ($counts['processed'] >= $counts['total_in_list'] && $counts['total_in_list'] > 0) {
         $conn->query("
             UPDATE csv_list 
-            SET status = 'completed'
+            SET status = 'completed', 
+                valid_count = (SELECT COUNT(*) FROM emails WHERE csv_list_id = $listId AND domain_status = 1),
+                invalid_count = (total_emails - (SELECT COUNT(*) FROM emails WHERE csv_list_id = $listId)) + 
+                               (SELECT COUNT(*) FROM emails WHERE csv_list_id = $listId AND domain_status = 0 AND domain_processed = 1)
             WHERE id = $listId AND status != 'completed'
         ");
         log_worker("✓ Marked csv_list_id $listId as COMPLETED (all {$counts['total_in_list']} emails validated)");

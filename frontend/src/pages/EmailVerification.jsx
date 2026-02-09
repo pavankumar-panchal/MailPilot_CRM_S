@@ -158,6 +158,66 @@ const EmailVerification = () => {
     fetchLists();
   }, [fetchLists]);
 
+  // Auto-refresh lists every 3 seconds to show dynamic progress
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      // Check if any list is currently running
+      const hasRunningList = lists.some(list => list.status === 'running' || list.status === 'pending');
+      if (hasRunningList) {
+        console.log('🔄 Auto-refreshing lists (verification in progress)');
+        // Fetch without showing loading state to prevent blinking
+        fetchListsSilently();
+      }
+    }, 3000); // Refresh every 3 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [lists]);
+
+  // Silent fetch - updates data without loading spinner
+  const fetchListsSilently = async () => {
+    try {
+      const res = await authFetch(`${API_CONFIG.GET_CSV_LIST}?limit=-1`);
+      
+      if (!res.ok) {
+        return; // Silently fail
+      }
+      
+      const responseText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        return; // Silently fail
+      }
+
+      if (data.success === false) {
+        return; // Silently fail
+      }
+
+      const newLists = Array.isArray(data.data) ? data.data.map(list => ({
+        id: parseInt(list.id) || 0,
+        list_name: list.list_name || 'Unknown',
+        file_name: list.list_name || 'Unknown',
+        total_emails: parseInt(list.total_emails) || 0,
+        valid_count: parseInt(list.valid_count) || 0,
+        invalid_count: parseInt(list.invalid_count) || 0,
+        failed_count: parseInt(list.failed_count) || 0,
+        status: list.status || 'pending',
+        created_at: list.created_at,
+        is_verification_list: true
+      })) : [];
+
+      // Only update if data actually changed
+      setLists(prevLists => {
+        const hasChanges = JSON.stringify(prevLists) !== JSON.stringify(newLists);
+        return hasChanges ? newLists : prevLists;
+      });
+    } catch (error) {
+      // Silently fail - don't disrupt user experience
+      console.error("Silent fetch error:", error);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

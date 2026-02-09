@@ -126,7 +126,7 @@
         $eligibleCount = ($eligibleRes && $eligibleRes->num_rows) ? (int)$eligibleRes->fetch_assoc()['c'] : 0;
         workerLog("Server #$server_id: eligible_emails_from_csv=$eligibleCount");
     }
-    $pendingRes = $conn->query("SELECT COUNT(*) AS c FROM mail_blaster WHERE campaign_id = $campaign_id AND status = 'pending'");
+    $pendingRes = $conn->query("SELECT COUNT(*) AS c FROM mail_blaster WHERE campaign_id = $campaign_id AND status IN ('pending', 'failed', 'processing') AND attempt_count < 5");
     $pendingCount = ($pendingRes && $pendingRes->num_rows) ? (int)$pendingRes->fetch_assoc()['c'] : 0;
     workerLog("Server #$server_id: eligible_emails=$eligibleCount pending_in_mail_blaster=$pendingCount");
 
@@ -277,7 +277,7 @@
                 }
                 
                 // Check if there are emails remaining to process (already in queue)
-                $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed') AND attempt_count < 5)");
+                $remainingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed', 'processing') AND attempt_count < 5)");
                 $remaining = ($remainingCheck && $remainingCheck->num_rows > 0) ? intval($remainingCheck->fetch_assoc()['cnt']) : 0;
                 
                 if ($remaining > 0) {
@@ -428,7 +428,7 @@
     $finalUnclaimed = ($finalUnclaimedCheck && $finalUnclaimedCheck->num_rows > 0) ? intval($finalUnclaimedCheck->fetch_assoc()['cnt']) : 0;
     
     // Check emails in queue but not yet sent
-    $finalPendingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed') AND attempt_count < 5)");
+    $finalPendingCheck = $conn->query("SELECT COUNT(*) as cnt FROM mail_blaster WHERE campaign_id = $campaign_id AND (status IN ('pending', 'failed', 'processing') AND attempt_count < 5)");
     $finalPending = ($finalPendingCheck && $finalPendingCheck->num_rows > 0) ? intval($finalPendingCheck->fetch_assoc()['cnt']) : 0;
     
     $finalTotal = $finalUnclaimed + $finalPending;
@@ -448,15 +448,6 @@
         
     function sendEmail($conn, $campaign_id, $to_email, $server, $account, $campaign, $csv_list_id = null) {
         if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) { throw new Exception("Invalid email: $to_email"); }
-        
-        // ============================================================================
-        // MULTI-LAYER DUPLICATE PREVENTION SYSTEM
-        // ============================================================================
-        // Layer 1: Database UNIQUE constraint (campaign_id, to_mail) - PRIMARY PROTECTION
-        // Layer 2: Transaction with FOR UPDATE lock - RACE CONDITION PROTECTION  
-        // Layer 3: Status checking before send - LOGICAL PROTECTION
-        // Layer 4: Double-check after send - FINAL VERIFICATION
-        // ============================================================================
         
         // CRITICAL: Start transaction and lock the row IMMEDIATELY to prevent duplicates
         $conn->query("START TRANSACTION");
@@ -541,11 +532,20 @@
         $mail->SMTPAutoTLS = true;
         $mail->setFrom($account['email']);
         $mail->addAddress($to_email);
-        $mail->Subject = $campaign['mail_subject'];
-
+        
         // Process campaign body - use template merge if template_id is set, otherwise use regular mail_body
         $body = processCampaignBody($conn, $campaign, $to_email, $csv_list_id);
         if (empty(trim($body))) throw new Exception("Empty body after template processing");
+        
+        // Get recipient data for merge fields (used for both subject and body)
+        // This fetches data from imported_recipients or emails table and merges extra_data JSON
+        $template_id = isset($campaign['template_id']) ? intval($campaign['template_id']) : 0;
+        $import_batch_id = isset($campaign['import_batch_id']) ? $campaign['import_batch_id'] : null;
+        $email_data = getEmailRowData($conn, $to_email, $csv_list_id, $import_batch_id);
+        
+        // Process email subject with merge fields support
+        // Allows placeholders like [[Name]], [[Amount]], [[Company]] in subject line
+        $mail->Subject = mergeTemplateWithData($campaign['mail_subject'], $email_data);
         
         // Rich text editors (like Quill) save HTML as syntax-highlighted code
         // wrapped in <p><span style="color:...">tokens</span></p>
@@ -769,6 +769,16 @@
         // ON DUPLICATE KEY UPDATE ensures single record per campaign+email combination
         // REQUIRES: UNIQUE KEY unique_campaign_email (campaign_id, to_mail) on mail_blaster table
         // attempt_count: starts at 1, max 5 attempts with different SMTP accounts
+        // CRITICAL: After 5 failed attempts, mark as permanent failure
+        $newAttemptCount = min($existingAttempts + 1, 5);
+        $finalStatus = $status;
+        
+        // If this is 5th attempt and still failed, mark as permanent failure
+        if ($newAttemptCount >= 5 && $status === 'failed') {
+            $finalStatus = 'permanent_failure';
+            workerLog("Marking $to_email as PERMANENT FAILURE after 5 attempts");
+        }
+        
         $stmt = $conn->prepare("
             INSERT INTO mail_blaster 
                 (campaign_id, smtp_account_id, smtp_email, to_mail, csv_list_id, smtpid, delivery_date, delivery_time, status, error_message, attempt_count, user_id) 
@@ -781,7 +791,7 @@
                 smtpid = VALUES(smtpid), 
                 delivery_date = VALUES(delivery_date), 
                 delivery_time = VALUES(delivery_time), 
-                status = VALUES(status),
+                status = IF(mail_blaster.attempt_count >= 5 AND VALUES(status) = 'failed', 'permanent_failure', VALUES(status)),
                 error_message = IF(VALUES(status) = 'success', NULL, CONCAT('[Attempt ', mail_blaster.attempt_count + 1, '] ', VALUES(error_message))),
                 attempt_count = LEAST(mail_blaster.attempt_count + 1, 5),
                 user_id = VALUES(user_id)
@@ -795,7 +805,7 @@
             $to_email, 
             $csv_list_id, 
             $smtp_account_id, 
-            $status, 
+            $finalStatus, 
             $error, 
             $campaign_user_id
         );
@@ -1334,8 +1344,9 @@
         $statusQuery = "SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
-            SUM(CASE WHEN status = 'failed' AND attempt_count >= 5 THEN 1 ELSE 0 END) as failed_count,
-            SUM(CASE WHEN status IN ('pending', 'failed') AND attempt_count < 5 THEN 1 ELSE 0 END) as retryable_count
+            SUM(CASE WHEN status IN ('failed', 'permanent_failure') AND attempt_count >= 5 THEN 1 ELSE 0 END) as failed_count,
+            SUM(CASE WHEN status IN ('pending', 'failed') AND attempt_count < 5 THEN 1 ELSE 0 END) as retryable_count,
+            SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_count
         FROM mail_blaster 
         WHERE campaign_id = $campaign_id";
         
@@ -1350,8 +1361,9 @@
         $successCount = intval($stats['success_count']);
         $failedCount = intval($stats['failed_count']);
         $retryableCount = intval($stats['retryable_count']);
+        $processingCount = intval($stats['processing_count']);
         
-        workerLog("Campaign $campaign_id: Total=$total, Success=$successCount, Failed(5+)=$failedCount, Retryable(<5)=$retryableCount");
+        workerLog("Campaign $campaign_id: Total=$total, Success=$successCount, Failed(5+)=$failedCount, Retryable(<5)=$retryableCount, Processing=$processingCount");
         
         // Update campaign_status table with accurate counts
         if ($total > 0) {
@@ -1403,11 +1415,12 @@
         }
         
         // Mark as completed when all retries exhausted and no unclaimed emails
-        if ($unclaimed === 0 && $retryableCount === 0 && $total > 0) {
+        // CRITICAL: Campaign is NOT completed if there are still retryable emails OR processing emails
+        if ($unclaimed === 0 && $retryableCount === 0 && $processingCount === 0 && $total > 0) {
             workerLog("Campaign $campaign_id: All retry attempts exhausted! Marking as completed.");
             $conn->query("UPDATE campaign_status SET status = 'completed', end_time = NOW(), process_pid = NULL, pending_emails = 0 WHERE campaign_id = $campaign_id AND status != 'completed'");
         } else {
-            workerLog("Campaign $campaign_id: Not completed. Retryable=$retryableCount, Unclaimed=$unclaimed");
+            workerLog("Campaign $campaign_id: Not completed. Retryable=$retryableCount, Processing=$processingCount, Unclaimed=$unclaimed");
         }
     }
 

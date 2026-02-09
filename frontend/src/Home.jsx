@@ -1,7 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from './api/axios';
+import { API_CONFIG } from './config';
 
 const Home = ({ user }) => {
+  const [stats, setStats] = useState({
+    totalCampaigns: 0,
+    emailsSent: 0,
+    activeSmtp: 0,
+    successRate: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch dashboard stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch campaigns
+        const campaignsRes = await axios.post(API_CONFIG.API_MASTER_CAMPAIGNS, { action: 'list' });
+        const campaigns = campaignsRes.data?.data?.campaigns || [];
+        
+        // Fetch SMTP servers
+        const smtpRes = await axios.get(API_CONFIG.API_MASTER_SMTPS);
+        const smtpServers = smtpRes.data?.data || [];
+        
+        // Calculate stats
+        const totalCampaigns = campaigns.length;
+        const emailsSent = campaigns.reduce((sum, c) => sum + (parseInt(c.sent_emails) || 0), 0);
+        const totalEmails = campaigns.reduce((sum, c) => sum + (parseInt(c.sent_emails) || 0) + (parseInt(c.failed_emails) || 0), 0);
+        const successRate = totalEmails > 0 ? Math.round((emailsSent / totalEmails) * 100) : 0;
+        
+        // Count active SMTP accounts
+        const activeSmtp = smtpServers.reduce((sum, server) => {
+          return sum + (server.accounts?.filter(acc => acc.is_active)?.length || 0);
+        }, 0);
+        
+        setStats({
+          totalCampaigns,
+          emailsSent,
+          activeSmtp,
+          successRate,
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchStats();
+  }, []);
+
   const quickActions = [
     {
       title: 'Email Verification',
@@ -68,8 +117,17 @@ const Home = ({ user }) => {
         </svg>
       ),
       gradient: 'from-cyan-500 to-blue-600',
+      adminOnly: true,
     },
   ];
+
+  // Filter actions based on user role
+  const filteredActions = quickActions.filter(action => {
+    if (action.adminOnly && user?.role !== 'admin') {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -81,7 +139,7 @@ const Home = ({ user }) => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
                 Welcome back, <span className="text-blue-600">{user?.name || 'User'}</span>
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">Enterprise Email Campaign Management</p>
+              <p className="text-sm sm:text-base text-gray-600">Relyon Email Campaign Management</p>
             </div>
             <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 rounded-full border border-green-200">
               <span className="relative flex h-2 w-2">
@@ -104,7 +162,9 @@ const Home = ({ user }) => {
                 </svg>
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+              {loading ? '...' : stats.totalCampaigns.toLocaleString()}
+            </p>
           </div>
 
           <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
@@ -116,7 +176,9 @@ const Home = ({ user }) => {
                 </svg>
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+              {loading ? '...' : stats.emailsSent.toLocaleString()}
+            </p>
           </div>
 
           <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
@@ -128,7 +190,9 @@ const Home = ({ user }) => {
                 </svg>
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+              {loading ? '...' : stats.activeSmtp.toLocaleString()}
+            </p>
           </div>
 
           <div className="glass-effect rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
@@ -140,7 +204,9 @@ const Home = ({ user }) => {
                 </svg>
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-800">0%</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+              {loading ? '...' : `${stats.successRate}%`}
+            </p>
           </div>
         </div>
 
@@ -148,7 +214,7 @@ const Home = ({ user }) => {
         <div className="glass-effect rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {quickActions.map((action, index) => (
+            {filteredActions.map((action, index) => (
               <Link
                 key={index}
                 to={action.path}

@@ -95,6 +95,9 @@ export const API_CONFIG = {
   API_MASTER_SMTPS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/smtps`,
   API_MASTER_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/master/campaigns_master`,
   
+  // Export endpoints
+  API_EXPORT_CAMPAIGN: `${BASE_URL}/backend/api/export_campaign.php`,
+  
   // Legacy endpoints
   API_RETRY_FAILED: `${BASE_URL}/backend/routes/api.php?endpoint=/api/retry-failed`,
   API_MONITOR_CAMPAIGNS: `${BASE_URL}/backend/routes/api.php?endpoint=/api/monitor/campaigns`,

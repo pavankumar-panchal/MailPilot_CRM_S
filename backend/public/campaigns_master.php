@@ -1212,6 +1212,15 @@ function getTemplatePreview($conn, $campaign_id, $email_index = 0) {
         $selectedResult = $conn->query($selectedQuery);
         if ($selectedResult && $selectedResult->num_rows > 0) {
             $selectedEmail = $selectedResult->fetch_assoc();
+            
+            // Merge extra_data JSON into main array for preview display
+            if (isset($selectedEmail['extra_data']) && $selectedEmail['extra_data']) {
+                $extraData = json_decode($selectedEmail['extra_data'], true);
+                if (is_array($extraData)) {
+                    // Merge extra data into the main array
+                    $selectedEmail = array_merge($selectedEmail, $extraData);
+                }
+            }
         }
     }
     
@@ -1222,8 +1231,11 @@ function getTemplatePreview($conn, $campaign_id, $email_index = 0) {
     // If we have sample data, merge it
     if ($selectedEmail) {
         $mergedHtml = mergeTemplateWithData($templateHtml, $selectedEmail);
+        // Also merge the email subject with recipient data
+        $mergedSubject = mergeTemplateWithData($campaign['mail_subject'] ?? '', $selectedEmail);
     } else {
         $mergedHtml = $templateHtml;
+        $mergedSubject = $campaign['mail_subject'] ?? '';
     }
     
     // Prepare current email data for display (excluding internal fields)
@@ -1235,6 +1247,7 @@ function getTemplatePreview($conn, $campaign_id, $email_index = 0) {
         unset($currentEmailData['import_batch_id']);
         unset($currentEmailData['is_active']);
         unset($currentEmailData['created_at']);
+        unset($currentEmailData['extra_data']); // Remove the JSON field itself after merging
     }
     
     return [
@@ -1243,6 +1256,7 @@ function getTemplatePreview($conn, $campaign_id, $email_index = 0) {
         'template_id' => $campaign['template_id'],
         'template_name' => $campaign['template_name'],
         'template_html' => $mergedHtml,
+        'mail_subject' => $mergedSubject, // Send merged subject instead of raw subject
         'has_sample_data' => $selectedEmail ? true : false,
         'current_index' => $email_index,
         'total_emails' => $totalCount,

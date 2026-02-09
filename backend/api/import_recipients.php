@@ -73,13 +73,23 @@ if (!in_array($ext, ['csv', 'xlsx', 'xls'])) {
 $batchId = 'BATCH_' . date('Ymd_His') . '_' . uniqid();
 
 /**
- * Read CSV file
+ * Read CSV file with error filtering
  */
 function readCsv($filepath) {
     $rows = [];
     if (($handle = fopen($filepath, "r")) !== FALSE) {
         while (($data = fgetcsv($handle, 10000, ",")) !== FALSE) {
-            $rows[] = $data;
+            // Filter out Excel errors from CSV data too
+            $filteredData = [];
+            foreach ($data as $value) {
+                // Remove Excel formula errors
+                if (is_string($value) && preg_match('/^#(REF|VALUE|DIV\/0|NAME|NUM|N\/A|NULL)!$/i', $value)) {
+                    $filteredData[] = ''; // Replace error with empty string
+                } else {
+                    $filteredData[] = $value;
+                }
+            }
+            $rows[] = $filteredData;
         }
         fclose($handle);
     }
@@ -87,7 +97,8 @@ function readCsv($filepath) {
 }
 
 /**
- * Simple XLSX reader
+ * Read XLSX with error filtering
+ * Filters out Excel formula errors like #REF!, #VALUE!, #DIV/0! before storing to database
  */
 function readXlsx($filepath) {
     $zip = new ZipArchive;
@@ -147,6 +158,12 @@ function readXlsx($filepath) {
                 if (isset($cell['t']) && (string)$cell['t'] === 's') {
                     $cellValue = $sharedStrings[(int)$cellValue] ?? '';
                 }
+            }
+            
+            // Filter out Excel formula errors before storing to database
+            // This prevents #REF!, #VALUE!, #DIV/0!, etc. from being stored
+            if (is_string($cellValue) && preg_match('/^#(REF|VALUE|DIV\/0|NAME|NUM|N\/A|NULL)!$/i', $cellValue)) {
+                $cellValue = ''; // Replace error with empty string
             }
             
             $rowData[] = $cellValue;

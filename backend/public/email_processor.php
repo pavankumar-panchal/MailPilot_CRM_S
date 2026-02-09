@@ -191,7 +191,8 @@ try {
             continue;
         }
 
-        // De-duplicate within the uploaded file (case-insensitive)
+        // De-duplicate within the uploaded file only (case-insensitive)
+        // This ensures uniqueness per file, not across the entire database
         if (isset($seen[$email])) {
             $duplicateCount++;
             $rejectedEmails[] = [
@@ -221,49 +222,8 @@ try {
         throw new Exception('No valid emails found in CSV file');
     }
 
-    // Filter out emails that already exist for THIS USER to avoid duplicates
-    // Each user can have their own copy of the same email
-    $existingSet = [];
-    $chunkSize = 1000;
-    $allRaw = array_column($emails, 'raw_emailid');
-    $emailChunks = array_chunk($allRaw, $chunkSize);
-
-    foreach ($emailChunks as $chunk) {
-        $placeholders = implode(',', array_fill(0, count($chunk), '?'));
-        $types = str_repeat('s', count($chunk));
-        $types .= 'i'; // Add type for user_id
-        $chunk[] = $user_id; // Add user_id to params
-        
-        // Check for user's existing emails only
-        $stmt = $conn->prepare("SELECT raw_emailid FROM emails WHERE raw_emailid IN ($placeholders) AND user_id = ?");
-        
-        if ($stmt) {
-            $stmt->bind_param($types, ...$chunk);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            while ($r = $res->fetch_assoc()) { 
-                $existingSet[strtolower($r['raw_emailid'])] = true; 
-            }
-            $stmt->close();
-        }
-    }
-
-    $filtered = [];
-    foreach ($emails as $row) {
-        $e = strtolower($row['raw_emailid']);
-        if (isset($existingSet[$e])) {
-            $duplicateCount++;
-            $rejectedEmails[] = [
-                'email' => $row['raw_emailid'],
-                'reason' => 'Already exists in database',
-                'line' => 'N/A'
-            ];
-            continue;
-        }
-        $filtered[] = $row;
-    }
-
-    $emails = $filtered;
+    // No database duplicate checking - only in-file duplicates are filtered
+    // This allows the same email to be uploaded in different CSV files for different campaigns
     $validCount = count($emails);
 
     if ($validCount === 0) {
@@ -282,8 +242,10 @@ try {
             VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?)
         ");
         
-        $totalEmails = $validCount + $invalidCount + $duplicateCount;
-        $stmt->bind_param('ssiiii', $listName, $fileName, $totalEmails, $validCount, $invalidCount, $user_id);
+        // total_emails = only emails actually inserted (after removing duplicates)
+        // This ensures accurate valid/invalid counts during verification
+        $totalEmailsInserted = $validCount;
+        $stmt->bind_param('ssiiii', $listName, $fileName, $totalEmailsInserted, $validCount, $invalidCount, $user_id);
         $stmt->execute();
         $csvListId = $conn->insert_id;
         $stmt->close();
@@ -351,7 +313,8 @@ try {
                 'invalid_count' => $invalidCount,
                 'duplicate_count' => $duplicateCount,
                 'rejected_count' => count($rejectedEmails),
-                'total_emails' => $totalEmails,
+                'total_emails' => $validCount,  // Only emails actually inserted
+                'total_in_file' => $validCount + $invalidCount + $duplicateCount,  // Original file count
                 'server_ip' => $serverIp,
                 'list_details' => $listData
             ]

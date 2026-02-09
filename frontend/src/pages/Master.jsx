@@ -250,6 +250,75 @@ const Master = () => {
     }
   }, [fetchData]);
 
+  // Export campaign data (memoized)
+  const exportCampaign = useCallback(async (campaignId, campaignName) => {
+    try {
+      logger.debug('🔄 Exporting campaign:', { campaignId, campaignName });
+      
+      setMessage({ 
+        type: "info", 
+        text: "Preparing export... Please wait." 
+      });
+      
+      // Use axios to download with proper authentication
+      const response = await axios.get(`${API_CONFIG.API_EXPORT_CAMPAIGN}?campaign_id=${campaignId}`, {
+        responseType: 'blob',
+        withCredentials: true,
+        headers: {
+          'Accept': 'text/csv,application/json',
+        },
+      });
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename
+      const sanitizedName = campaignName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      link.download = `${sanitizedName}_Export_${timestamp}.csv`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setMessage({ 
+        type: "success", 
+        text: "Campaign data exported successfully!" 
+      });
+    } catch (error) {
+      logger.error('❌ Export error:', error);
+      logger.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // Try to read error message from blob if it's JSON
+      let errorMessage = "Failed to export campaign data";
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const jsonError = JSON.parse(text);
+          errorMessage = jsonError.message || errorMessage;
+        } catch (e) {
+          // Not JSON, use default message
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      setMessage({
+        type: "error",
+        text: errorMessage,
+      });
+    }
+  }, []);
+
   // Handle CSV list selection change
   const handleCsvListChange = useCallback(async (campaignId, csvListId) => {
     try {
@@ -490,28 +559,41 @@ const Master = () => {
                         <StatusBadge status={campaign.campaign_status} />
                       </div>
                     </div>
-                    <div className="flex flex-row flex-wrap gap-2 items-center mt-2 sm:mt-0">
+                    <div className="flex flex-row flex-wrap gap-2 items-center mt-3 sm:mt-0 w-full sm:w-auto">
+                      {/* Toggle Details Button */}
                       <button
                         onClick={() => toggleCampaignDetails(campaign.campaign_id)}
-                        className="text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg"
+                        className="flex-1 sm:flex-none text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg border border-gray-300 hover:border-gray-400 transition-all hover:shadow-sm"
                       >
                         <i
                           className={`fas ${expandedCampaigns[campaign.campaign_id]
                             ? "fa-chevron-up"
                             : "fa-chevron-down"
-                            } text-sm`}
+                            } text-sm sm:text-base`}
                         ></i>
+                        <span className="ml-2 sm:hidden text-xs">{expandedCampaigns[campaign.campaign_id] ? "Less" : "More"}</span>
                       </button>
+                      
+                      {/* Export Button - Repositioned for better visibility */}
+                      <button
+                        onClick={() => exportCampaign(campaign.campaign_id, campaign.description)}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-xs sm:text-sm font-medium transition-all shadow-md hover:shadow-lg whitespace-nowrap"
+                        title="Export campaign data with SMTP details"
+                      >
+                        <i className="fas fa-file-download mr-1 sm:mr-2"></i>
+                        <span>Export</span>
+                      </button>
+                      
                       {campaign.campaign_status === "running" ? (
                         <button
                           onClick={() => pauseCampaign(campaign.campaign_id)}
-                          className="px-3 sm:px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-xs sm:text-sm font-medium"
+                          className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap shadow-md hover:shadow-lg transition-all"
                         >
-                          <i className="fas fa-pause mr-1"></i> Pause
+                          <i className="fas fa-pause mr-1 sm:mr-2"></i> Pause
                         </button>
                       ) : campaign.campaign_status === "completed" ? (
-                        <span className="px-3 sm:px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-xs sm:text-sm font-medium">
-                          <i className="fas fa-check-circle mr-1"></i> Completed
+                        <span className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-xs sm:text-sm font-medium text-center whitespace-nowrap">
+                          <i className="fas fa-check-circle mr-1 sm:mr-2"></i> Completed
                         </span>
                       ) : (
                         <>
@@ -542,9 +624,9 @@ const Master = () => {
                           )}
                           <button
                             onClick={() => startCampaign(campaign.campaign_id)}
-                            className="px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-lg text-xs sm:text-sm font-medium"
+                            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap shadow-md hover:shadow-lg transition-all"
                           >
-                            <i className="fas fa-paper-plane mr-1"></i> Send
+                            <i className="fas fa-paper-plane mr-1 sm:mr-2"></i> Send
                           </button>
                         </>
                       )}
@@ -898,9 +980,9 @@ const Master = () => {
       {/* Template Preview Modal */}
       {showTemplatePreview && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 overflow-auto">
-          <div className="bg-white w-full sm:rounded-xl shadow-2xl sm:max-w-7xl sm:my-4 min-h-screen sm:min-h-0 sm:max-h-[95vh] flex flex-col">
+          <div className="bg-white w-full sm:rounded-2xl shadow-2xl sm:max-w-[95vw] sm:my-4 min-h-screen sm:min-h-0 sm:max-h-[95vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 sm:rounded-t-2xl">
               <div className="flex justify-between items-start sm:items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base sm:text-xl font-bold text-gray-900 flex items-center">
@@ -917,7 +999,7 @@ const Master = () => {
                 </div>
                 <button
                   onClick={closeTemplatePreview}
-                  className="text-gray-400 hover:text-gray-600 p-1.5 sm:p-2 rounded-lg hover:bg-white transition-colors flex-shrink-0"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 sm:p-2 rounded-xl hover:bg-white/80 transition-all duration-200 flex-shrink-0 hover:shadow-md"
                 >
                   <i className="fas fa-times text-lg sm:text-xl"></i>
                 </button>
@@ -925,7 +1007,7 @@ const Master = () => {
 
               {/* Email Navigation */}
               {templatePreviewData && templatePreviewData.has_sample_data && (
-                <div className="mt-3 sm:mt-4 bg-white rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200">
+                <div className="mt-3 sm:mt-4 bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-indigo-100">
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                     {/* Navigation Controls */}
                     <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
@@ -937,12 +1019,12 @@ const Master = () => {
                           changePreviewEmail(templatePreviewData.campaign_id, Math.max(0, currentEmailIndex - 1));
                         }}
                         disabled={currentEmailIndex === 0 || loadingPreview}
-                        className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
+                        className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex-1 sm:flex-initial"
                       >
                         {loadingPreview ? <i className="fas fa-spinner fa-spin sm:mr-2"></i> : <i className="fas fa-chevron-left sm:mr-2"></i>}
                         <span className="hidden sm:inline">Previous</span>
                       </button>
-                      <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+                      <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 shadow-sm">
                         <span className="text-xs sm:text-sm font-bold text-indigo-900 whitespace-nowrap">
                           <span className="hidden sm:inline">Email </span>{currentEmailIndex + 1} <span className="text-indigo-400 mx-1">of</span> {templatePreviewData.total_emails.toLocaleString()}
                         </span>
@@ -955,7 +1037,7 @@ const Master = () => {
                           changePreviewEmail(templatePreviewData.campaign_id, Math.min(templatePreviewData.total_emails - 1, currentEmailIndex + 1));
                         }}
                         disabled={currentEmailIndex >= templatePreviewData.total_emails - 1 || loadingPreview}
-                        className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-1 sm:flex-initial"
+                        className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex-1 sm:flex-initial"
                       >
                         <span className="hidden sm:inline">Next</span>
                         {loadingPreview ? <i className="fas fa-spinner fa-spin sm:ml-2"></i> : <i className="fas fa-chevron-right sm:ml-2"></i>}
@@ -963,7 +1045,7 @@ const Master = () => {
                     </div>
 
                     {/* Page Number Input */}
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-indigo-50 rounded-xl p-2 border border-indigo-200 shadow-sm">
                       <label htmlFor="pageNumberInput" className="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap">
                         <i className="fas fa-hashtag text-indigo-600 mr-1"></i>
                         Go to page:
@@ -978,7 +1060,7 @@ const Master = () => {
                         onKeyPress={handlePageNumberKeyPress}
                         placeholder={`1-${templatePreviewData.total_emails.toLocaleString()}`}
                         disabled={loadingPreview}
-                        className="w-20 sm:w-24 px-2 py-1.5 border border-gray-300 rounded text-xs sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-20 sm:w-24 px-2 py-1.5 border border-indigo-300 rounded-lg text-xs sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                       />
                       <button
                         type="button"
@@ -988,7 +1070,7 @@ const Master = () => {
                           goToPageNumber();
                         }}
                         disabled={!pageNumberInput || loadingPreview}
-                        className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-xs sm:text-sm font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap shadow-md hover:shadow-lg"
                         title="Jump to page"
                       >
                         {loadingPreview ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-arrow-right"></i>}
@@ -998,7 +1080,7 @@ const Master = () => {
 
                     {/* Current Email Info */}
                     {templatePreviewData.current_email && (
-                      <div className="mt-3 sm:mt-0 sm:flex-1 sm:ml-4 sm:pl-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l-2 border-indigo-200">
+                      <div className="mt-3 sm:mt-0 sm:flex-1 sm:ml-4 sm:pl-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l-2 border-indigo-200 bg-gradient-to-r from-transparent to-indigo-50/30 sm:rounded-r-lg sm:pr-2">
                         <div className="flex items-start gap-2">
                           <i className="fas fa-user-circle text-indigo-600 text-lg sm:text-xl mt-0.5 flex-shrink-0"></i>
                           <div className="flex-1 min-w-0">
@@ -1012,7 +1094,7 @@ const Master = () => {
                                  templatePreviewData.to ||
                                  'Email not available'}
                               </span>
-                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium inline-flex items-center self-start">
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium inline-flex items-center self-start shadow-sm">
                                 <i className="fas fa-check-circle mr-1"></i>Valid
                               </span>
                             </div>
@@ -1021,7 +1103,7 @@ const Master = () => {
                               {(templatePreviewData.current_email['Billed Name'] || 
                                 templatePreviewData.current_email.BilledName || 
                                 templatePreviewData.current_email.Name) && (
-                                <span className="flex items-center">
+                                <span className="flex items-center bg-white/50 px-2 py-0.5 rounded-lg">
                                   <i className="fas fa-building text-gray-400 mr-1"></i>
                                   {templatePreviewData.current_email['Billed Name'] || 
                                    templatePreviewData.current_email.BilledName || 
@@ -1029,20 +1111,20 @@ const Master = () => {
                                 </span>
                               )}
                               {templatePreviewData.current_email.Amount && (
-                                <span className="flex items-center">
+                                <span className="flex items-center bg-white/50 px-2 py-0.5 rounded-lg">
                                   <i className="fas fa-rupee-sign text-gray-400 mr-1"></i>
                                   {templatePreviewData.current_email.Amount}
                                 </span>
                               )}
                               {templatePreviewData.current_email.Days && (
-                                <span className="flex items-center">
+                                <span className="flex items-center bg-white/50 px-2 py-0.5 rounded-lg">
                                   <i className="fas fa-calendar-day text-gray-400 mr-1"></i>
                                   {templatePreviewData.current_email.Days} days
                                 </span>
                               )}
                               {(templatePreviewData.current_email['Bill Number'] || 
                                 templatePreviewData.current_email.BillNumber) && (
-                                <span className="flex items-center">
+                                <span className="flex items-center bg-white/50 px-2 py-0.5 rounded-lg">
                                   <i className="fas fa-file-invoice text-gray-400 mr-1"></i>
                                   {templatePreviewData.current_email['Bill Number'] || 
                                    templatePreviewData.current_email.BillNumber}
@@ -1096,21 +1178,21 @@ const Master = () => {
                   )}
                   
                   {/* Email Preview Frame */}
-                  <div className="mx-auto w-full" style={{ maxWidth: '800px' }}>
+                  <div className="mx-auto w-full px-4" style={{ maxWidth: 'min(1100px, 85vw)' }}>
                     {/* Email Client Mock Header */}
-                    <div className="bg-white rounded-t-lg sm:rounded-t-xl shadow-lg border border-gray-200 p-3 sm:p-4">
+                    <div className="bg-white rounded-t-xl sm:rounded-t-2xl shadow-lg border border-gray-200 p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-gray-200">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
+                          <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-sm"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
                         </div>
-                        <div className="text-xs text-gray-500 font-medium">Email Preview</div>
+                        <div className="text-xs text-gray-500 font-medium bg-gray-50 px-3 py-1 rounded-full">Email Preview</div>
                         <div className="flex items-center gap-2">
-                          <button className="text-gray-400 hover:text-gray-600">
+                          <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                             <i className="fas fa-search text-sm"></i>
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
+                          <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                             <i className="fas fa-ellipsis-v text-sm"></i>
                           </button>
                         </div>
@@ -1131,14 +1213,14 @@ const Master = () => {
                         <div className="flex items-start">
                           <span className="text-gray-500 font-medium w-16">Subject:</span>
                           <span className="text-gray-900 flex-1 font-semibold">
-                            {templatePreviewData.campaign_name}
+                            {templatePreviewData.mail_subject || templatePreviewData.campaign_name}
                           </span>
                         </div>
                       </div>
                     </div>
                     
                     {/* Email Body Frame */}
-                    <div className="bg-white shadow-lg border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
+                    <div className="bg-white shadow-lg border-x border-b border-gray-200 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
                       <div 
                         className="email-preview-body p-6"
                         style={{

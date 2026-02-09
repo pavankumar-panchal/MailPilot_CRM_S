@@ -18,6 +18,8 @@ const EmailSent = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const isFirstLoad = useRef(true);
+  const isFetching = useRef(false); // Prevent request pile-up
+  const abortController = useRef(null);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -28,28 +30,64 @@ const EmailSent = () => {
 
   // Fetch campaigns
   const fetchCampaigns = async () => {
+    // CRITICAL: Prevent overlapping requests
+    if (isFetching.current) {
+      return;
+    }
+
     // Only show loading on first load
     if (isFirstLoad.current) setLoading(true);
+
+    isFetching.current = true;
+
     try {
-      const res = await fetch(API_CONFIG.API_MONITOR_CAMPAIGNS);
+      // Create abort controller with 5-second timeout
+      abortController.current = new AbortController();
+      const timeoutId = setTimeout(() => abortController.current.abort(), 5000);
+
+      const res = await fetch(API_CONFIG.API_MONITOR_CAMPAIGNS, {
+        signal: abortController.current.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error('Request failed');
+
       const data = await res.json();
       setCampaigns(Array.isArray(data) ? data : []);
       setPagination((prev) => ({
         ...prev,
         total: Array.isArray(data) ? data.length : 0,
       }));
-    } catch {
-      setMessage({ type: "error", text: "Failed to load campaigns." });
+      
+      // Clear any error messages on successful fetch
+      if (message) setMessage(null);
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn('Campaign fetch timed out');
+      } else {
+        setMessage({ type: "error", text: "Failed to load campaigns." });
+      }
+    } finally {
+      setLoading(false);
+      isFirstLoad.current = false;
+      isFetching.current = false;
     }
-    setLoading(false);
-    isFirstLoad.current = false;
   };
 
   useEffect(() => {
     fetchCampaigns();
-    // Auto-refresh every 5 seconds
+    
+    // Auto-refresh every 5 seconds (with built-in overlap protection)
     const interval = setInterval(fetchCampaigns, 5000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+    };
   }, []);
 
   // Calculate pagination
