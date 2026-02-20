@@ -10,21 +10,18 @@
 // Ensure timezone is set
 date_default_timezone_set('Asia/Kolkata');
 
-error_log(">>> auth_helper.php: File started loading");
-
 /**
  * Get current authenticated user from session OR token
  * This is the ONLY function you need to call for authentication
  * 
  * @return array|null User data or null if not authenticated
  */
-error_log(">>> auth_helper.php: About to define getAuthenticatedUser");
 function getAuthenticatedUser() {
     global $conn;
     
     // Ensure DB connection exists
     if (!isset($conn) || !$conn) {
-        error_log("Auth helper: No database connection available");
+        // error_log("Auth helper: No database connection available");
         return null;
     }
     
@@ -32,7 +29,7 @@ function getAuthenticatedUser() {
     if (isset($_SESSION['user_id']) && isset($_SESSION['token_expiry'])) {
         // Check if token hasn't expired
         if ($_SESSION['token_expiry'] > time()) {
-            error_log("Auth: Session auth successful for user ID: " . $_SESSION['user_id']);
+            // error_log("Auth: Session auth successful for user ID: " . $_SESSION['user_id']);
             return [
                 'id' => $_SESSION['user_id'],
                 'email' => $_SESSION['user_email'] ?? '',
@@ -40,7 +37,7 @@ function getAuthenticatedUser() {
                 'role' => $_SESSION['user_role'] ?? 'user'
             ];
         } else {
-            error_log("Auth: Session expired for user ID: " . $_SESSION['user_id']);
+            // error_log("Auth: Session expired for user ID: " . $_SESSION['user_id']);
         }
     }
     
@@ -48,11 +45,11 @@ function getAuthenticatedUser() {
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
     
-    error_log("Auth: HTTP_AUTHORIZATION from server: " . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'NOT SET'));
-    error_log("Auth: Authorization from headers: " . ($authHeader ? 'Present (' . substr($authHeader, 0, 20) . '...)' : 'Missing'));
+    // error_log("Auth: HTTP_AUTHORIZATION from server: " . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'NOT SET'));
+    // error_log("Auth: Authorization from headers: " . ($authHeader ? 'Present (' . substr($authHeader, 0, 20) . '...)' : 'Missing'));
     
-    if (empty($authHeader)) {
-        error_log("Auth: No authorization header found");
+    if (!$authHeader) {
+        // error_log("Auth: No authorization header found");
         return null;
     }
     
@@ -90,7 +87,7 @@ function getAuthenticatedUser() {
             $updateStmt->execute();
             $updateStmt->close();
             
-            error_log("Token auth successful for user: " . $row['email'] . " (ID: " . $row['id'] . ")");
+            // error_log("Token auth successful for user: " . $row['email'] . " (ID: " . $row['id'] . ")");
             
             // Populate session for subsequent requests
             $_SESSION['user_id'] = $row['id'];
@@ -107,11 +104,11 @@ function getAuthenticatedUser() {
                 'role' => $row['role']
             ];
         } else {
-            error_log("Token validation failed: Token not found or expired");
+            // error_log("Token validation failed: Token not found or expired");
         }
         $stmt->close();
     } catch (Exception $e) {
-        error_log("Token validation error: " . $e->getMessage());
+        // error_log("Token validation error: " . $e->getMessage());
     }
     
     return null;
@@ -139,5 +136,3 @@ function isAuthenticatedAdmin() {
     $user = getAuthenticatedUser();
     return $user && $user['role'] === 'admin';
 }
-
-error_log(">>> auth_helper.php: File loaded successfully - all functions defined");

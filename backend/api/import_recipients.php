@@ -9,7 +9,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/import_errors.log');
+// ini_set('error_log', __DIR__ . '/../logs/import_errors.log'); // Disabled - no log files
 set_time_limit(300);
 ini_set('memory_limit', '512M');
 

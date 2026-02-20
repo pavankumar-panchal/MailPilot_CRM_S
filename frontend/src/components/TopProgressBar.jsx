@@ -39,14 +39,17 @@ const TopProgressBar = () => {
         // Only update if component is still mounted
         if (!isMounted) return;
 
-        // Check for validation progress
+        // CRITICAL: Only show progress when email validation is actually running
+        // Check: stage is 'active' AND validation exists AND percent < 100
         if (
           data &&
-          typeof data.percent === "number" &&
-          data.total > 0 &&
-          data.percent < 100
+          data.stage === 'active' &&
+          data.validation &&
+          typeof data.validation.percent === "number" &&
+          data.validation.total > 0 &&
+          data.validation.percent < 100
         ) {
-          setPercent(data.percent);
+          setPercent(data.validation.percent);
           setActive(true);
         } else {
           setActive(false);

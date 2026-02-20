@@ -1,10 +1,31 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from '@tailwindcss/vite'
+import tailwindcss from '@tailwindcss/vite';
+import compression from 'vite-plugin-compression';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react({
+      // Enable Fast Refresh for better DX
+      fastRefresh: true,
+    }),
+    tailwindcss(),
+    // Gzip compression for production builds
+    compression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      threshold: 1024, // Only compress files > 1kb
+      deleteOriginFile: false
+    }),
+    // Brotli compression for even better compression
+    compression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 1024,
+      deleteOriginFile: false
+    })
+  ],
   base: './', // Use relative paths for production
   
   build: {

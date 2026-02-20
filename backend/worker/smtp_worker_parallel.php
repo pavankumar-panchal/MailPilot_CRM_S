@@ -1,15 +1,4 @@
 <?php
-/**
- * ENTERPRISE-GRADE Email Validation Worker: Complete Domain + SMTP Validation
- * Performs thorough email validation including:
- * - Domain verification (MX records, DNS resolution)
- * - SMTP validation (mailbox existence check)
- * - Catch-all detection
- * - Disposable/role email detection
- * 
- * Based on single_email.php methodology with parallel processing
- * Usage: php smtp_worker_parallel.php <worker_id> <process_id> <start_index> <end_index>
- */
 date_default_timezone_set('Asia/Kolkata');
 set_time_limit(0);
 
@@ -27,8 +16,16 @@ $workerId = intval($argv[1]);
 $processId = trim($argv[2]);
 $startIndex = intval($argv[3]);
 $endIndex = intval($argv[4]);
+$userId = isset($argv[5]) ? intval($argv[5]) : null;
+$dbWorkerId = isset($argv[6]) ? intval($argv[6]) : null;
 
 $GLOBALS['workerId'] = $workerId;
+$GLOBALS['userId'] = $userId;
+$GLOBALS['dbWorkerId'] = $dbWorkerId;
+
+// Logging configuration
+if (!defined('LOG_DIR')) define('LOG_DIR', __DIR__ . '/../logs/');
+if (!defined('ENABLE_DETAILED_LOGGING')) define('ENABLE_DETAILED_LOGGING', false);
 
 // Tuning constants (enterprise-grade)
 if (!defined('SIP_SMTP_SOCKET_TIMEOUT')) define('SIP_SMTP_SOCKET_TIMEOUT', 8);
@@ -41,17 +38,94 @@ if (!defined('SIP_SMTP_DEFERRAL_DELAY_MIN')) define('SIP_SMTP_DEFERRAL_DELAY_MIN
 if (!defined('SIP_MAX_TOTAL_SMTP_TIME')) define('SIP_MAX_TOTAL_SMTP_TIME', 28);
 if (!defined('SIP_DISABLE_CATCHALL_DETECTION')) define('SIP_DISABLE_CATCHALL_DETECTION', false);
 
-// Log function
-function log_worker($msg) {
-    global $workerId;
-    $timestamp = date('Y-m-d H:i:s');
-    echo "[$timestamp] Worker $workerId: $msg\n";
+// ============================================================
+// ENHANCED LOGGING FUNCTIONS - Write to both console and .log files
+// ============================================================
+$WORKER_LOG_FILE = null;
+
+function init_worker_logging() {
+    global $WORKER_LOG_FILE, $workerId, $userId, $dbWorkerId, $processId;
+    
+    // Create logs directory if it doesn't exist
+    if (!is_dir(LOG_DIR)) {
+        mkdir(LOG_DIR, 0755, true);
+    }
+    
+    // Worker-specific log file
+    if ($userId !== null && $dbWorkerId !== null) {
+        $logFileName = 'srv' . $dbWorkerId . '_user_' . $userId . '_worker_' . $workerId . '_' . date('Y-m-d_H-i-s') . '.log';
+    } elseif ($userId !== null) {
+        $logFileName = 'user_' . $userId . '_worker_' . $workerId . '_' . date('Y-m-d_H-i-s') . '.log';
+    } else {
+        $logFileName = 'worker_' . $workerId . '_' . date('Y-m-d_H-i-s') . '.log';
+    }
+    $WORKER_LOG_FILE = LOG_DIR . $logFileName;
+    
+    // Write initial header
+    if (ENABLE_DETAILED_LOGGING) {
+        $header = "=== WORKER LOG STARTED ===\n";
+        $header .= "Parallel Worker ID: $workerId\n";
+        $header .= "User ID: " . ($userId ?? 'N/A') . "\n";
+        $header .= "DB Worker ID (Server): " . ($dbWorkerId ?? 'N/A') . "\n";
+        $header .= "Process ID: $processId\n";
+        $header .= "Started: " . date('Y-m-d H:i:s') . "\n";
+        $header .= "========================\n\n";
+        file_put_contents($WORKER_LOG_FILE, $header, FILE_APPEND);
+    }
 }
 
-log_worker("Started with args: workerId=$workerId, processId=$processId, startIndex=$startIndex, endIndex=$endIndex");
+// Log function with file output
+function log_worker($msg) {
+    global $workerId, $userId, $WORKER_LOG_FILE;
+    $timestamp = date('Y-m-d H:i:s');
+    
+    $prefix = $userId !== null ? "[User $userId | Worker $workerId]" : "[Worker $workerId]";
+    $formattedMsg = "[$timestamp] $prefix $msg\n";
+    
+    // Write to console
+    echo $formattedMsg;
+    
+    // Write to log file
+    if ($WORKER_LOG_FILE && ENABLE_DETAILED_LOGGING) {
+        file_put_contents($WORKER_LOG_FILE, $formattedMsg, FILE_APPEND);
+    }
+}
+
+function log_email_processed($email, $status, $response) {
+    global $WORKER_LOG_FILE, $userId, $workerId;
+    
+    if (!ENABLE_DETAILED_LOGGING) return;
+    
+    $timestamp = date('Y-m-d H:i:s');
+    $statusSymbol = $status === 'valid' ? '✓' : '✗';
+    $msg  = "[$timestamp] $statusSymbol EMAIL: $email | STATUS: $status | RESPONSE: $response\n";
+    
+    // Write to console (concise)
+    echo "[$timestamp] Worker $workerId: $statusSymbol $email => $status\n";
+    
+    // Write detailed info to log file
+    if ($WORKER_LOG_FILE) {
+        file_put_contents($WORKER_LOG_FILE, $msg, FILE_APPEND);
+    }
+}
+
+// Initialize logging
+init_worker_logging();
+
+// Initialize logging . ", dbWorkerId=" . ($dbWorkerId ?? 'null')
+init_worker_logging();
+
+log_worker("Started with args: workerId=$workerId, processId=$processId, startIndex=$startIndex, endIndex=$endIndex, userId=" . ($userId ?? 'null'));
 
 // Database connection from config
 require_once __DIR__ . '/../config/db.php';
+
+// Ensure connection always closes (prevents "too many connections" error)
+register_shutdown_function(function() use (&$conn) {
+    if (isset($conn) && $conn instanceof mysqli) {
+        @$conn->close();
+    }
+});
 
 if (!isset($conn) || $conn->connect_error) {
     log_worker("Connection failed: " . ($conn->connect_error ?? 'No connection'));
@@ -59,9 +133,6 @@ if (!isset($conn) || $conn->connect_error) {
 }
 
 log_worker("Database connection established");
-
-// Database schema matches server - no additional columns needed
-// Using: domain_verified, domain_status, validation_response, domain_processed, validation_status
 
 // Get worker directory and emails
 $workerDir = '/tmp/bulk_workers_' . $processId . '/';
@@ -85,6 +156,56 @@ $emailsToProcess = array_slice($allEmails, $startIndex, ($endIndex - $startIndex
 
 log_worker("Total emails in file: " . count($allEmails));
 log_worker("Processing emails from index $startIndex to $endIndex (" . count($emailsToProcess) . " emails)");
+
+// Validate emails belong to correct user_id AND worker_id if specified
+if ($userId !== null || $dbWorkerId !== null) {
+    $filterDesc = [];
+    if ($userId !== null) $filterDesc[] = "USER_ID=$userId";
+    if ($dbWorkerId !== null) $filterDesc[] = "WORKER_ID=$dbWorkerId";
+    
+    log_worker("Validating emails belong to " . implode(' AND ', $filterDesc));
+    $validatedEmails = [];
+    $skippedCount = 0;
+    
+    foreach ($emailsToProcess as $email) {
+        $checkStmt = $conn->prepare("
+            SELECT e.user_id, cl.user_id as csv_user_id, e.worker_id 
+            FROM emails e
+            LEFT JOIN csv_list cl ON e.csv_list_id = cl.id
+            WHERE e.raw_emailid = ? 
+            LIMIT 1
+        ");
+        $checkStmt->bind_param('s', $email);
+        $checkStmt->execute();
+        $result = $checkStmt->get_result();
+        $row = $result->fetch_assoc();
+        $checkStmt->close();
+        
+        if ($row) {
+            $emailUserId = $row['user_id'] ?? $row['csv_user_id'];
+            $emailWorkerId = intval($row['worker_id']);
+            
+            $passesUserFilter = ($userId === null || intval($emailUserId) === $userId);
+            $passesWorkerFilter = ($dbWorkerId === null || $emailWorkerId === $dbWorkerId);
+            
+            if ($passesUserFilter && $passesWorkerFilter) {
+                $validatedEmails[] = $email;
+            } else {
+                $skippedCount++;
+                $reason = [];
+                if (!$passesUserFilter) $reason[] = "user_id=$emailUserId (expected=$userId)";
+                if (!$passesWorkerFilter) $reason[] = "worker_id=$emailWorkerId (expected=$dbWorkerId)";
+                log_worker("SKIPPED: $email (" . implode(', ', $reason) . ")");
+            }
+        } else {
+            $skippedCount++;
+            log_worker("SKIPPED: $email (not found in database)");
+        }
+    }
+    
+    $emailsToProcess = $validatedEmails;
+    log_worker("After validation: " . count($emailsToProcess) . " emails (skipped: $skippedCount)");
+}
 
 // ========== ENTERPRISE HELPER FUNCTIONS (from single_email.php) ==========
 
@@ -963,6 +1084,9 @@ foreach ($emailsToProcess as $email) {
         $stmt->execute();
         $stmt->close();
         
+        // Log successful validation
+        log_email_processed($email, $validationStatus, $validationResponse ?? 'N/A');
+        
     } else {
         $invalidEmails[] = $email;
         $invalidCount++;
@@ -983,6 +1107,9 @@ foreach ($emailsToProcess as $email) {
         $stmt->bind_param('isiss', $domainStatus, $validationStatus, $domainVerified, $validationResponse, $originalEmail);
         $stmt->execute();
         $stmt->close();
+        
+        // Log failed validation
+        log_email_processed($email, $validationStatus, $validationResponse ?? 'N/A');
     }
     
     // Store details for aggregation

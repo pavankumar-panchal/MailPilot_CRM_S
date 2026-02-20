@@ -1,0 +1,158 @@
+# MailPilot CRM - Root Configuration
+# This file should be in the root of your emailvalidation folder
+
+RewriteEngine On
+
+# Set base path (auto-detects folder name)
+RewriteBase /verify_emails/MailPilot_CRM_S/
+
+# ============================================
+# API ROUTING - Route /api/* to backend/api/
+# ============================================
+# Match any request starting with /api/
+RewriteCond %{REQUEST_URI} ^/verify_emails/MailPilot_CRM_S/api/
+RewriteRule ^api/(.*)$ backend/api/$1 [QSA,L]
+
+# ============================================
+# BACKEND ROUTING - Direct backend access
+# ============================================
+RewriteCond %{REQUEST_URI} ^/verify_emails/MailPilot_CRM_S/backend/
+RewriteRule ^backend/(.*)$ backend/$1 [QSA,L]
+
+# ============================================
+# FRONTEND ROUTING - Single Page Application
+# ============================================
+# Don't rewrite if file exists (for assets, images, etc.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Don't rewrite API or backend requests
+RewriteCond %{REQUEST_URI} !^/verify_emails/MailPilot_CRM_S/api/
+RewriteCond %{REQUEST_URI} !^/verify_emails/MailPilot_CRM_S/backend/
+
+# Route everything else to index.html (for React Router / Vue Router)
+RewriteRule ^(.*)$ index.html [L]
+
+# ============================================
+# SECURITY HEADERS
+# ============================================
+<IfModule mod_headers.c>
+    # Prevent MIME type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Clickjacking protection
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # XSS protection
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # HTTPS enforcement (uncomment when SSL is enabled)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    
+    # CORS for API (if needed from different domain)
+    # Header set Access-Control-Allow-Origin "https://yourdomain.com"
+</IfModule>
+
+# ============================================
+# COMPRESSION - Improve load times
+# ============================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/atom+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ============================================
+# BROWSER CACHING - Cache static assets
+# ============================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    
+    # Fonts
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    
+    # HTML (shorter cache for dynamic content)
+    ExpiresByType text/html "access plus 0 seconds"
+    
+    # JSON (no cache for API responses)
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
+
+# ============================================
+# MIME TYPES - Ensure proper content types
+# ============================================
+<IfModule mod_mime.c>
+    # JavaScript
+    AddType application/javascript js
+    AddType application/json json
+    
+    # Fonts
+    AddType font/woff woff
+    AddType font/woff2 woff2
+    AddType application/font-woff woff
+    AddType application/font-woff2 woff2
+    
+    # Images
+    AddType image/svg+xml svg svgz
+    AddEncoding gzip svgz
+</IfModule>
+
+# ============================================
+# SECURITY - Disable directory browsing
+# ============================================
+Options -Indexes
+
+# ============================================
+# SECURITY - Protect sensitive files
+# ============================================
+<FilesMatch "\.(env|log|sql|json|md|sh)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Protect .git files (use RedirectMatch since DirectoryMatch not allowed in .htaccess)
+RedirectMatch 404 /\.git
+
+# ============================================
+# PHP SETTINGS (if not using PHP-FPM)
+# ============================================
+<IfModule mod_php7.c>
+    php_value max_execution_time 60
+    php_value max_input_time 60
+    php_value memory_limit 256M
+    php_value post_max_size 50M
+    php_value upload_max_filesize 50M
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log backend/logs/php_errors.log
+</IfModule>
+
+# ============================================
+# ERROR PAGES (Optional)
+# ============================================
+# ErrorDocument 404 /emailvalidation/index.html
+# ErrorDocument 500 /emailvalidation/500.html

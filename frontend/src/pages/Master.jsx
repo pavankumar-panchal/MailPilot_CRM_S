@@ -26,6 +26,7 @@ const Master = () => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
   const [pageNumberInput, setPageNumberInput] = useState('');
+  const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(0);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -79,20 +80,40 @@ const Master = () => {
     fetchCsvLists();
   }, [fetchCsvLists]);
 
-  // Fetch campaigns function (memoized)
-  const fetchData = useCallback(async () => {
+  // Fetch campaigns function (memoized with change detection)
+  const fetchData = useCallback(async (skipLoadingState = false) => {
     try {
-      const res = await axios.post(API_PUBLIC_URL, { action: "list" });
-      // campaigns_master.php returns { success: true, data: { campaigns: [...] } }
+      if (!skipLoadingState) {
+        // Only show loading on initial fetch
+      }
+      
+      // OPTIMIZATION: Send last_update timestamp for change detection
+      const res = await axios.post(API_PUBLIC_URL, { 
+        action: "list",
+        last_update: lastUpdateTimestamp 
+      });
+      
       if (!res?.data) throw new Error("No response data");
       if (res.data.success === false) throw new Error(res.data.message || "API returned failure");
 
-      const campaigns = (res.data.data && res.data.data.campaigns) || [];
-      setCampaigns(campaigns);
-      setPagination((prev) => ({
-        ...prev,
-        total: campaigns.length,
-      }));
+      const responseData = res.data.data || {};
+      const campaigns = responseData.campaigns || [];
+      const hasChanges = responseData.has_changes !== false; // Default to true if not specified
+      const timestamp = responseData.timestamp || Math.floor(Date.now() / 1000);
+      
+      // OPTIMIZATION: Only update state if there are actual changes
+      if (hasChanges && campaigns.length >= 0) {
+        setCampaigns(campaigns);
+        setPagination((prev) => ({
+          ...prev,
+          total: campaigns.length,
+        }));
+        setLastUpdateTimestamp(timestamp);
+        logger.debug('📊 Updated campaigns data:', campaigns.length, 'campaigns');
+      } else if (!hasChanges) {
+        logger.debug('✅ No changes detected, skipping state update');
+      }
+      
       setLoading(false);
       return campaigns;
     } catch (error) {
@@ -102,19 +123,20 @@ const Master = () => {
       setLoading(false);
       return [];
     }
-  }, []);
+  }, [lastUpdateTimestamp]);
 
   // Check if any campaigns are running (determines polling frequency)
   const hasRunningCampaigns = useMemo(() => {
     return campaigns.some(c => c.campaign_status === 'running');
   }, [campaigns]);
 
-  // Smart polling - only poll when needed
+  // Smart polling - only poll when needed with adaptive intervals
   useEffect(() => {
     fetchData();
     
-    // Adaptive polling interval
-    const pollInterval = hasRunningCampaigns ? 5000 : 30000; // 5s if running, 30s if idle
+    // OPTIMIZATION: Adaptive polling interval based on campaign state
+    // 10s for running campaigns (was 5s), 60s for idle (was 30s)
+    const pollInterval = hasRunningCampaigns ? 10000 : 60000;
     
     // Only poll when page is visible
     let interval;
@@ -157,7 +179,7 @@ const Master = () => {
     }
   }, []);
 
-  // Auto-refresh email counts for running campaigns
+  // Auto-refresh email counts for running campaigns (optimized interval)
   useEffect(() => {
     if (!hasRunningCampaigns) return;
 
@@ -174,7 +196,7 @@ const Master = () => {
         });
         return currentCampaigns;
       });
-    }, 3000); // Refresh every 3 seconds for live updates
+    }, 5000); // OPTIMIZED: Refresh every 5 seconds (was 3s) - reduces server load
 
     return () => clearInterval(refreshInterval);
   }, [hasRunningCampaigns, fetchEmailCounts]);
@@ -257,16 +279,34 @@ const Master = () => {
       
       setMessage({ 
         type: "info", 
-        text: "Preparing export... Please wait." 
+        text: "Preparing export... This may take a moment for large campaigns." 
       });
       
-      // Use axios to download with proper authentication
+      // Use axios to download with proper authentication and extended timeout
       const response = await axios.get(`${API_CONFIG.API_EXPORT_CAMPAIGN}?campaign_id=${campaignId}`, {
         responseType: 'blob',
         withCredentials: true,
+        timeout: 300000, // 5 minutes timeout for large exports
         headers: {
           'Accept': 'text/csv,application/json',
         },
+        onDownloadProgress: (progressEvent) => {
+          // Show progress for large downloads
+          if (progressEvent.lengthComputable) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setMessage({ 
+              type: "info", 
+              text: `Downloading... ${percentCompleted}% complete` 
+            });
+          } else {
+            // Length not computable, just show bytes downloaded
+            const mbDownloaded = (progressEvent.loaded / (1024 * 1024)).toFixed(2);
+            setMessage({ 
+              type: "info", 
+              text: `Downloading... ${mbDownloaded} MB received` 
+            });
+          }
+        }
       });
       
       // Create blob and download
@@ -498,9 +538,14 @@ const Master = () => {
             const selectedCsvList = getSelectedCsvList(campaign.campaign_id);
             const isTemplateImport = campaign.import_batch_id || campaign.email_source === 'imported_recipients';
             
-            // Determine email count based on source
+            // ✅ FIXED: Prioritize campaign_status.total_emails (from Server 1) when available
+            // This ensures frontend displays the actual count from campaign_status after campaign starts
             let emailCount;
-            if (campaign.csv_list_valid_count !== undefined && campaign.csv_list_valid_count !== null) {
+            if (campaign.total_emails > 0) {
+              // Use campaign_status.total_emails if campaign has started (Server 1 source of truth)
+              emailCount = Number(campaign.total_emails);
+            } else if (campaign.csv_list_valid_count !== undefined && campaign.csv_list_valid_count !== null) {
+              // Fall back to pre-calculated count for campaigns not yet started
               emailCount = Number(campaign.csv_list_valid_count);
             } else if (selectedCsvList?.valid_count) {
               emailCount = Number(selectedCsvList.valid_count);

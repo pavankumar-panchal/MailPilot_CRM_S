@@ -124,7 +124,7 @@ try {
                         AND NOT EXISTS (
                             SELECT 1 FROM mail_blaster mb
                             WHERE mb.campaign_id = $campaign_id
-                            AND mb.to_mail = e.raw_emailid
+                            AND mb.to_mail COLLATE utf8mb4_unicode_ci = e.raw_emailid COLLATE utf8mb4_unicode_ci
                         )
                     ");
                     if ($unclaimedRes) {

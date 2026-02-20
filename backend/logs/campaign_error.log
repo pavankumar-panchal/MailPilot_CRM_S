@@ -1,0 +1,57 @@
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: === EMAIL BLAST PARALLEL STARTED ===
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Campaign ID: 5
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: PHP Version: 8.2.12
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Process ID: 24498
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Log file: /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/../logs/campaign_debug.log
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: === Starting Parallel Email Blast Daemon for Campaign #5 ===
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: --- Starting parallel blast cycle for 1 emails ---
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Starting parallel email blast for campaign #5
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Worker script ready at /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php
+[12-Feb-2026 14:22:51 Asia/Kolkata] Campaign 5: Step 1: Fetching campaign details for campaign #5
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Campaign found: {"campaign_id":"5","csv_list_id":null,"import_batch_id":"BATCH_20260205_111252_b03809a1","template_id":"7","description":"Kind Attn: [[Company]] | Saral PayPack - AMC","mail_subject":"Kind Attn: [[Company]] | Saral PayPack - AMC","mail_body":"","attachment_path":null,"send_as_html":"1","images_paths":null,"user_id":"1"}
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: ==========================================
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Campaign user_id: 1
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Campaign owner: Pavankumar (panchalpavan800@gmail.com)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Using ONLY SMTP accounts belonging to user #1
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: ==========================================
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Step 2: Fetching SMTP servers for user #1
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Daily counters reset for new day
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonsoft.info: 24 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonmail.xyz: 23 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_payrollsoft.in: 23 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonmails1.com: 23 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonmails3.com: 23 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonmails2.com: 23 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server SMTP_relyonmail.online: 22 accounts available (user 1)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Found 7 SMTP servers
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Found 7 active SMTP servers
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #14 (SMTP_relyonsoft.info): 24 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #15 (SMTP_relyonmail.xyz): 23 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #16 (SMTP_payrollsoft.in): 23 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #17 (SMTP_relyonmails1.com): 23 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #18 (SMTP_relyonmails3.com): 23 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #19 (SMTP_relyonmails2.com): 23 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Server #20 (SMTP_relyonmail.online): 22 accounts
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Step 3: Checking emails remaining (csv_list_id: 0)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Using import batch: BATCH_20260205_111252_b03809a1
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Fast count from campaign_status: 7 pending emails
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Emails remaining count: 7
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Total emails remaining: 7
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Total SMTP accounts available: 161
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Step 3.5: Checking SMTP account health...
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: SMTP Health: healthy=162
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Step 4: Launching workers for 7 SMTP servers
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Launching per-server workers: 7
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Worker script path: /opt/lampp/htdocs/verify_emails/MailPilot_CRM_S/backend/includes/email_blast_worker.php
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Worker script verified: EXISTS
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Using PHP CLI binary: /usr/bin/php
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Worker PHP version: PHP Warning:  PHP Startup: Unable to load dynamic library 'curl.so' (tried: /usr/lib/php/20230831/curl.so (/usr/lib/php/20230831/curl.so: undefined symbol: curl_mime_addpart, version CURL_OPENSSL_4), /usr/lib/php/20230831/curl.so.so (/usr/lib/php/20230831/curl.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+PHP Warning:  PHP Startup: Unable to load dynamic library 'intl.so' (tried: /usr/lib/php/20230831/intl.so (/opt/lampp/lib/libstdc++.so.6: version `CXXABI_1.3.8' not found (required by /usr/lib/php/20230831/intl.so)), /usr/lib/php/20230831/intl.so.so (/usr/lib/php/20230831/intl.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+8.3.6
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: ERROR: Worker PHP is version PHP Warning:  PHP Startup: Unable to load dynamic library 'curl.so' (tried: /usr/lib/php/20230831/curl.so (/usr/lib/php/20230831/curl.so: undefined symbol: curl_mime_addpart, version CURL_OPENSSL_4), /usr/lib/php/20230831/curl.so.so (/usr/lib/php/20230831/curl.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+PHP Warning:  PHP Startup: Unable to load dynamic library 'intl.so' (tried: /usr/lib/php/20230831/intl.so (/opt/lampp/lib/libstdc++.so.6: version `CXXABI_1.3.8' not found (required by /usr/lib/php/20230831/intl.so)), /usr/lib/php/20230831/intl.so.so (/usr/lib/php/20230831/intl.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+8.3.6 (requires PHP 8.0+)
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Forcing Plesk PHP 8.1...
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: CRITICAL: Cannot find PHP 8.1+ for workers!
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Worker launch result: {"status":"error","message":"PHP 8.1+ required"}
+[12-Feb-2026 14:22:52 Asia/Kolkata] Campaign 5: Monitoring workers progress...

@@ -3,9 +3,9 @@
 date_default_timezone_set('Asia/Kolkata');
 
 // ABSOLUTE FIRST LOG - write to file directly
-file_put_contents('/tmp/get_csv_list_debug.log', date('Y-m-d H:i:s') . " - REQUEST START\n", FILE_APPEND);
-file_put_contents('/tmp/get_csv_list_debug.log', "Origin: " . ($_SERVER['HTTP_ORIGIN'] ?? 'none') . "\n", FILE_APPEND);
-file_put_contents('/tmp/get_csv_list_debug.log', "Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN') . "\n", FILE_APPEND);
+// file_put_contents('/tmp/get_csv_list_debug.log', date('Y-m-d H:i:s') . " - REQUEST START\n", FILE_APPEND); // Disabled
+// file_put_contents('/tmp/get_csv_list_debug.log', "Origin: " . ($_SERVER['HTTP_ORIGIN'] ?? 'none') . "\n", FILE_APPEND); // Disabled
+// file_put_contents('/tmp/get_csv_list_debug.log', "Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN') . "\n", FILE_APPEND); // Disabled
 
 // Log immediately
 error_log(">>> get_csv_list.php REQUEST START - Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'));

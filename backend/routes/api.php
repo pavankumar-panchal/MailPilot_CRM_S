@@ -1,7 +1,35 @@
 <?php
+// CRITICAL: Always return JSON, never HTML errors
+header('Content-Type: application/json');
+
+// Custom error handler to prevent HTML output
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error [$errno]: $errstr in $errfile:$errline");
+    // Don't output anything to prevent breaking JSON
+    return true;
+});
+
+// Fatal error handler
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        // Clear any previous output
+        while (ob_get_level()) ob_end_clean();
+        
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Server error occurred',
+            'message' => 'Please try again in a moment'
+        ]);
+        error_log("FATAL ERROR: {$error['message']} in {$error['file']}:{$error['line']}");
+    }
+});
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // Never display errors in output
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../logs/api_errors.log');
 
@@ -43,10 +71,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 try {
+    // Start output buffering to catch any unexpected output
+    ob_start();
+    
     require_once __DIR__ . '/../config/db.php';
     error_log("Database config loaded successfully");
+    
+    // Clear buffer if successful
+    ob_end_clean();
 } catch (Exception $e) {
+    // Clear any buffered output
+    while (ob_get_level()) ob_end_clean();
+    
     error_log("FATAL: Database config failed: " . $e->getMessage());
+    header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['error' => 'Database initialization failed', 'details' => $e->getMessage()]);
     exit;
@@ -119,8 +157,15 @@ try {
             require __DIR__ . '/../includes/monitor_campaigns.php';
             break;
 
+        case ($request === '/api/master/' || $request === '/api/master'):
+            error_log("API Router: Routing to campaigns_master.php (master endpoint)");
+            define('ROUTER_HANDLED', true);
+            require __DIR__ . '/../public/campaigns_master.php';
+            break;
+
         case ($request === '/api/master/campaigns_master'):
             error_log("API Router: Routing to campaigns_master.php");
+            define('ROUTER_HANDLED', true);
             require __DIR__ . '/../public/campaigns_master.php';
             break;
 
@@ -135,7 +180,30 @@ try {
             break;
 
         case ($request === '/api/master/smtps'):
-            require __DIR__ . '/../includes/master_smtps.php';
+            error_log("API Router: Routing to master_smtps.php (requires Server 2 connection)");
+            try {
+                // Start output buffering to catch any unexpected output
+                ob_start();
+                
+                define('ROUTER_HANDLED', true);
+                require __DIR__ . '/../includes/master_smtps.php';
+                
+                // Clear buffer if successful
+                ob_end_clean();
+            } catch (Exception $e) {
+                // Clear any buffered output
+                while (ob_get_level()) ob_end_clean();
+                
+                error_log("FATAL: SMTP servers endpoint failed: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Failed to load SMTP servers',
+                    'message' => 'Unable to connect to campaign database. Please try again.'
+                ]);
+            }
             break;
 
         case ($request === '/api/master/distribution'):
@@ -151,11 +219,11 @@ try {
             $result = $conn->query("
                 SELECT
                     COUNT(*) AS total_valid,
-                    SUM(CASE WHEN mb.status IS NULL OR mb.status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN mb.status IS NULL OR mb.status = 'pending' OR mb.status = '' THEN 1 ELSE 0 END) AS pending,
                     SUM(CASE WHEN mb.status = 'success' THEN 1 ELSE 0 END) AS sent,
                     SUM(CASE WHEN mb.status = 'failed' THEN 1 ELSE 0 END) AS failed
                 FROM emails e
-                LEFT JOIN mail_blaster mb ON mb.to_mail = e.raw_emailid
+                LEFT JOIN mail_blaster mb ON mb.to_mail COLLATE utf8mb4_unicode_ci = e.raw_emailid COLLATE utf8mb4_unicode_ci
                 WHERE e.domain_status = 1
             ");
             $row = $result->fetch_assoc();

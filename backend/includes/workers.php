@@ -12,6 +12,13 @@ require_once __DIR__ . '/session_config.php';
 require_once __DIR__ . '/security_helpers.php';
 require_once __DIR__ . '/auth_helper.php';
 require_once __DIR__ . '/user_filtering.php';
+require_once __DIR__ . '/api_optimization.php';
+
+// Start performance tracking
+$startTime = microtime(true);
+
+// Enable response compression
+enableCompression();
 
 header('Content-Type: application/json');
 
@@ -191,6 +198,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
 // GET workers
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Set cache headers for GET requests (2 minutes)
+    setCacheHeaders(getCacheDurationForResource('workers'));
+    
     // Admin can see all workers, regular users only see their own
     if (isAuthenticatedAdmin()) {
         // Admin: get all workers
@@ -210,7 +220,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $row['user_id'] = (int)$row['user_id'];
         $workers[] = $row;
     }
+    
+    // Add performance headers
+    addPerformanceHeaders($startTime);
+    
+    // Send optimized JSON response
     echo json_encode($workers);
+    exit;
     exit;
 }
 

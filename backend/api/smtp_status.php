@@ -2,12 +2,20 @@
 /**
  * SMTP Status and Health Monitor
  * Shows which SMTP accounts are working and their current usage
+ * 
+ * IMPORTANT: Uses Server 2 (CRM database) for SMTP tables
  */
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/db_campaign.php';
+
+// Keep both connections:
+// $conn = Server 1 (email_id) - has campaign_master
+// $conn_heavy = Server 2 (CRM) - has smtp_servers, smtp_accounts, mail_blaster
+$conn_smtp = $conn_heavy;
 
 $today = date('Y-m-d');
 $current_hour = intval(date('G'));
@@ -51,21 +59,21 @@ $query = "
          AND mb.delivery_date = CURDATE()
          AND mb.status = 'failed'
         ) as failed_today_count
-    FROM smtp_accounts sa
-    JOIN smtp_servers ss ON ss.id = sa.smtp_server_id
+    FROM CRM.smtp_accounts sa
+    JOIN CRM.smtp_servers ss ON ss.id = sa.smtp_server_id
     LEFT JOIN (
         SELECT smtp_id, SUM(emails_sent) as sent_today
-        FROM smtp_usage
+        FROM CRM.smtp_usage
         WHERE date = '$today'
         GROUP BY smtp_id
     ) daily_usage ON daily_usage.smtp_id = sa.id
-    LEFT JOIN smtp_usage hourly_usage ON hourly_usage.smtp_id = sa.id 
+    LEFT JOIN CRM.smtp_usage hourly_usage ON hourly_usage.smtp_id = sa.id 
         AND hourly_usage.date = '$today' AND hourly_usage.hour = $current_hour
     WHERE ss.is_active = 1
     ORDER BY ss.user_id, ss.id, sa.id
 ";
 
-$result = $conn->query($query);
+$result = $conn_smtp->query($query);
 $smtp_accounts = [];
 $summary = [
     'total' => 0,
@@ -129,19 +137,48 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Get campaigns using each SMTP
-$campaign_usage = $conn->query("
+// Get campaigns using each SMTP from Server 2
+$campaign_usage_raw = $conn_heavy->query("
     SELECT 
         mb.smtpid,
         mb.campaign_id,
-        cm.mail_subject,
         COUNT(*) as emails_processing
     FROM mail_blaster mb
-    JOIN campaign_master cm ON cm.campaign_id = mb.campaign_id
     WHERE mb.status IN ('processing', 'pending')
     AND mb.delivery_time >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
     GROUP BY mb.smtpid, mb.campaign_id
 ")->fetch_all(MYSQLI_ASSOC);
+
+// Get campaign details from Server 1 if we have campaign IDs
+$campaign_usage = [];
+if (!empty($campaign_usage_raw)) {
+    $campaign_ids = array_unique(array_column($campaign_usage_raw, 'campaign_id'));
+    if (!empty($campaign_ids)) {
+        $ids_list = implode(',', array_map('intval', $campaign_ids));
+        $campaigns_result = $conn->query("
+            SELECT campaign_id, mail_subject 
+            FROM campaign_master 
+            WHERE campaign_id IN ($ids_list)
+        ");
+        
+        $campaigns = [];
+        if ($campaigns_result) {
+            while ($row = $campaigns_result->fetch_assoc()) {
+                $campaigns[$row['campaign_id']] = $row['mail_subject'];
+            }
+        }
+        
+        // Combine the data
+        foreach ($campaign_usage_raw as $usage) {
+            $campaign_usage[] = [
+                'smtpid' => $usage['smtpid'],
+                'campaign_id' => $usage['campaign_id'],
+                'mail_subject' => $campaigns[$usage['campaign_id']] ?? 'Unknown Campaign',
+                'emails_processing' => $usage['emails_processing']
+            ];
+        }
+    }
+}
 
 echo json_encode([
     'summary' => $summary,
@@ -150,4 +187,5 @@ echo json_encode([
     'timestamp' => date('Y-m-d H:i:s')
 ]);
 
+$conn_smtp->close();
 $conn->close();

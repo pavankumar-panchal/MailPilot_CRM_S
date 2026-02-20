@@ -160,6 +160,19 @@ function setSecurityHeaders() {
     
     // Remove PHP version disclosure
     header_remove("X-Powered-By");
+
+    // Force no-cache for all API responses to prevent "disk cache" issues
+    setNoCacheHeaders();
+}
+
+/**
+ * Set headers to prevent caching
+ */
+function setNoCacheHeaders() {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Cache-Control: post-check=0, pre-check=0', false);
+    header('Pragma: no-cache');
+    header('Expires: Sat, 26 Jul 1997 05:00:00 GMT'); // Date in the past
 }
 
 /**

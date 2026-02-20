@@ -6,10 +6,13 @@
  * Each campaign gets its dedicated SMTP accounts for maximum speed
  */
 
+// === RESOURCE MANAGEMENT: Prevent affecting other applications ===
+require_once __DIR__ . '/resource_manager.php';
+ResourceManager::initCampaignProcess('orchestrator');
+
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
-set_time_limit(0);
-ini_set('memory_limit', '2048M');
+// Memory limit (512M) and time limit (3600s) set by ResourceManager
 date_default_timezone_set('Asia/Kolkata');
 
 require_once __DIR__ . '/../config/db.php';
@@ -138,8 +141,9 @@ function startCampaignProcess($conn, $campaign_id) {
     }
     
     $script = __DIR__ . '/email_blast_parallel.php';
+    // Launch with LOW PRIORITY to prevent affecting other applications
     $cmd = sprintf(
-        '%s %s %d > /dev/null 2>&1 &',
+        'nice -n 10 %s %s %d > /dev/null 2>&1 &',
         escapeshellarg($php_cli),
         escapeshellarg($script),
         $campaign_id
@@ -147,8 +151,20 @@ function startCampaignProcess($conn, $campaign_id) {
     
     exec($cmd, $output, $ret);
     
-    // Update status to running
-    $conn->query("UPDATE campaign_status SET status = 'running', start_time = NOW() WHERE campaign_id = $campaign_id");
+    // Update status to running - with row-level locking and SHORT timeout
+    try {
+        // Set short lock timeout to avoid blocking frontend queries
+        $conn->query("SET SESSION innodb_lock_wait_timeout = 3");
+        
+        $conn->begin_transaction();
+        $conn->query("SELECT campaign_id FROM campaign_status WHERE campaign_id = $campaign_id FOR UPDATE");
+        $conn->query("UPDATE campaign_status SET status = 'running', start_time = NOW() WHERE campaign_id = $campaign_id");
+        $conn->commit();
+    } catch (Exception $e) {
+        $conn->rollback();
+        error_log("Failed to update campaign #$campaign_id status to running: " . $e->getMessage());
+        return false;
+    }
     
     return true;
 }

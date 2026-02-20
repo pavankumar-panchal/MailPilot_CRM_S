@@ -55,12 +55,11 @@ if (!file_exists($script)) {
     exit;
 }
 
-// Launch worker
+// Launch worker - redirect to /dev/null (no log files)
 $cmd = sprintf(
-    '%s %s %d > /tmp/worker_debug_%d.log 2>&1 & echo $!',
+    '%s %s %d > /dev/null 2>&1 & echo $!',
     escapeshellarg($php_cli),
     escapeshellarg($script),
-    $campaign_id,
     $campaign_id
 );
 
@@ -77,8 +76,7 @@ echo json_encode([
     'pid' => $pid,
     'php_cli' => $php_cli,
     'command' => $cmd,
-    'log_file' => "/tmp/worker_debug_$campaign_id.log",
-    'message' => "Workers launched. Check log file for details."
+    'message' => "Workers launched (no log files created)."
 ]);
 
 $conn->close();

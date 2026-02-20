@@ -9,6 +9,13 @@ require_once __DIR__ . '/security_helpers.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/user_filtering.php';
 require_once __DIR__ . '/auth_helper.php';
+require_once __DIR__ . '/api_optimization.php';
+
+// Start performance tracking
+$startTime = microtime(true);
+
+// Enable response compression
+enableCompression();
 
 // Set security headers
 setSecurityHeaders();
@@ -79,6 +86,9 @@ function getInputData()
 try {
     // GET /api/master/campaigns or /api/master/campaigns?id=1
     if ($method === 'GET') {
+        // Set cache headers (90 seconds for campaigns)
+        setCacheHeaders(getCacheDurationForResource('campaigns'));
+        
         // Require authentication
         $currentUser = requireAuth();
         error_log("campaign.php GET - User: " . json_encode($currentUser));
@@ -102,6 +112,8 @@ try {
                 // escape sequences into their character equivalents. If the
                 // stored content already contains real newlines this is a no-op.
                 $row['mail_body'] = isset($row['mail_body']) ? stripcslashes($row['mail_body']) : $row['mail_body'];
+                // Add performance headers
+                addPerformanceHeaders($startTime);
                 echo json_encode($row);
             } else {
                 http_response_code(404);
@@ -133,6 +145,9 @@ try {
             }
             
             error_log("campaign.php GET - Found " . count($campaigns) . " campaigns");
+            
+            // Add performance headers
+            addPerformanceHeaders($startTime);
             
             echo json_encode($campaigns);
             exit;
@@ -504,8 +519,32 @@ try {
             exit;
         }
         
-        // Allow campaigns with either template or body (or both)
-        // No strict validation here - flexible for different campaign types
+        // ENHANCED VALIDATION for campaign creation
+        if (empty(trim($description))) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Campaign description cannot be empty']);
+            exit;
+        }
+        
+        if (empty(trim($mail_subject))) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Email subject cannot be empty']);
+            exit;
+        }
+        
+        // Validate that campaign has content: either body OR template (not both empty)
+        if ((empty($mail_body) || empty(trim($mail_body))) && empty($template_id)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Campaign must have either email content or a template selected']);
+            exit;
+        }
+        
+        // Validate subject length
+        if (strlen($mail_subject) > 255) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Email subject is too long (maximum 255 characters)']);
+            exit;
+        }
 
         // Store images as JSON (null if empty array)
         $images_json = !empty($images_paths) ? json_encode($images_paths) : null;

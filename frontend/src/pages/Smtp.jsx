@@ -1521,7 +1521,7 @@ const Smtp = () => {
                         onChange={handleEditAccountFormChange}
                         className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                         min="0"
-                        max="1000"
+                        max="1000000"
                       />
                     </div>
                     <div>
@@ -1535,7 +1535,7 @@ const Smtp = () => {
                         onChange={handleEditAccountFormChange}
                         className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md text-sm"
                         min="0"
-                        max="10000"
+                        max="1000000"
                       />
                     </div>
                   </div>

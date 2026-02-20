@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Diagnostics - Frontend Freeze Detector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #4CAF50; }
+        .status-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4CAF50;
+        }
+        .status-card.warning { border-left-color: #ff9800; }
+        .status-card.error { border-left-color: #f44336; }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .status-row:last-child { border-bottom: none; }
+        .label { color: #888; }
+        .value { font-weight: bold; color: #fff; }
+        .value.good { color: #4CAF50; }
+        .value.warning { color: #ff9800; }
+        .value.critical { color: #f44336; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .loading { color: #ff9800; }
+        .error-msg { color: #f44336; padding: 10px; background: #3a1a1a; border-radius: 4px; }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #3a3a3a;
+        }
+        .logs {
+            background: #0a0a0a;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
+        .timestamp { color: #888; }
+        .auto-refresh { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 4px; }
+        .refresh-controls { display: flex; align-items: center; gap: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 System Diagnostics - Frontend Freeze Detector</h1>
+        
+        <div class="auto-refresh">
+            <div class="refresh-controls">
+                <button id="toggleAutoRefresh" onclick="toggleAutoRefresh()">Enable Auto-Refresh (5s)</button>
+                <button onclick="runHealthCheck()">🏥 Health Check</button>
+                <button onclick="runDiagnostics()">🔬 Full Diagnostics</button>
+                <button onclick="testProgress()">📊 Test Progress API</button>
+                <span id="lastUpdate"></span>
+            </div>
+        </div>
+
+        <div id="healthStatus"></div>
+        <div id="diagnosticsStatus"></div>
+        <div id="progressStatus"></div>
+        <div id="logsSection"></div>
+    </div>
+
+    <script>
+        let autoRefreshEnabled = false;
+        let autoRefreshInterval = null;
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const btn = document.getElementById('toggleAutoRefresh');
+            
+            if (autoRefreshEnabled) {
+                btn.textContent = 'Disable Auto-Refresh';
+                btn.style.background = '#f44336';
+                startAutoRefresh();
+            } else {
+                btn.textContent = 'Enable Auto-Refresh (5s)';
+                btn.style.background = '#4CAF50';
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            runHealthCheck();
+            autoRefreshInterval = setInterval(() => {
+                runHealthCheck();
+            }, 5000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        async function runHealthCheck() {
+            const container = document.getElementById('healthStatus');
+            container.innerHTML = '<div class="status-card"><div class="loading">⏳ Running health check...</div></div>';
+            
+            const start = Date.now();
+            try {
+                const response = await fetch('./api/health_check.php');
+                const duration = Date.now() - start;
+                const data = await response.json();
+                
+                let statusClass = 'status-card';
+                if (data.status === 'error') statusClass += ' error';
+                else if (data.status === 'slow') statusClass += ' warning';
+                
+                let html = `<div class="${statusClass}">
+                    <h2>🏥 Health Check</h2>
+                    <div class="status-row">
+                        <span class="label">Status:</span>
+                        <span class="value ${data.status === 'ok' ? 'good' : data.status === 'slow' ? 'warning' : 'critical'}">${data.status.toUpperCase()}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">Response Time:</span>
+                        <span class="value ${duration < 100 ? 'good' : duration < 500 ? 'warning' : 'critical'}">${duration}ms</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">Database:</span>
+                        <span class="value ${data.database === 'connected' ? 'good' : 'critical'}">${data.database}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">DB Query Time:</span>
+                        <span class="value ${data.db_query_ms < 50 ? 'good' : data.db_query_ms < 100 ? 'warning' : 'critical'}">${data.db_query_ms}ms</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">PHP Memory:</span>
+                        <span class="value">${data.memory_mb} MB</span>
+                    </div>
+                    ${data.warning ? `<div class="error-msg">⚠️ ${data.warning}</div>` : ''}
+                </div>`;
+                
+                container.innerHTML = html;
+                document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                container.innerHTML = `<div class="status-card error">
+                    <h2>🏥 Health Check - FAILED</h2>
+                    <div class="error-msg">❌ ${error.message}</div>
+                    <p style="margin-top: 10px;">This could mean:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Server is completely overloaded</li>
+                        <li>PHP-FPM workers are all busy</li>
+                        <li>Network timeout</li>
+                    </ul>
+                </div>`;
+            }
+        }
+
+        async function runDiagnostics() {
+            const container = document.getElementById('diagnosticsStatus');
+            container.innerHTML = '<div class="status-card"><div class="loading">⏳ Running full diagnostics (may take 5-10 seconds)...</div></div>';
+            
+            try {
+                const response = await fetch('./api/system_diagnostics.php');
+                const data = await response.json();
+                
+                let statusClass = 'status-card';
+                if (data.health === 'CRITICAL') statusClass += ' error';
+                else if (data.health === 'WARNING') statusClass += ' warning';
+                
+                let html = `<div class="${statusClass}">
+                    <h2>🔬 System Diagnostics</h2>
+                    <h3 style="margin-top: 20px;">Overall Health: ${data.health}</h3>`;
+                
+                // Issues
+                if (data.health_issues && data.health_issues.length > 0) {
+                    html += '<div class="error-msg" style="margin: 10px 0;"><strong>🚨 CRITICAL ISSUES:</strong><ul style="margin-left: 20px; margin-top: 5px;">';
+                    data.health_issues.forEach(issue => {
+                        html += `<li>${issue}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Warnings
+                if (data.health_warnings && data.health_warnings.length > 0) {
+                    html += '<div style="background: #3a2a1a; padding: 10px; margin: 10px 0; border-radius: 4px;"><strong>⚠️ WARNINGS:</strong><ul style="margin-left: 20px; margin-top: 5px;">';
+                    data.health_warnings.forEach(warning => {
+                        html += `<li>${warning}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Recommendations
+                if (data.recommendations && data.recommendations.length > 0) {
+                    html += '<div style="background: #1a2a3a; padding: 10px; margin: 10px 0; border-radius: 4px;"><strong>💡 RECOMMENDATIONS:</strong><ul style="margin-left: 20px; margin-top: 5px;">';
+                    data.recommendations.forEach(rec => {
+                        html += `<li>${rec}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                html += '<details style="margin-top: 20px;"><summary style="cursor: pointer; font-weight: bold;">📋 Full Diagnostics Data</summary><pre>' + JSON.stringify(data, null, 2) + '</pre></details>';
+                html += '</div>';
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = `<div class="status-card error">
+                    <h2>🔬 Diagnostics - FAILED</h2>
+                    <div class="error-msg">❌ ${error.message}</div>
+                </div>`;
+            }
+        }
+
+        async function testProgress() {
+            const container = document.getElementById('progressStatus');
+            container.innerHTML = '<div class="status-card"><div class="loading">⏳ Testing progress API...</div></div>';
+            
+            const start = Date.now();
+            try {
+                const response = await fetch('./includes/progress.php');
+                const duration = Date.now() - start;
+                const data = await response.json();
+                
+                let statusClass = 'status-card';
+                if (!response.ok) statusClass += ' error';
+                
+                let html = `<div class="${statusClass}">
+                    <h2>📊 Progress API Test</h2>
+                    <div class="status-row">
+                        <span class="label">HTTP Status:</span>
+                        <span class="value ${response.ok ? 'good' : 'critical'}">${response.status} ${response.statusText}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">Response Time:</span>
+                        <span class="value ${duration < 100 ? 'good' : duration < 500 ? 'warning' : 'critical'}">${duration}ms</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="label">Stage:</span>
+                        <span class="value">${data.stage || 'N/A'}</span>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>`;
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = `<div class="status-card error">
+                    <h2>📊 Progress API - FAILED</h2>
+                    <div class="error-msg">❌ ${error.message}</div>
+                    <p style="margin-top: 10px;">This is likely the cause of frontend freeze!</p>
+                    <p>Check: /backend/logs/progress_errors.log</p>
+                </div>`;
+            }
+        }
+
+        // Run health check on page load
+        runHealthCheck();
+    </script>
+</body>
+</html>

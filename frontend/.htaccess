@@ -7,12 +7,66 @@
   # Set the base path for rewrite rules
   RewriteBase /emailvalidation/
   
+  # ========================================================================
+  # Serve Pre-Compressed Files (Brotli & Gzip) - Performance Optimization
+  # ========================================================================
+  
+  # Serve Brotli compressed files if available and supported
+  RewriteCond %{HTTP:Accept-Encoding} br
+  RewriteCond %{REQUEST_FILENAME}\.br -f
+  RewriteRule ^(.+)\.(js|css|svg|json)$ $1.$2.br [L,T=application/$2]
+  
+  # Serve Gzip compressed files if available and supported
+  RewriteCond %{HTTP:Accept-Encoding} gzip
+  RewriteCond %{REQUEST_FILENAME}\.gz -f
+  RewriteRule ^(.+)\.(js|css|svg|json)$ $1.$2.gz [L,T=application/$2]
+  
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   
   # Rewrite everything else to index.html to allow React Router to handle routing
   RewriteRule . /emailvalidation/index.html [L]
+</IfModule>
+
+# ========================================================================
+# Set Content-Type and Encoding for Pre-Compressed Files
+# ========================================================================
+<IfModule mod_headers.c>
+  # Brotli compressed JavaScript
+  <FilesMatch "\.js\.br$">
+    Header set Content-Type "application/javascript"
+    Header set Content-Encoding "br"
+    Header set Vary "Accept-Encoding"
+  </FilesMatch>
+  
+  # Brotli compressed CSS
+  <FilesMatch "\.css\.br$">
+    Header set Content-Type "text/css"
+    Header set Content-Encoding "br"
+    Header set Vary "Accept-Encoding"
+  </FilesMatch>
+  
+  # Gzip compressed JavaScript
+  <FilesMatch "\.js\.gz$">
+    Header set Content-Type "application/javascript"
+    Header set Content-Encoding "gzip"
+    Header set Vary "Accept-Encoding"
+  </FilesMatch>
+  
+  # Gzip compressed CSS
+  <FilesMatch "\.css\.gz$">
+    Header set Content-Type "text/css"
+    Header set Content-Encoding "gzip"
+    Header set Vary "Accept-Encoding"
+  </FilesMatch>
+  
+  # Gzip compressed JSON
+  <FilesMatch "\.json\.gz$">
+    Header set Content-Type "application/json"
+    Header set Content-Encoding "gzip"
+    Header set Vary "Accept-Encoding"
+  </FilesMatch>
 </IfModule>
 
 # Security Headers
@@ -35,7 +89,33 @@
 
 # Compression
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+  # Compress HTML, CSS, JavaScript, Text, XML and fonts
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/atom+xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/truetype
+  AddOutputFilterByType DEFLATE font/opentype
+  AddOutputFilterByType DEFLATE application/font-woff
+  AddOutputFilterByType DEFLATE application/font-woff2
+  AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+  
+  # Remove browser bugs (for old browsers)
+  BrowserMatch ^Mozilla/4 gzip-only-text/html
+  BrowserMatch ^Mozilla/4\.0[678] no-gzip
+  BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+  
+  # Make sure proxies don't deliver wrong content
+  Header append Vary User-Agent env=!dont-vary
 </IfModule>
 
 # Caching

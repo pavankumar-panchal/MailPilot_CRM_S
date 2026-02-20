@@ -65,7 +65,7 @@ if ($result) {
     
     // Log the reset
     $log_message = date('Y-m-d H:i:s') . " - Daily counters reset. Total sent today: {$stats['total_sent_today']}\n";
-    file_put_contents(__DIR__ . '/../storage/daily_reset.log', $log_message, FILE_APPEND);
+    // file_put_contents(__DIR__ . '/../storage/daily_reset.log', $log_message, FILE_APPEND); // Disabled
     
     echo "\nReset completed successfully!\n";
 } else {

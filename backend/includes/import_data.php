@@ -19,7 +19,7 @@ register_shutdown_function(function() {
 
 // Error handling
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/import_errors.log');
+// ini_set('error_log', __DIR__ . '/../logs/import_errors.log'); // Disabled - no log files
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 set_time_limit(300);
@@ -80,8 +80,8 @@ if ($action === 'list') {
         import_batch_id,
         import_filename,
         COUNT(*) as record_count,
-        COUNT(CASE WHEN is_active = 1 THEN 1 END) as valid_count,
-        COUNT(CASE WHEN is_active = 0 THEN 1 END) as invalid_count,
+        COUNT(CASE WHEN is_active = 1 AND Emails IS NOT NULL AND Emails <> '' THEN 1 END) as valid_count,
+        COUNT(CASE WHEN is_active = 0 OR Emails IS NULL OR Emails = '' THEN 1 END) as invalid_count,
         MIN(imported_at) as imported_at,
         user_id as batch_user_id,
         GROUP_CONCAT(DISTINCT Emails ORDER BY Emails SEPARATOR ', ') as sample_emails,
@@ -111,10 +111,12 @@ if ($action === 'list') {
                 $row['sample_emails'] .= '...';
             }
         }
-        // Set total_emails for compatibility
-        $row['total_emails'] = $row['record_count'];
+        // ✅ FIXED: Use valid_count for Excel imports (is_active=1 records)
+        // This matches the actual emails that will be used in campaigns
+        // record_count includes all rows (even inactive), valid_count only counts is_active=1
+        $row['total_emails'] = $row['valid_count'];
         
-        error_log("Batch found: " . $row['import_batch_id'] . " - File: " . $row['import_filename'] . " - User: " . $row['batch_user_id'] . " - Count: " . $row['record_count'] . " - Valid: " . $row['valid_count'] . " - Status: " . $row['status']);
+        error_log("Batch found: " . $row['import_batch_id'] . " - File: " . $row['import_filename'] . " - User: " . $row['batch_user_id'] . " - RecordCount: " . $row['record_count'] . " - ValidCount: " . $row['valid_count'] . " - Status: " . $row['status']);
         unset($row['batch_user_id']); // Don't send to frontend
         $batches[] = $row;
     }

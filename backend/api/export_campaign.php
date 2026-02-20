@@ -5,6 +5,7 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../includes/session_config.php';
 require_once __DIR__ . '/../includes/security_helpers.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/db_campaign.php'; // SERVER 2 for mail_blaster table
 
 // Set security headers
 setSecurityHeaders();
@@ -33,9 +34,11 @@ if ($campaign_id <= 0) {
 // Set filename
 $filename = 'campaign_' . $campaign_id . '_export.csv';
 
-// Query to get all email data with SMTP details
+// OPTIMIZED: Use STRAIGHT_JOIN for predictable query execution
+// Stream data to prevent memory issues with large campaigns
+// IMPORTANT: mail_blaster, smtp_accounts, smtp_servers are on SERVER 2 (conn_heavy)
 $query = "
-    SELECT 
+    SELECT STRAIGHT_JOIN
         mb.id,
         mb.campaign_id,
         mb.to_mail as recipient_email,
@@ -57,11 +60,29 @@ $query = "
     ORDER BY mb.id ASC
 ";
 
-// Stream CSV output (same as email validation export)
+// Set longer execution time for large exports
+set_time_limit(300); // 5 minutes max
+ini_set('memory_limit', '256M');
+
+// Stream CSV output (unbuffered for large datasets)
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Cache-Control: no-cache, must-revalidate');
+header('Pragma: no-cache');
 
-$result = $conn->query($query);
+// Disable output buffering for streaming
+if (ob_get_level()) {
+    ob_end_clean();
+}
+
+// Query SERVER 2 (mail_blaster table)
+$result = $conn_heavy->query($query);
+
+if (!$result) {
+    http_response_code(500);
+    echo "Error: " . $conn_heavy->error;
+    exit();
+}
 
 $out = fopen('php://output', 'w');
 
@@ -83,7 +104,8 @@ fputcsv($out, [
     'Error Message'
 ]);
 
-// Write data rows
+// Write data rows with periodic flushing for large datasets
+$row_count = 0;
 if ($result) {
     while ($row = $result->fetch_assoc()) {
         fputcsv($out, [
@@ -102,9 +124,15 @@ if ($result) {
             $row['attempt_count'],
             $row['error_message'] ?: '-'
         ]);
+        
+        // Flush output every 100 rows for better streaming performance
+        $row_count++;
+        if ($row_count % 100 === 0) {
+            flush();
+        }
     }
 }
 
 fclose($out);
-$conn->close();
+$conn_heavy->close();
 exit;

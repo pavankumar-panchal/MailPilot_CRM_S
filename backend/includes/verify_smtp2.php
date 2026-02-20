@@ -10,10 +10,10 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET");
 
 // Database configuration
-$servername = "127.0.0.1";
-$username = "root"; 
-$password = "";
-$dbname = "CRM";
+$servername = "174.141.233.174";
+$username = "email_id"; 
+$password = "55y60jgW*";
+$dbname = "email_id";
 
 // Create main connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -22,20 +22,8 @@ if ($conn->connect_error) {
     die(json_encode(["status" => "error", "message" => "Connection failed: " . $conn->connect_error]));
 }
 
-// Separate log DB credentials
-$log_db_host = "127.0.0.1";
-$log_db_user = "root";
-$log_db_pass = "";
-$log_db_name = "CRM_logs";
-
-$conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
-$conn_logs->set_charset("utf8mb4");
-if ($conn_logs->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Log DB connection failed: " . $conn_logs->connect_error]));
-}
-
 // Configuration
-define('MAX_WORKERS', 200);
+define('MAX_WORKERS', 100);
 define('EMAILS_PER_WORKER', 500);
 define('WORKER_SCRIPT', __DIR__ . '/smtp_worker2.php');
 define('LOG_FILE', __DIR__ . '/../storage/smtp_parallel.log');
@@ -47,23 +35,14 @@ ini_set('memory_limit', '2048M');
 if (!file_exists(WORKER_SCRIPT)) {
     $worker_code = <<<'EOC'
 <?php
-$servername = "127.0.0.1";
-$username = "root";
-$password = "";
-$dbname = "CRM";
+$servername = "174.141.233.174";
+$username = "email_id"; 
+$password = "55y60jgW*";
+$dbname = "email_id";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");
 if ($conn->connect_error) exit(1);
-
-$log_db_host = "127.0.0.1";
-$log_db_user = "root";
-$log_db_pass = "";
-$log_db_name = "CRM_logs";
-
-$conn_logs = new mysqli($log_db_host, $log_db_user, $log_db_pass, $log_db_name);
-$conn_logs->set_charset("utf8mb4");
-if ($conn_logs->connect_error) exit(1);
 
 define('WORKER_ID', 2); // Set worker id here
 
@@ -82,25 +61,7 @@ function log_worker($msg, $id_range = '') {
     file_put_contents($logfile, "[$ts][$id_range] $msg\n", FILE_APPEND);
 }
 
-function insert_smtp_log($conn_logs, $email, $steps, $validation, $validation_response) {
-    $stmt = $conn_logs->prepare("INSERT INTO email_smtp_checks2 
-        (email, smtp_connection, ehlo, mail_from, rcpt_to, validation, validation_response) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param(
-        "sssssss",
-        $email,
-        $steps['smtp_connection'],
-        $steps['ehlo'],
-        $steps['mail_from'],
-        $steps['rcpt_to'],
-        $validation,
-        $validation_response
-    );
-    $stmt->execute();
-    $stmt->close();
-}
-
-function verifyEmailViaSMTP($email, $domain, $conn_logs) {
+function verifyEmailViaSMTP($email, $domain) {
     $ip = false;
     $mxHost = null;
     $steps = [
@@ -129,7 +90,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     }
 
     if (!$ip) {
-        insert_smtp_log($conn_logs, $email, $steps, "No valid MX or A record found", "No valid MX or A record found");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -145,7 +105,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     $timeout = 15;
     $smtp = @stream_socket_client("tcp://$ip:$port", $errno, $errstr, $timeout);
     if (!$smtp) {
-        insert_smtp_log($conn_logs, $email, $steps, "Connection failed: $errstr", "Connection failed: $errstr");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -160,7 +119,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     $response = fgets($smtp, 4096);
     if ($response === false || substr($response, 0, 3) != "220") {
         fclose($smtp);
-        insert_smtp_log($conn_logs, $email, $steps, "SMTP server not ready or no response", "SMTP server not ready or no response");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -181,7 +139,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     if (!$ehlo_ok) {
         fclose($smtp);
         $steps['ehlo'] = 'No';
-        insert_smtp_log($conn_logs, $email, $steps, "EHLO failed", "EHLO failed");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -197,7 +154,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     if ($mailfrom_resp === false) {
         fclose($smtp);
         $steps['mail_from'] = 'No';
-        insert_smtp_log($conn_logs, $email, $steps, "MAIL FROM failed", "MAIL FROM failed");
         return [
             "status" => "invalid",
             "result" => 0,
@@ -220,7 +176,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
     $validation_response = substr($validation_response, 0, 1000);
 
     if ($responseCode == "250" || $responseCode == "251") {
-        insert_smtp_log($conn_logs, $email, $steps, $ip, $validation_response);
         return [
             "status" => "valid",
             "result" => 1,
@@ -230,7 +185,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
             "validation_response" => $ip
         ];
     } elseif (in_array($responseCode, ["450", "451", "452"])) {
-        insert_smtp_log($conn_logs, $email, $steps, $rcpt_resp, $validation_response);
         return [
             "status" => "retryable",
             "result" => 2,
@@ -240,7 +194,6 @@ function verifyEmailViaSMTP($email, $domain, $conn_logs) {
             "validation_response" => $rcpt_resp
         ];
     } else {
-        insert_smtp_log($conn_logs, $email, $steps, $rcpt_resp, $validation_response);
         return [
             "status" => "invalid",
             "result" => 0,
@@ -257,7 +210,7 @@ if ($result) {
         $email = $row["raw_emailid"];
         $domain = $row["sp_domain"];
         $email_id = $row["id"];
-        $verify = verifyEmailViaSMTP($email, $domain, $conn_logs);
+        $verify = verifyEmailViaSMTP($email, $domain);
 
         // --- Sanitize validation_response for utf8mb4 ---
         if (isset($verify['validation_response'])) {
@@ -289,7 +242,6 @@ if ($result) {
     log_worker("Query failed: " . $conn->error, "");
 }
 $conn->close();
-$conn_logs->close();
 EOC;
     file_put_contents(WORKER_SCRIPT, $worker_code);
 }
@@ -406,7 +358,6 @@ try {
             "message" => "No emails found to process. Marked csv_list as completed."
         ]);
         $conn->close();
-        $conn_logs->close();
         exit;
     }
 
@@ -449,7 +400,6 @@ try {
     ]);
 } finally {
     $conn->close();
-    $conn_logs->close();
 }
 
 function update_all_csv_list_stats($conn) {

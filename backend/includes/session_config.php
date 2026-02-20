@@ -48,5 +48,5 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
     
     // Log session info for debugging
-    error_log("session_config.php - Session ID: " . session_id() . " | Has user_id: " . (isset($_SESSION['user_id']) ? 'YES' : 'NO'));
+    // error_log("session_config.php - Session ID: " . session_id() . " | Has user_id: " . (isset($_SESSION['user_id']) ? 'YES' : 'NO'));
 }

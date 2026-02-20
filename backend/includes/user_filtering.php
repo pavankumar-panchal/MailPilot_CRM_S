@@ -75,10 +75,7 @@ function getUserFilterWhere($tableAlias = '') {
     // Use isAuthenticatedAdmin() to support both session and token auth
     $isAdmin = function_exists('isAuthenticatedAdmin') && isAuthenticatedAdmin();
     
-    error_log("getUserFilterWhere called - isAdmin: " . ($isAdmin ? 'YES' : 'NO'));
-    
     if ($isAdmin) {
-        error_log("getUserFilterWhere - Returning EMPTY (admin mode)");
         return ''; // Admin sees everything - no filtering
     }
     
@@ -86,13 +83,11 @@ function getUserFilterWhere($tableAlias = '') {
     $user = function_exists('getAuthenticatedUser') ? getAuthenticatedUser() : getCurrentUser();
     
     if (!$user) {
-        error_log("getUserFilterWhere - No user, blocking");
         return 'WHERE 1=0'; // No access if not logged in
     }
     
     $prefix = $tableAlias ? "$tableAlias." : '';
     $filter = "WHERE {$prefix}user_id = " . intval($user['id']);
-    error_log("getUserFilterWhere - Returning: $filter");
     return $filter;
 }
 

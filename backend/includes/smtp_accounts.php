@@ -2,9 +2,14 @@
 
 require_once __DIR__ . '/session_config.php';
 require_once __DIR__ . '/security_helpers.php';
-require_once __DIR__ . '/../config/db.php';
+
+// CRITICAL: ONLY load Server 2 (CRM) database - smtp_servers, smtp_accounts, smtp_usage are ONLY on Server 2
+require_once __DIR__ . '/../config/db_campaign.php';
 require_once __DIR__ . '/user_filtering.php';
 require_once __DIR__ . '/auth_helper.php';
+
+// Use Server 2 (Campaign DB) connection for ALL SMTP account operations
+$conn = $conn_heavy;
 
 // Set security headers
 setSecurityHeaders();
@@ -50,8 +55,8 @@ if ($method === 'POST') {
         }
         
         $from_name = sanitizeString($data['from_name'] ?? '', 255);
-        $daily_limit = validateInteger($data['daily_limit'] ?? 500, 0, 10000);
-        $hourly_limit = validateInteger($data['hourly_limit'] ?? 50, 0, 1000);
+        $daily_limit = validateInteger($data['daily_limit'] ?? 500, 0, 1000000);
+        $hourly_limit = validateInteger($data['hourly_limit'] ?? 50, 0, 1000000);
         $is_active = validateBoolean($data['is_active'] ?? 1);
         
         // Get current user ID
@@ -98,8 +103,8 @@ if ($method === 'PUT') {
         }
         
         $from_name = sanitizeString($data['from_name'] ?? '', 255);
-        $daily_limit = validateInteger($data['daily_limit'] ?? 500, 0, 10000);
-        $hourly_limit = validateInteger($data['hourly_limit'] ?? 50, 0, 1000);
+        $daily_limit = validateInteger($data['daily_limit'] ?? 500, 0, 1000000);
+        $hourly_limit = validateInteger($data['hourly_limit'] ?? 50, 0, 1000000);
         $is_active = validateBoolean($data['is_active'] ?? 1);
         
         // Check if user has permission to update this account
